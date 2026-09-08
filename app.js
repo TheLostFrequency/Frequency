@@ -1,32 +1,25 @@
 /* =========================================================
    FREQUENCY
-   Main application
+   Personal Music Vault
    ========================================================= */
-
-const SUPABASE_URL = 'https://nmiodppvxqpzfrideduv.supabase.co';
-
-/*
-  IMPORTANT:
-  Replace the value below with your CURRENT Supabase
-  PUBLISHABLE key.
-
-  It should begin with:
-  sb_publishable_
-
-  Do NOT use the secret/service_role key.
-*/
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_S7SpRNfMTiY7SB4Y19LRDQ_WBzH_TPc';
 
 
 /* =========================================================
-   SUPABASE
+   SUPABASE CONFIG
    ========================================================= */
 
-const supabaseConfigured =
+const SUPABASE_URL =
+  'https://nmiodppvxqpzfrideduv.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_S7SpRNfMTiY7SB4Y19LRDQ_WBzH_TPc';
+
+
+const supabaseReady =
   SUPABASE_URL.startsWith('https://') &&
   SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
 
-const sb = supabaseConfigured
+const sb = supabaseReady
   ? supabase.createClient(
       SUPABASE_URL,
       SUPABASE_PUBLISHABLE_KEY
@@ -35,59 +28,70 @@ const sb = supabaseConfigured
 
 
 /* =========================================================
-   HELPERS
+   DOM
    ========================================================= */
 
-const $ = (selector) => document.querySelector(selector);
+const $ = (selector) =>
+  document.querySelector(selector);
 
-const $$ = (selector) => Array.from(
-  document.querySelectorAll(selector)
-);
+const $$ = (selector) =>
+  Array.from(document.querySelectorAll(selector));
 
 const audio = $('#audio');
 
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
 let currentUser = null;
+
 let tracks = [];
 let playlists = [];
 
 let currentTrackIndex = -1;
+
+let viewMode =
+  localStorage.getItem('frequency-view') ||
+  'collection';
+
 let shuffled = false;
 let repeatMode = 'off';
 
-let viewMode =
-  localStorage.getItem('frequency-view') || 'collection';
+let currentPage = 'library';
+
+let carouselIndex = 0;
 
 
 /* =========================================================
-   DOM HELPERS
+   TOAST
    ========================================================= */
 
-function showElement(selector) {
-  const element = $(selector);
+function toast(message) {
+  const element = $('#toast');
 
-  if (element) {
-    element.classList.remove('hidden');
+  if (!element) {
+    alert(message);
+    return;
   }
+
+  element.textContent = message;
+  element.classList.add('show');
+
+  clearTimeout(
+    toast.timeout
+  );
+
+  toast.timeout =
+    setTimeout(() => {
+      element.classList.remove('show');
+    }, 3000);
 }
 
 
-function hideElement(selector) {
-  const element = $(selector);
-
-  if (element) {
-    element.classList.add('hidden');
-  }
-}
-
-
-function setText(selector, text) {
-  const element = $(selector);
-
-  if (element) {
-    element.textContent = text ?? '';
-  }
-}
-
+/* =========================================================
+   HELPERS
+   ========================================================= */
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -99,111 +103,206 @@ function escapeHtml(value) {
 }
 
 
+function show(element) {
+  if (element) {
+    element.classList.remove('hidden');
+  }
+}
+
+
+function hide(element) {
+  if (element) {
+    element.classList.add('hidden');
+  }
+}
+
+
+function setText(selector, value) {
+  const element = $(selector);
+
+  if (element) {
+    element.textContent = value ?? '';
+  }
+}
+
+
+function formatTime(seconds) {
+  if (
+    !Number.isFinite(Number(seconds)) ||
+    Number(seconds) < 0
+  ) {
+    return '0:00';
+  }
+
+  const total =
+    Math.floor(Number(seconds));
+
+  const minutes =
+    Math.floor(total / 60);
+
+  const secondsPart =
+    total % 60;
+
+  return `${minutes}:${String(
+    secondsPart
+  ).padStart(2, '0')}`;
+}
+
+
+function formatCount(count, singular) {
+  return `${count} ${
+    count === 1
+      ? singular
+      : singular + 's'
+  }`;
+}
+
+
 /* =========================================================
    AUTH
    ========================================================= */
 
-async function getCurrentUser() {
+async function getUser() {
   if (!sb) {
     return null;
   }
 
-  const { data, error } = await sb.auth.getUser();
+  const {
+    data,
+    error
+  } = await sb.auth.getUser();
 
   if (error) {
-    console.error('Auth error:', error);
+    console.error(
+      'getUser error:',
+      error
+    );
+
     return null;
   }
 
-  return data.user || null;
-}
-
-
-async function refreshAuthUI() {
-  currentUser = await getCurrentUser();
-
-  const authButtons = $$('.auth-button');
-  const signOutButtons = $$('.sign-out');
-
-  authButtons.forEach((button) => {
-    button.classList.toggle('hidden', !!currentUser);
-  });
-
-  signOutButtons.forEach((button) => {
-    button.classList.toggle('hidden', !currentUser);
-  });
-
-  const userEmail = $('#userEmail');
-
-  if (userEmail && currentUser) {
-    userEmail.textContent =
-      currentUser.email || 'Signed in';
-  }
+  return data?.user || null;
 }
 
 
 async function signIn(email, password) {
   if (!sb) {
-    alert(
-      'Supabase is not configured. Add your current sb_publishable_ key to app.js first.'
+    $('#authStatus').textContent =
+      'Supabase is not configured. Put your current sb_publishable_ key into app.js.';
+    return;
+  }
+
+  const status =
+    $('#authStatus');
+
+  const button =
+    $('#authSubmit');
+
+  status.textContent =
+    'Signing in...';
+
+  button.disabled = true;
+
+  try {
+    const {
+      data,
+      error
+    } = await sb.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    currentUser =
+      data.user;
+
+    status.textContent =
+      '';
+
+    await showApp();
+
+    toast('Welcome back to Frequency.');
+
+  } catch (error) {
+    console.error(
+      'Sign in error:',
+      error
     );
-    return;
+
+    status.textContent =
+      error.message ||
+      'Unable to sign in.';
+
+  } finally {
+    button.disabled = false;
   }
-
-  const { data, error } = await sb.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    console.error(error);
-    alert(error.message);
-    return;
-  }
-
-  currentUser = data.user;
-
-  closeAllModals();
-
-  await refreshAuthUI();
-  await loadAll();
-
-  alert('Welcome back to Frequency.');
 }
 
 
 async function signUp(email, password) {
   if (!sb) {
-    alert(
-      'Supabase is not configured. Add your current sb_publishable_ key to app.js first.'
-    );
+    $('#authStatus').textContent =
+      'Supabase is not configured. Put your current sb_publishable_ key into app.js.';
     return;
   }
 
-  const { data, error } = await sb.auth.signUp({
-    email,
-    password
-  });
+  const status =
+    $('#authStatus');
 
-  if (error) {
-    console.error(error);
-    alert(error.message);
-    return;
-  }
+  const button =
+    $('#authSubmit');
 
-  if (data.session) {
-    currentUser = data.user;
+  status.textContent =
+    'Creating account...';
 
-    closeAllModals();
+  button.disabled = true;
 
-    await refreshAuthUI();
-    await loadAll();
+  try {
+    const {
+      data,
+      error
+    } = await sb.auth.signUp({
+      email,
+      password
+    });
 
-    alert('Your Frequency account is ready.');
-  } else {
-    alert(
-      'Account created. Check your email to confirm your account, then sign in.'
+    if (error) {
+      throw error;
+    }
+
+    if (data.session) {
+      currentUser =
+        data.user;
+
+      status.textContent =
+        '';
+
+      await showApp();
+
+      toast(
+        'Your Frequency account is ready.'
+      );
+
+    } else {
+      status.textContent =
+        'Account created. Check your email to confirm your account, then sign in.';
+    }
+
+  } catch (error) {
+    console.error(
+      'Sign up error:',
+      error
     );
+
+    status.textContent =
+      error.message ||
+      'Unable to create account.';
+
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -213,11 +312,17 @@ async function signOut() {
     return;
   }
 
-  const { error } = await sb.auth.signOut();
+  const {
+    error
+  } = await sb.auth.signOut();
 
   if (error) {
-    console.error(error);
-    alert(error.message);
+    console.error(
+      'Sign out error:',
+      error
+    );
+
+    toast(error.message);
     return;
   }
 
@@ -227,41 +332,163 @@ async function signOut() {
   currentTrackIndex = -1;
 
   stopAudio();
-  await refreshAuthUI();
-  renderAll();
+
+  $('#appView').classList.add(
+    'hidden'
+  );
+
+  $('#authView').classList.remove(
+    'hidden'
+  );
+
+  $('#authEmail').value = '';
+  $('#authPassword').value = '';
+  $('#authStatus').textContent = '';
+
+  toast('Signed out.');
+}
+
+
+async function showApp() {
+  $('#authView').classList.add(
+    'hidden'
+  );
+
+  $('#appView').classList.remove(
+    'hidden'
+  );
+
+  await loadLibrary();
+
+  renderCurrentPage();
+}
+
+
+function setupAuth() {
+  const form =
+    $('#authForm');
+
+  const toggle =
+    $('#authToggle');
+
+  let mode = 'login';
+
+  form.addEventListener(
+    'submit',
+    async (event) => {
+      event.preventDefault();
+
+      const email =
+        $('#authEmail').value.trim();
+
+      const password =
+        $('#authPassword').value;
+
+      if (!email || !password) {
+        $('#authStatus').textContent =
+          'Enter your email and password.';
+        return;
+      }
+
+      if (password.length < 6) {
+        $('#authStatus').textContent =
+          'Password must be at least 6 characters.';
+        return;
+      }
+
+      if (mode === 'login') {
+        await signIn(
+          email,
+          password
+        );
+      } else {
+        await signUp(
+          email,
+          password
+        );
+      }
+    }
+  );
+
+
+  toggle.addEventListener(
+    'click',
+    () => {
+      mode =
+        mode === 'login'
+          ? 'signup'
+          : 'login';
+
+      if (mode === 'signup') {
+        $('#authSubmit').textContent =
+          'Create account';
+
+        toggle.textContent =
+          'Already have an account? Sign in';
+
+        $('#authPassword').setAttribute(
+          'autocomplete',
+          'new-password'
+        );
+
+      } else {
+        $('#authSubmit').textContent =
+          'Sign in';
+
+        toggle.textContent =
+          'Need an account? Sign up';
+
+        $('#authPassword').setAttribute(
+          'autocomplete',
+          'current-password'
+        );
+      }
+
+      $('#authStatus').textContent =
+        '';
+    }
+  );
 }
 
 
 /* =========================================================
-   AUTH MODAL
+   AUTH STATE
    ========================================================= */
 
-function openAuthModal(mode = 'login') {
-  const modal = $('#authModal');
-
-  if (!modal) {
+function setupAuthListener() {
+  if (!sb) {
     return;
   }
 
-  modal.classList.remove('hidden');
+  sb.auth.onAuthStateChange(
+    async (_event, session) => {
+      currentUser =
+        session?.user || null;
 
-  const loginForm = $('#loginForm');
-  const signupForm = $('#signupForm');
+      if (currentUser) {
+        $('#authView').classList.add(
+          'hidden'
+        );
 
-  if (mode === 'signup') {
-    loginForm?.classList.add('hidden');
-    signupForm?.classList.remove('hidden');
-  } else {
-    signupForm?.classList.add('hidden');
-    loginForm?.classList.remove('hidden');
-  }
-}
+        $('#appView').classList.remove(
+          'hidden'
+        );
 
+        await loadLibrary();
 
-function closeAllModals() {
-  $$('.modal').forEach((modal) => {
-    modal.classList.add('hidden');
-  });
+        renderCurrentPage();
+
+      } else {
+        $('#authView').classList.remove(
+          'hidden'
+        );
+
+        $('#appView').classList.add(
+          'hidden'
+        );
+      }
+    }
+  );
 }
 
 
@@ -275,16 +502,28 @@ async function loadTracks() {
     return;
   }
 
-  const { data, error } = await sb
+  const {
+    data,
+    error
+  } = await sb
     .from('tracks')
     .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at', {
-      ascending: false
-    });
+    .eq(
+      'user_id',
+      currentUser.id
+    )
+    .order(
+      'created_at',
+      {
+        ascending: false
+      }
+    );
 
   if (error) {
-    console.error('Tracks error:', error);
+    console.error(
+      'Load tracks error:',
+      error
+    );
 
     tracks = [];
 
@@ -301,16 +540,28 @@ async function loadPlaylists() {
     return;
   }
 
-  const { data, error } = await sb
+  const {
+    data,
+    error
+  } = await sb
     .from('playlists')
     .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at', {
-      ascending: false
-    });
+    .eq(
+      'user_id',
+      currentUser.id
+    )
+    .order(
+      'created_at',
+      {
+        ascending: false
+      }
+    );
 
   if (error) {
-    console.error('Playlists error:', error);
+    console.error(
+      'Load playlists error:',
+      error
+    );
 
     playlists = [];
 
@@ -321,13 +572,10 @@ async function loadPlaylists() {
 }
 
 
-async function loadAll() {
+async function loadLibrary() {
   if (!currentUser) {
     tracks = [];
     playlists = [];
-
-    renderAll();
-
     return;
   }
 
@@ -336,265 +584,577 @@ async function loadAll() {
     loadPlaylists()
   ]);
 
-  renderAll();
+  updateCounts();
 }
 
 
 /* =========================================================
-   STORAGE URLS
+   STORAGE
    ========================================================= */
 
-async function getSignedUrl(bucket, path) {
+async function signedUrl(
+  bucket,
+  path
+) {
   if (!sb || !path) {
-    return '';
+    return null;
   }
 
-  const { data, error } = await sb.storage
+  const {
+    data,
+    error
+  } = await sb.storage
     .from(bucket)
-    .createSignedUrl(path, 60 * 60);
+    .createSignedUrl(
+      path,
+      60 * 60
+    );
 
   if (error) {
     console.error(
-      `Signed URL error for ${bucket}:`,
+      'Storage URL error:',
       error
     );
 
-    return '';
+    return null;
   }
 
-  return data?.signedUrl || '';
+  return data?.signedUrl || null;
 }
 
 
-async function getAudioUrl(track) {
-  if (!track?.audio_path) {
-    return '';
-  }
-
-  return getSignedUrl('audio', track.audio_path);
+async function audioUrl(track) {
+  return signedUrl(
+    'audio',
+    track.audio_path
+  );
 }
 
 
-async function getCoverUrl(track) {
-  if (!track?.cover_path) {
-    return '';
-  }
-
-  return getSignedUrl('covers', track.cover_path);
-}
-
-
-/* =========================================================
-   AUDIO DURATION
-   ========================================================= */
-
-function getAudioDuration(file) {
-  return new Promise((resolve) => {
-    const tempAudio = document.createElement('audio');
-
-    tempAudio.preload = 'metadata';
-
-    tempAudio.onloadedmetadata = () => {
-      const duration = tempAudio.duration;
-
-      URL.revokeObjectURL(tempAudio.src);
-
-      resolve(
-        Number.isFinite(duration)
-          ? duration
-          : null
-      );
-    };
-
-    tempAudio.onerror = () => {
-      URL.revokeObjectURL(tempAudio.src);
-      resolve(null);
-    };
-
-    tempAudio.src = URL.createObjectURL(file);
-  });
-}
-
-
-/* =========================================================
-   FORMATTERS
-   ========================================================= */
-
-function formatDuration(seconds) {
-  if (!seconds || !Number.isFinite(Number(seconds))) {
-    return '--:--';
-  }
-
-  seconds = Math.floor(Number(seconds));
-
-  const minutes = Math.floor(seconds / 60);
-  const remaining = seconds % 60;
-
-  return `${minutes}:${String(remaining).padStart(2, '0')}`;
-}
-
-
-function formatDate(dateString) {
-  if (!dateString) {
-    return '';
-  }
-
-  const date = new Date(dateString);
-
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  return date.toLocaleDateString(
-    undefined,
-    {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }
+async function coverUrl(track) {
+  return signedUrl(
+    'covers',
+    track.cover_path
   );
 }
 
 
 /* =========================================================
-   COVER PLACEHOLDER
+   COUNTS
    ========================================================= */
 
-function coverPlaceholder(track) {
-  const title =
-    track?.title ||
-    'Frequency';
+function updateCounts() {
+  const trackCount =
+    tracks.length;
 
-  const firstLetter =
-    title.charAt(0).toUpperCase() || 'F';
+  const albums =
+    new Set(
+      tracks.map(
+        (track) =>
+          track.album?.trim() ||
+          'Singles'
+      )
+    );
 
-  return `
-    <div class="cover-placeholder">
-      <span>${escapeHtml(firstLetter)}</span>
-    </div>
-  `;
+  setText(
+    '#trackCount',
+    formatCount(
+      trackCount,
+      'track'
+    )
+  );
 }
 
 
 /* =========================================================
-   COLLECTION VIEW
+   NAVIGATION
    ========================================================= */
 
-async function renderCollection() {
-  const container =
-    $('#collection') ||
-    $('#collectionView') ||
-    $('#musicCollection');
+function switchPage(page) {
+  currentPage = page;
 
-  if (!container) {
-    return;
+  $$('.nav-item').forEach(
+    (button) => {
+      button.classList.toggle(
+        'active',
+        button.dataset.page === page
+      );
+    }
+  );
+
+  $$('.page').forEach(
+    (section) => {
+      section.classList.toggle(
+        'active-page',
+        section.id ===
+          `page-${page}`
+      );
+    }
+  );
+
+  const titles = {
+    library: 'Library',
+    search: 'Search',
+    albums: 'Albums',
+    playlists: 'Playlists'
+  };
+
+  setText(
+    '#pageTitle',
+    titles[page] || 'Library'
+  );
+
+  if (page === 'library') {
+    renderLibrary();
   }
 
-  if (!currentUser) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <h2>Your Frequency</h2>
-        <p>Sign in to access your private music library.</p>
-        <button class="primary-button" id="collectionLoginBtn">
-          Sign in
-        </button>
-      </div>
-    `;
+  if (page === 'search') {
+    renderSearch();
+  }
 
-    $('#collectionLoginBtn')?.addEventListener(
-      'click',
-      () => openAuthModal('login')
+  if (page === 'albums') {
+    renderAlbums();
+  }
+
+  if (page === 'playlists') {
+    renderPlaylists();
+  }
+}
+
+
+/* =========================================================
+   VIEW MODE
+   ========================================================= */
+
+function setView(mode) {
+  viewMode = mode;
+
+  localStorage.setItem(
+    'frequency-view',
+    mode
+  );
+
+  $('#viewCollection')
+    ?.classList.toggle(
+      'active',
+      mode === 'collection'
     );
 
+  $('#viewList')
+    ?.classList.toggle(
+      'active',
+      mode === 'list'
+    );
+
+  renderLibrary();
+}
+
+
+/* =========================================================
+   EMPTY LIBRARY
+   ========================================================= */
+
+function renderEmptyLibrary() {
+  $('#emptyLibrary').classList.remove(
+    'hidden'
+  );
+
+  $('#collectionView').classList.add(
+    'hidden'
+  );
+
+  $('#listView').classList.add(
+    'hidden'
+  );
+}
+
+
+/* =========================================================
+   LIBRARY
+   ========================================================= */
+
+async function renderLibrary() {
+  if (!currentUser) {
     return;
   }
 
   if (!tracks.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-art">◯</div>
-
-        <h2>Your collection is empty</h2>
-
-        <p>
-          Upload your first track and start building
-          your personal Frequency.
-        </p>
-
-        <button
-          class="primary-button"
-          id="collectionEmptyUpload"
-        >
-          ＋ Upload music
-        </button>
-      </div>
-    `;
-
-    $('#collectionEmptyUpload')?.addEventListener(
-      'click',
-      () => showElement('#uploadModal')
-    );
-
+    renderEmptyLibrary();
     return;
   }
 
-  const cards = [];
+  $('#emptyLibrary').classList.add(
+    'hidden'
+  );
 
-  for (const track of tracks) {
-    const cover = await getCoverUrl(track);
+  if (viewMode === 'collection') {
+    $('#collectionView').classList.remove(
+      'hidden'
+    );
 
-    cards.push(`
-      <article
-        class="track-card"
-        data-track-id="${escapeHtml(track.id)}"
-      >
-        <button
-          class="artwork-button"
-          data-play-track="${escapeHtml(track.id)}"
-          aria-label="Play ${escapeHtml(track.title)}"
-        >
-          ${
-            cover
-              ? `<img
-                  src="${cover}"
-                  alt="${escapeHtml(track.title)} cover"
-                  loading="lazy"
-                >`
-              : coverPlaceholder(track)
-          }
+    $('#listView').classList.add(
+      'hidden'
+    );
 
-          <span class="artwork-play">
-            ▶
-          </span>
-        </button>
+    await renderCarousel();
 
-        <div class="track-card-info">
-          <strong>
-            ${escapeHtml(track.title)}
-          </strong>
+  } else {
+    $('#collectionView').classList.add(
+      'hidden'
+    );
 
-          <span>
-            ${escapeHtml(track.artist)}
-          </span>
-        </div>
-      </article>
-    `);
+    $('#listView').classList.remove(
+      'hidden'
+    );
+
+    await renderList();
+  }
+}
+
+
+/* =========================================================
+   COLLECTION CAROUSEL
+   ========================================================= */
+
+async function renderCarousel() {
+  const carousel =
+    $('#carousel');
+
+  if (!carousel) {
+    return;
   }
 
-  container.innerHTML = `
-    <div class="artwork-carousel" id="artworkCarousel">
-      ${cards.join('')}
-    </div>
+  if (
+    carouselIndex >= tracks.length
+  ) {
+    carouselIndex = 0;
+  }
 
-    <div class="carousel-caption" id="carouselCaption">
-      <span>
-        Swipe, drag, or scroll
-      </span>
-    </div>
-  `;
+  carousel.innerHTML = '';
 
-  attachTrackButtons();
-  setupCarousel();
+  const fragment =
+    document.createDocumentFragment();
+
+  for (
+    let index = 0;
+    index < tracks.length;
+    index++
+  ) {
+    const track =
+      tracks[index];
+
+    const card =
+      document.createElement(
+        'div'
+      );
+
+    card.className =
+      'carousel-item';
+
+    card.dataset.index =
+      index;
+
+    const cover =
+      await coverUrl(track);
+
+    if (cover) {
+      card.innerHTML = `
+        <img
+          src="${cover}"
+          alt="${escapeHtml(
+            track.title
+          )}"
+          draggable="false"
+        >
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="carousel-placeholder">
+          <span>
+            ${escapeHtml(
+              (
+                track.title ||
+                'F'
+              ).charAt(0)
+            )}
+          </span>
+        </div>
+      `;
+    }
+
+    card.addEventListener(
+      'click',
+      () => {
+        const clickedIndex =
+          Number(
+            card.dataset.index
+          );
+
+        if (
+          clickedIndex ===
+          carouselIndex
+        ) {
+          playTrack(
+            clickedIndex
+          );
+        } else {
+          carouselIndex =
+            clickedIndex;
+
+          updateCarouselPosition();
+        }
+      }
+    );
+
+    fragment.appendChild(card);
+  }
+
+  carousel.appendChild(
+    fragment
+  );
+
+  updateCarouselPosition();
+}
+
+
+function updateCarouselPosition() {
+  const items =
+    $$('.carousel-item');
+
+  items.forEach(
+    (item, index) => {
+      let offset =
+        index -
+        carouselIndex;
+
+      const total =
+        items.length;
+
+      if (
+        offset >
+        total / 2
+      ) {
+        offset -= total;
+      }
+
+      if (
+        offset <
+        -total / 2
+      ) {
+        offset += total;
+      }
+
+      const distance =
+        Math.abs(offset);
+
+      const x =
+        offset * 235;
+
+      const scale =
+        Math.max(
+          0.58,
+          1 -
+            distance * 0.12
+        );
+
+      const opacity =
+        Math.max(
+          0.28,
+          1 -
+            distance * 0.2
+        );
+
+      const rotate =
+        offset * -8;
+
+      const z =
+        100 -
+        distance;
+
+      item.style.transform =
+        `translateX(${x}px) scale(${scale}) rotateY(${rotate}deg)`;
+
+      item.style.opacity =
+        opacity;
+
+      item.style.zIndex =
+        z;
+
+      item.classList.toggle(
+        'active',
+        index ===
+          carouselIndex
+      );
+    }
+  );
+
+  const active =
+    tracks[carouselIndex];
+
+  if (!active) {
+    return;
+  }
+
+  setText(
+    '#activeArtist',
+    active.artist ||
+      'Unknown artist'
+  );
+
+  setText(
+    '#activeTitle',
+    active.title ||
+      'Untitled'
+  );
+
+  setText(
+    '#activeAlbum',
+    active.album ||
+      'Single'
+  );
+}
+
+
+function carouselNext() {
+  if (!tracks.length) {
+    return;
+  }
+
+  carouselIndex =
+    (
+      carouselIndex + 1
+    ) % tracks.length;
+
+  updateCarouselPosition();
+}
+
+
+function carouselPrevious() {
+  if (!tracks.length) {
+    return;
+  }
+
+  carouselIndex =
+    (
+      carouselIndex -
+      1 +
+      tracks.length
+    ) % tracks.length;
+
+  updateCarouselPosition();
+}
+
+
+/* =========================================================
+   CAROUSEL TOUCH / DRAG
+   ========================================================= */
+
+function setupCarouselGestures() {
+  const carousel =
+    $('#carousel');
+
+  if (!carousel) {
+    return;
+  }
+
+  let startX = 0;
+  let dragging = false;
+
+  carousel.addEventListener(
+    'pointerdown',
+    (event) => {
+      startX =
+        event.clientX;
+
+      dragging = true;
+
+      carousel.setPointerCapture(
+        event.pointerId
+      );
+    }
+  );
+
+  carousel.addEventListener(
+    'pointerup',
+    (event) => {
+      if (!dragging) {
+        return;
+      }
+
+      dragging = false;
+
+      const distance =
+        event.clientX -
+        startX;
+
+      if (
+        Math.abs(distance) <
+        35
+      ) {
+        return;
+      }
+
+      if (distance < 0) {
+        carouselNext();
+      } else {
+        carouselPrevious();
+      }
+    }
+  );
+
+  carousel.addEventListener(
+    'pointercancel',
+    () => {
+      dragging = false;
+    }
+  );
+
+  carousel.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+
+      if (
+        event.deltaY > 0 ||
+        event.deltaX > 0
+      ) {
+        carouselNext();
+      } else {
+        carouselPrevious();
+      }
+    },
+    {
+      passive: false
+    }
+  );
+
+  carousel.addEventListener(
+    'keydown',
+    (event) => {
+      if (
+        event.key ===
+        'ArrowRight'
+      ) {
+        carouselNext();
+      }
+
+      if (
+        event.key ===
+        'ArrowLeft'
+      ) {
+        carouselPrevious();
+      }
+
+      if (
+        event.key ===
+        'Enter'
+      ) {
+        playTrack(
+          carouselIndex
+        );
+      }
+    }
+  );
 }
 
 
@@ -604,91 +1164,307 @@ async function renderCollection() {
 
 async function renderList() {
   const container =
-    $('#list') ||
-    $('#listView') ||
-    $('#musicList');
+    $('#listView');
 
   if (!container) {
     return;
   }
 
-  if (!currentUser) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <h2>Your Frequency</h2>
-        <p>Sign in to see your music.</p>
-      </div>
-    `;
+  container.innerHTML = '';
 
-    return;
-  }
+  for (
+    let index = 0;
+    index < tracks.length;
+    index++
+  ) {
+    const track =
+      tracks[index];
 
-  if (!tracks.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <h2>No music yet</h2>
-        <p>Upload a track to begin.</p>
-      </div>
-    `;
+    const cover =
+      await coverUrl(track);
 
-    return;
-  }
+    const row =
+      document.createElement(
+        'div'
+      );
 
-  const rows = [];
+    row.className =
+      'track-row';
 
-  for (const track of tracks) {
-    const cover = await getCoverUrl(track);
-
-    rows.push(`
-      <div
-        class="track-row"
-        data-track-id="${escapeHtml(track.id)}"
+    row.innerHTML = `
+      <button
+        class="list-art"
+        data-list-index="${index}"
       >
-        <button
-          class="list-play"
-          data-play-track="${escapeHtml(track.id)}"
-        >
-          ${
-            cover
-              ? `<img
-                  src="${cover}"
-                  alt=""
-                  loading="lazy"
-                >`
-              : coverPlaceholder(track)
-          }
+        ${
+          cover
+            ? `
+              <img
+                src="${cover}"
+                alt=""
+                draggable="false"
+              >
+            `
+            : `
+              <div class="list-placeholder">
+                ${
+                  escapeHtml(
+                    (
+                      track.title ||
+                      'F'
+                    ).charAt(0)
+                  )
+                }
+              </div>
+            `
+        }
+      </button>
 
-          <span>▶</span>
-        </button>
+      <div class="list-info">
+        <strong>
+          ${escapeHtml(
+            track.title ||
+            'Untitled'
+          )}
+        </strong>
 
-        <div class="track-row-main">
-          <strong>
-            ${escapeHtml(track.title)}
-          </strong>
-
-          <span>
-            ${escapeHtml(track.artist)}
-          </span>
-        </div>
-
-        <div class="track-row-album">
-          ${escapeHtml(track.album || '—')}
-        </div>
-
-        <div class="track-row-duration">
-          ${formatDuration(track.duration)}
-        </div>
+        <span>
+          ${escapeHtml(
+            track.artist ||
+            'Unknown artist'
+          )}
+        </span>
       </div>
-    `);
+
+      <div class="list-album">
+        ${escapeHtml(
+          track.album ||
+          'Single'
+        )}
+      </div>
+
+      <div class="list-duration">
+        ${formatTime(
+          track.duration
+        )}
+      </div>
+
+      <button
+        class="list-play"
+        data-list-play="${index}"
+      >
+        ▶
+      </button>
+    `;
+
+    container.appendChild(
+      row
+    );
   }
 
-  container.innerHTML = `
-    <div class="track-list">
-      ${rows.join('')}
-    </div>
-  `;
+  $$('.list-art').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          playTrack(
+            Number(
+              button.dataset.listIndex
+            )
+          );
+        }
+      );
+    }
+  );
 
-  attachTrackButtons();
+  $$('.list-play').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          playTrack(
+            Number(
+              button.dataset.listPlay
+            )
+          );
+        }
+      );
+    }
+  );
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+async function renderSearch(
+  query = ''
+) {
+  const container =
+    $('#searchResults');
+
+  if (!container) {
+    return;
+  }
+
+  const search =
+    query
+      .trim()
+      .toLowerCase();
+
+  const results =
+    tracks.filter(
+      (track) => {
+        if (!search) {
+          return true;
+        }
+
+        return [
+          track.title,
+          track.artist,
+          track.album,
+          track.genre,
+          track.year
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(search);
+      }
+    );
+
+  container.innerHTML = '';
+
+  if (!results.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>No results</h3>
+        <p class="muted">
+          Nothing in your library matches that search.
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+  for (
+    const track of results
+  ) {
+    const originalIndex =
+      tracks.findIndex(
+        (item) =>
+          item.id === track.id
+      );
+
+    const cover =
+      await coverUrl(track);
+
+    const row =
+      document.createElement(
+        'div'
+      );
+
+    row.className =
+      'track-row';
+
+    row.innerHTML = `
+      <button
+        class="list-art"
+        data-search-index="${originalIndex}"
+      >
+        ${
+          cover
+            ? `
+              <img
+                src="${cover}"
+                alt=""
+                draggable="false"
+              >
+            `
+            : `
+              <div class="list-placeholder">
+                ${escapeHtml(
+                  (
+                    track.title ||
+                    'F'
+                  ).charAt(0)
+                )}
+              </div>
+            `
+        }
+      </button>
+
+      <div class="list-info">
+        <strong>
+          ${escapeHtml(
+            track.title
+          )}
+        </strong>
+
+        <span>
+          ${escapeHtml(
+            track.artist
+          )}
+        </span>
+      </div>
+
+      <div class="list-album">
+        ${escapeHtml(
+          track.album ||
+          'Single'
+        )}
+      </div>
+
+      <div class="list-duration">
+        ${formatTime(
+          track.duration
+        )}
+      </div>
+
+      <button
+        class="list-play"
+        data-search-play="${originalIndex}"
+      >
+        ▶
+      </button>
+    `;
+
+    container.appendChild(
+      row
+    );
+  }
+
+  $$('[data-search-index]').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          playTrack(
+            Number(
+              button.dataset.searchIndex
+            )
+          );
+        }
+      );
+    }
+  );
+
+  $$('[data-search-play]').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          playTrack(
+            Number(
+              button.dataset.searchPlay
+            )
+          );
+        }
+      );
+    }
+  );
 }
 
 
@@ -697,76 +1473,129 @@ async function renderList() {
    ========================================================= */
 
 async function renderAlbums() {
-  const container = $('#albums');
+  const grid =
+    $('#albumsGrid');
 
-  if (!container) {
+  if (!grid) {
     return;
   }
 
+  grid.innerHTML = '';
+
   if (!tracks.length) {
-    container.innerHTML = `
+    grid.innerHTML = `
       <div class="empty-state">
-        <h2>No albums yet</h2>
+        <h3>No albums yet</h3>
+        <p class="muted">
+          Upload music to start building your albums.
+        </p>
       </div>
     `;
 
     return;
   }
 
-  const albumMap = new Map();
+  const albumMap =
+    new Map();
 
-  tracks.forEach((track) => {
-    const albumName =
-      track.album?.trim() ||
-      'Singles';
+  tracks.forEach(
+    (track) => {
+      const album =
+        track.album?.trim() ||
+        'Singles';
 
-    if (!albumMap.has(albumName)) {
-      albumMap.set(albumName, []);
+      if (!albumMap.has(album)) {
+        albumMap.set(
+          album,
+          []
+        );
+      }
+
+      albumMap
+        .get(album)
+        .push(track);
     }
+  );
 
-    albumMap.get(albumName).push(track);
-  });
-
-  const albums = [];
-
-  for (const [name, albumTracks] of albumMap) {
+  for (
+    const [
+      albumName,
+      albumTracks
+    ] of albumMap
+  ) {
     const cover =
-      await getCoverUrl(albumTracks[0]);
+      await coverUrl(
+        albumTracks[0]
+      );
 
-    albums.push(`
-      <article
-        class="album-card"
-        data-album="${escapeHtml(name)}"
-      >
+    const card =
+      document.createElement(
+        'div'
+      );
+
+    card.className =
+      'album-card';
+
+    card.innerHTML = `
+      <div class="album-art">
         ${
           cover
-            ? `<img
+            ? `
+              <img
                 src="${cover}"
-                alt="${escapeHtml(name)}"
-                loading="lazy"
-              >`
-            : coverPlaceholder({
-                title: name
-              })
+                alt="${escapeHtml(
+                  albumName
+                )}"
+              >
+            `
+            : `
+              <div class="album-placeholder">
+                ${escapeHtml(
+                  albumName.charAt(0)
+                )}
+              </div>
+            `
         }
+      </div>
 
-        <div>
-          <strong>
-            ${escapeHtml(name)}
-          </strong>
+      <strong>
+        ${escapeHtml(
+          albumName
+        )}
+      </strong>
 
-          <span>
-            ${albumTracks.length}
-            ${albumTracks.length === 1
-              ? 'track'
-              : 'tracks'}
-          </span>
-        </div>
-      </article>
-    `);
+      <span>
+        ${formatCount(
+          albumTracks.length,
+          'track'
+        )}
+      </span>
+    `;
+
+    card.addEventListener(
+      'click',
+      () => {
+        const firstIndex =
+          tracks.findIndex(
+            (track) =>
+              track.id ===
+              albumTracks[0].id
+          );
+
+        if (
+          firstIndex !== -1
+        ) {
+          playTrack(
+            firstIndex
+          );
+        }
+      }
+    );
+
+    grid.appendChild(
+      card
+    );
   }
-
-  container.innerHTML = albums.join('');
 }
 
 
@@ -775,189 +1604,96 @@ async function renderAlbums() {
    ========================================================= */
 
 async function renderPlaylists() {
-  const container = $('#playlists');
+  const grid =
+    $('#playlistsGrid');
 
-  if (!container) {
+  if (!grid) {
     return;
   }
 
-  if (!currentUser) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <h2>Your playlists</h2>
-        <p>Sign in to create playlists.</p>
-      </div>
-    `;
-
-    return;
-  }
+  grid.innerHTML = '';
 
   if (!playlists.length) {
-    container.innerHTML = `
+    grid.innerHTML = `
       <div class="empty-state">
-        <h2>No playlists yet</h2>
-
-        <p>
+        <h3>No playlists yet</h3>
+        <p class="muted">
           Create your first playlist.
         </p>
-
-        <button
-          class="primary-button"
-          id="emptyPlaylistBtn"
-        >
-          ＋ New playlist
-        </button>
       </div>
     `;
-
-    $('#emptyPlaylistBtn')?.addEventListener(
-      'click',
-      () => showElement('#playlistModal')
-    );
 
     return;
   }
 
-  const cards = [];
+  for (
+    const playlist of playlists
+  ) {
+    const cover =
+      playlist.cover_path
+        ? await signedUrl(
+            'covers',
+            playlist.cover_path
+          )
+        : null;
 
-  for (const playlist of playlists) {
-    let cover = '';
-
-    if (playlist.cover_path) {
-      cover = await getSignedUrl(
-        'covers',
-        playlist.cover_path
+    const card =
+      document.createElement(
+        'div'
       );
-    }
 
-    cards.push(`
-      <article class="playlist-card">
+    card.className =
+      'playlist-card';
+
+    card.innerHTML = `
+      <div class="playlist-art">
         ${
           cover
-            ? `<img
+            ? `
+              <img
                 src="${cover}"
-                alt="${escapeHtml(playlist.name)}"
-                loading="lazy"
-              >`
+                alt="${escapeHtml(
+                  playlist.name
+                )}"
+              >
+            `
             : `
               <div class="playlist-placeholder">
-                ♫
+                F
               </div>
             `
         }
+      </div>
 
-        <div>
-          <strong>
-            ${escapeHtml(playlist.name)}
-          </strong>
+      <strong>
+        ${escapeHtml(
+          playlist.name
+        )}
+      </strong>
 
-          ${
-            playlist.description
-              ? `<span>
-                  ${escapeHtml(
-                    playlist.description
-                  )}
-                </span>`
-              : ''
-          }
-        </div>
-      </article>
-    `);
+      ${
+        playlist.description
+          ? `
+            <span>
+              ${escapeHtml(
+                playlist.description
+              )}
+            </span>
+          `
+          : ''
+      }
+    `;
+
+    grid.appendChild(
+      card
+    );
   }
-
-  container.innerHTML = cards.join('');
 }
 
 
 /* =========================================================
-   RENDER ALL
+   PLAYBACK
    ========================================================= */
-
-async function renderAll() {
-  const collection =
-    $('#collection') ||
-    $('#collectionView') ||
-    $('#musicCollection');
-
-  const list =
-    $('#list') ||
-    $('#listView') ||
-    $('#musicList');
-
-  if (collection) {
-    collection.classList.toggle(
-      'hidden',
-      viewMode !== 'collection'
-    );
-  }
-
-  if (list) {
-    list.classList.toggle(
-      'hidden',
-      viewMode !== 'list'
-    );
-  }
-
-  await renderCollection();
-  await renderList();
-  await renderAlbums();
-  await renderPlaylists();
-
-  updateLibraryCounts();
-}
-
-
-/* =========================================================
-   COUNTS
-   ========================================================= */
-
-function updateLibraryCounts() {
-  const trackCount =
-    tracks.length;
-
-  const albumCount =
-    new Set(
-      tracks.map(
-        (track) =>
-          track.album?.trim() || 'Singles'
-      )
-    ).size;
-
-  setText(
-    '#trackCount',
-    String(trackCount)
-  );
-
-  setText(
-    '#albumCount',
-    String(albumCount)
-  );
-
-  setText(
-    '#playlistCount',
-    String(playlists.length)
-  );
-}
-
-
-/* =========================================================
-   PLAY TRACK
-   ========================================================= */
-
-async function playTrackById(trackId) {
-  const index =
-    tracks.findIndex(
-      (track) =>
-        String(track.id) === String(trackId)
-    );
-
-  if (index === -1) {
-    return;
-  }
-
-  await playTrack(index);
-}
-
 
 async function playTrack(index) {
   if (
@@ -967,27 +1703,31 @@ async function playTrack(index) {
     return;
   }
 
-  const track = tracks[index];
+  const track =
+    tracks[index];
 
-  const audioUrl =
-    await getAudioUrl(track);
+  const url =
+    await audioUrl(track);
 
-  if (!audioUrl) {
-    alert(
-      'Unable to load this track. Check that the audio file exists in Supabase Storage.'
+  if (!url) {
+    toast(
+      'Could not load this track.'
     );
 
     return;
   }
 
-  currentTrackIndex = index;
+  currentTrackIndex =
+    index;
 
-  audio.src = audioUrl;
+  audio.src =
+    url;
 
-  audio.dataset.trackId =
-    track.id;
+  audio.load();
 
-  updatePlayer(track);
+  await updatePlayer(
+    track
+  );
 
   try {
     await audio.play();
@@ -1002,103 +1742,53 @@ async function playTrack(index) {
 }
 
 
-function stopAudio() {
-  if (!audio) {
-    return;
-  }
-
-  audio.pause();
-  audio.currentTime = 0;
-  audio.removeAttribute('src');
-  audio.load();
-
-  updatePlayButton();
-}
-
-
-/* =========================================================
-   PLAYER
-   ========================================================= */
-
-async function updatePlayer(track) {
+async function updatePlayer(
+  track
+) {
   if (!track) {
     return;
   }
 
   setText(
     '#playerTitle',
-    track.title
+    track.title ||
+      'Nothing playing'
   );
 
   setText(
     '#playerArtist',
-    track.artist
-  );
-
-  setText(
-    '#nowPlayingTitle',
-    track.title
-  );
-
-  setText(
-    '#nowPlayingArtist',
-    track.artist
+    track.artist ||
+      'Choose a track'
   );
 
   const cover =
-    await getCoverUrl(track);
+    await coverUrl(track);
 
-  const images = [
-    $('#playerCover'),
-    $('#nowPlayingCover')
-  ];
+  const playerCover =
+    $('#playerCover');
 
-  images.forEach((image) => {
-    if (!image) {
-      return;
-    }
+  if (!playerCover) {
+    return;
+  }
 
-    if (cover) {
-      image.src = cover;
-      image.classList.remove(
-        'hidden'
-      );
-    }
-  });
-}
-
-
-function updatePlayButton() {
-  const playing =
-    audio &&
-    !audio.paused;
-
-  $$('.play-toggle').forEach(
-    (button) => {
-      button.textContent =
-        playing
-          ? '❚❚'
-          : '▶';
-    }
-  );
-
-  const player =
-    $('#player');
-
-  if (player) {
-    player.classList.toggle(
-      'is-playing',
-      playing
-    );
+  if (cover) {
+    playerCover.innerHTML = `
+      <img
+        src="${cover}"
+        alt=""
+      >
+    `;
+  } else {
+    playerCover.textContent =
+      (
+        track.title ||
+        'F'
+      ).charAt(0);
   }
 }
 
 
 function togglePlayback() {
-  if (!audio) {
-    return;
-  }
-
   if (!audio.src) {
     if (tracks.length) {
       playTrack(0);
@@ -1117,7 +1807,51 @@ function togglePlayback() {
 }
 
 
-async function playNext() {
+function updatePlayButton() {
+  const button =
+    $('#playBtn');
+
+  if (!button) {
+    return;
+  }
+
+  button.textContent =
+    audio &&
+    !audio.paused
+      ? '❚❚'
+      : '▶';
+}
+
+
+function stopAudio() {
+  if (!audio) {
+    return;
+  }
+
+  audio.pause();
+  audio.currentTime = 0;
+
+  audio.removeAttribute(
+    'src'
+  );
+
+  audio.load();
+
+  setText(
+    '#currentTime',
+    '0:00'
+  );
+
+  setText(
+    '#duration',
+    '0:00'
+  );
+
+  updatePlayButton();
+}
+
+
+async function nextTrack() {
   if (!tracks.length) {
     return;
   }
@@ -1125,19 +1859,32 @@ async function playNext() {
   let nextIndex;
 
   if (shuffled) {
-    nextIndex =
-      Math.floor(
-        Math.random() *
-        tracks.length
+    if (tracks.length === 1) {
+      nextIndex = 0;
+    } else {
+      do {
+        nextIndex =
+          Math.floor(
+            Math.random() *
+            tracks.length
+          );
+      } while (
+        nextIndex ===
+        currentTrackIndex
       );
+    }
+
   } else {
     nextIndex =
       currentTrackIndex + 1;
 
     if (
-      nextIndex >= tracks.length
+      nextIndex >=
+      tracks.length
     ) {
-      if (repeatMode === 'all') {
+      if (
+        repeatMode === 'all'
+      ) {
         nextIndex = 0;
       } else {
         stopAudio();
@@ -1146,17 +1893,18 @@ async function playNext() {
     }
   }
 
-  await playTrack(nextIndex);
+  await playTrack(
+    nextIndex
+  );
 }
 
 
-async function playPrevious() {
+async function previousTrack() {
   if (!tracks.length) {
     return;
   }
 
   if (
-    audio &&
     audio.currentTime > 3
   ) {
     audio.currentTime = 0;
@@ -1173,408 +1921,135 @@ async function playPrevious() {
       tracks.length - 1;
   }
 
-  await playTrack(previousIndex);
-}
-
-
-/* =========================================================
-   SEARCH
-   ========================================================= */
-
-function performSearch(value) {
-  const query =
-    String(value || '')
-      .trim()
-      .toLowerCase();
-
-  if (!query) {
-    tracks.forEach(
-      (track) => {
-        document
-          .querySelectorAll(
-            `[data-track-id="${track.id}"]`
-          )
-          .forEach(
-            (element) => {
-              element.classList.remove(
-                'search-hidden'
-              );
-            }
-          );
-      }
-    );
-
-    return;
-  }
-
-  tracks.forEach((track) => {
-    const searchable = [
-      track.title,
-      track.artist,
-      track.album,
-      track.genre,
-      track.year
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-
-    const match =
-      searchable.includes(query);
-
-    document
-      .querySelectorAll(
-        `[data-track-id="${track.id}"]`
-      )
-      .forEach((element) => {
-        element.classList.toggle(
-          'search-hidden',
-          !match
-        );
-      });
-  });
-}
-
-
-/* =========================================================
-   TRACK BUTTONS
-   ========================================================= */
-
-function attachTrackButtons() {
-  $$('[data-play-track]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        async (event) => {
-          event.stopPropagation();
-
-          const trackId =
-            button.dataset.playTrack;
-
-          await playTrackById(
-            trackId
-          );
-        }
-      );
-    }
+  await playTrack(
+    previousIndex
   );
 }
 
 
 /* =========================================================
-   CAROUSEL
+   UPLOAD
    ========================================================= */
 
-function setupCarousel() {
-  const carousel =
-    $('#artworkCarousel');
+function getAudioDuration(file) {
+  return new Promise(
+    (resolve) => {
+      const temp =
+        document.createElement(
+          'audio'
+        );
 
-  if (!carousel) {
-    return;
-  }
+      temp.preload =
+        'metadata';
 
-  const cards =
-    Array.from(
-      carousel.querySelectorAll(
-        '.track-card'
-      )
-    );
+      temp.onloadedmetadata =
+        () => {
+          const duration =
+            temp.duration;
 
-  let activeIndex = 0;
-  let pointerStartX = null;
-  let pointerDown = false;
-
-  function updateCarousel() {
-    cards.forEach(
-      (card, index) => {
-        const offset =
-          index - activeIndex;
-
-        const distance =
-          Math.abs(offset);
-
-        const scale =
-          Math.max(
-            0.72,
-            1 - distance * 0.08
+          URL.revokeObjectURL(
+            temp.src
           );
 
-        const opacity =
-          Math.max(
-            0.35,
-            1 - distance * 0.18
+          resolve(
+            Number.isFinite(
+              duration
+            )
+              ? duration
+              : null
           );
+        };
 
-        const rotate =
-          offset * -4;
-
-        const translate =
-          offset * 42;
-
-        card.style.setProperty(
-          '--carousel-x',
-          `${translate}%`
+      temp.onerror = () => {
+        URL.revokeObjectURL(
+          temp.src
         );
 
-        card.style.setProperty(
-          '--carousel-scale',
-          scale
+        resolve(null);
+      };
+
+      temp.src =
+        URL.createObjectURL(
+          file
         );
-
-        card.style.setProperty(
-          '--carousel-opacity',
-          opacity
-        );
-
-        card.style.setProperty(
-          '--carousel-rotate',
-          `${rotate}deg`
-        );
-
-        card.classList.toggle(
-          'is-active',
-          index === activeIndex
-        );
-      }
-    );
-
-    const activeTrack =
-      tracks[activeIndex];
-
-    if (activeTrack) {
-      setText(
-        '#carouselTitle',
-        activeTrack.title
-      );
-
-      setText(
-        '#carouselArtist',
-        activeTrack.artist
-      );
-
-      setText(
-        '#carouselAlbum',
-        activeTrack.album || ''
-      );
-    }
-  }
-
-  function move(direction) {
-    if (!cards.length) {
-      return;
-    }
-
-    activeIndex += direction;
-
-    if (activeIndex < 0) {
-      activeIndex =
-        cards.length - 1;
-    }
-
-    if (
-      activeIndex >= cards.length
-    ) {
-      activeIndex = 0;
-    }
-
-    updateCarousel();
-  }
-
-  carousel.addEventListener(
-    'wheel',
-    (event) => {
-      event.preventDefault();
-
-      if (
-        Math.abs(event.deltaX) >
-        Math.abs(event.deltaY)
-      ) {
-        move(
-          event.deltaX > 0
-            ? 1
-            : -1
-        );
-      } else {
-        move(
-          event.deltaY > 0
-            ? 1
-            : -1
-        );
-      }
-    },
-    {
-      passive: false
     }
   );
-
-  carousel.addEventListener(
-    'pointerdown',
-    (event) => {
-      pointerDown = true;
-      pointerStartX =
-        event.clientX;
-
-      carousel.setPointerCapture(
-        event.pointerId
-      );
-    }
-  );
-
-  carousel.addEventListener(
-    'pointerup',
-    (event) => {
-      if (!pointerDown) {
-        return;
-      }
-
-      pointerDown = false;
-
-      const difference =
-        event.clientX -
-        pointerStartX;
-
-      if (
-        Math.abs(difference) > 35
-      ) {
-        move(
-          difference < 0
-            ? 1
-            : -1
-        );
-      }
-    }
-  );
-
-  carousel.addEventListener(
-    'pointercancel',
-    () => {
-      pointerDown = false;
-    }
-  );
-
-  carousel.addEventListener(
-    'dblclick',
-    () => {
-      if (tracks[activeIndex]) {
-        playTrack(activeIndex);
-      }
-    }
-  );
-
-  updateCarousel();
 }
 
 
-/* =========================================================
-   UPLOAD TRACK
-   ========================================================= */
-
-async function uploadTrack(form) {
+async function uploadTrack() {
   if (!currentUser) {
-    alert(
-      'Please sign in before uploading music.'
-    );
-
-    openAuthModal('login');
-
-    return;
-  }
-
-  if (!sb) {
-    alert(
-      'Supabase is not configured. Add your current publishable key first.'
+    toast(
+      'Please sign in first.'
     );
 
     return;
   }
-
-  const formData =
-    new FormData(form);
 
   const audioFile =
-    formData.get('audio');
+    $('#trackFile').files[0];
 
   const coverFile =
-    formData.get('cover');
+    $('#coverFile').files[0];
 
   const title =
-    String(
-      formData.get('title') || ''
-    ).trim();
+    $('#trackTitle').value.trim();
 
   const artist =
-    String(
-      formData.get('artist') || ''
-    ).trim();
+    $('#trackArtist').value.trim();
 
   const album =
-    String(
-      formData.get('album') || ''
-    ).trim();
+    $('#trackAlbum').value.trim();
 
   const genre =
-    String(
-      formData.get('genre') || ''
-    ).trim();
+    $('#trackGenre').value.trim();
 
   const yearValue =
-    String(
-      formData.get('year') || ''
-    ).trim();
+    $('#trackYear').value.trim();
 
-  if (
-    !audioFile ||
-    !audioFile.name
-  ) {
-    alert(
-      'Please choose an audio file.'
-    );
+  const status =
+    $('#uploadStatus');
 
+  if (!audioFile) {
+    status.textContent =
+      'Choose an audio file.';
     return;
   }
 
   if (!title) {
-    alert(
-      'Please enter a song title.'
-    );
-
+    status.textContent =
+      'Enter a title.';
     return;
   }
 
   if (!artist) {
-    alert(
-      'Please enter an artist name.'
-    );
-
+    status.textContent =
+      'Enter an artist.';
     return;
   }
 
-  const submitButton =
-    form.querySelector(
-      '[type="submit"]'
+  status.textContent =
+    'Reading track...';
+
+  const duration =
+    await getAudioDuration(
+      audioFile
     );
 
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent =
-      'Uploading...';
-  }
-
-  try {
-    const duration =
-      await getAudioDuration(
-        audioFile
+  const audioName =
+    audioFile.name
+      .replace(
+        /[^a-zA-Z0-9._-]/g,
+        '_'
       );
 
-    const safeAudioName =
-      audioFile.name
-        .replace(
-          /[^a-zA-Z0-9._-]/g,
-          '_'
-        );
+  const audioPath =
+    `${currentUser.id}/${crypto.randomUUID()}-${audioName}`;
 
-    const audioPath =
-      `${currentUser.id}/${crypto.randomUUID()}-${safeAudioName}`;
+  try {
+
+    status.textContent =
+      'Uploading audio...';
 
     const {
       error: audioError
@@ -1584,7 +2059,8 @@ async function uploadTrack(form) {
         audioPath,
         audioFile,
         {
-          cacheControl: '3600',
+          cacheControl:
+            '3600',
           upsert: false,
           contentType:
             audioFile.type ||
@@ -1596,13 +2072,14 @@ async function uploadTrack(form) {
       throw audioError;
     }
 
+
     let coverPath = null;
 
-    if (
-      coverFile &&
-      coverFile.name
-    ) {
-      const safeCoverName =
+    if (coverFile) {
+      status.textContent =
+        'Uploading artwork...';
+
+      const coverName =
         coverFile.name
           .replace(
             /[^a-zA-Z0-9._-]/g,
@@ -1610,7 +2087,7 @@ async function uploadTrack(form) {
           );
 
       coverPath =
-        `${currentUser.id}/${crypto.randomUUID()}-${safeCoverName}`;
+        `${currentUser.id}/${crypto.randomUUID()}-${coverName}`;
 
       const {
         error: coverError
@@ -1620,7 +2097,8 @@ async function uploadTrack(form) {
           coverPath,
           coverFile,
           {
-            cacheControl: '3600',
+            cacheControl:
+              '3600',
             upsert: false,
             contentType:
               coverFile.type ||
@@ -1633,13 +2111,17 @@ async function uploadTrack(form) {
       }
     }
 
+
+    status.textContent =
+      'Adding track to Frequency...';
+
     const year =
       yearValue
         ? Number(yearValue)
         : null;
 
     const {
-      error: insertError
+      error: databaseError
     } = await sb
       .from('tracks')
       .insert({
@@ -1670,18 +2152,25 @@ async function uploadTrack(form) {
           coverPath
       });
 
-    if (insertError) {
-      throw insertError;
+    if (databaseError) {
+      throw databaseError;
     }
 
-    form.reset();
 
-    closeAllModals();
+    $('#uploadForm').reset();
 
-    await loadAll();
+    $('#uploadModal').classList.add(
+      'hidden'
+    );
 
-    alert(
-      'Track uploaded successfully.'
+    status.textContent = '';
+
+    await loadLibrary();
+
+    renderCurrentPage();
+
+    toast(
+      'Track added to Frequency.'
     );
 
   } catch (error) {
@@ -1690,83 +2179,54 @@ async function uploadTrack(form) {
       error
     );
 
-    alert(
+    status.textContent =
       error.message ||
-      'Something went wrong while uploading the track.'
-    );
-
-  } finally {
-    if (submitButton) {
-      submitButton.disabled =
-        false;
-
-      submitButton.textContent =
-        'Upload track';
-    }
+      'Upload failed.';
   }
 }
 
 
 /* =========================================================
-   CREATE PLAYLIST
+   PLAYLIST CREATION
    ========================================================= */
 
-async function createPlaylist(form) {
+async function createPlaylist() {
   if (!currentUser) {
-    alert(
+    toast(
       'Please sign in first.'
     );
 
     return;
   }
 
-  if (!sb) {
-    return;
-  }
-
-  const formData =
-    new FormData(form);
-
   const name =
-    String(
-      formData.get('name') || ''
-    ).trim();
+    $('#playlistName').value.trim();
 
   const description =
-    String(
-      formData.get('description') || ''
-    ).trim();
+    $('#playlistDescription')
+      .value.trim();
 
   const coverFile =
-    formData.get('cover');
+    $('#playlistCover').files[0];
+
+  const status =
+    $('#playlistStatus');
 
   if (!name) {
-    alert(
-      'Please enter a playlist name.'
-    );
-
+    status.textContent =
+      'Enter a playlist name.';
     return;
   }
 
-  const submitButton =
-    form.querySelector(
-      '[type="submit"]'
-    );
-
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent =
-      'Creating...';
-  }
+  status.textContent =
+    'Creating playlist...';
 
   try {
+
     let coverPath = null;
 
-    if (
-      coverFile &&
-      coverFile.name
-    ) {
-      const safeName =
+    if (coverFile) {
+      const coverName =
         coverFile.name
           .replace(
             /[^a-zA-Z0-9._-]/g,
@@ -1774,17 +2234,18 @@ async function createPlaylist(form) {
           );
 
       coverPath =
-        `${currentUser.id}/playlists/${crypto.randomUUID()}-${safeName}`;
+        `${currentUser.id}/playlists/${crypto.randomUUID()}-${coverName}`;
 
       const {
-        error: coverError
+        error
       } = await sb.storage
         .from('covers')
         .upload(
           coverPath,
           coverFile,
           {
-            cacheControl: '3600',
+            cacheControl:
+              '3600',
             upsert: false,
             contentType:
               coverFile.type ||
@@ -1792,10 +2253,11 @@ async function createPlaylist(form) {
           }
         );
 
-      if (coverError) {
-        throw coverError;
+      if (error) {
+        throw error;
       }
     }
+
 
     const {
       error
@@ -1818,13 +2280,20 @@ async function createPlaylist(form) {
       throw error;
     }
 
-    form.reset();
 
-    closeAllModals();
+    $('#playlistForm').reset();
 
-    await loadAll();
+    $('#playlistModal').classList.add(
+      'hidden'
+    );
 
-    alert(
+    status.textContent = '';
+
+    await loadLibrary();
+
+    renderPlaylists();
+
+    toast(
       'Playlist created.'
     );
 
@@ -1834,167 +2303,44 @@ async function createPlaylist(form) {
       error
     );
 
-    alert(
+    status.textContent =
       error.message ||
-      'Unable to create playlist.'
-    );
-
-  } finally {
-    if (submitButton) {
-      submitButton.disabled =
-        false;
-
-      submitButton.textContent =
-        'Create playlist';
-    }
+      'Unable to create playlist.';
   }
 }
 
 
 /* =========================================================
-   VIEW SWITCHING
+   MODALS
    ========================================================= */
 
-function setView(mode) {
-  if (
-    mode !== 'collection' &&
-    mode !== 'list'
-  ) {
-    return;
-  }
-
-  viewMode = mode;
-
-  localStorage.setItem(
-    'frequency-view',
-    viewMode
-  );
-
-  renderAll();
-
-  const collectionButton =
-    $('#viewCollection');
-
-  const listButton =
-    $('#viewList');
-
-  collectionButton?.classList.toggle(
-    'active',
-    viewMode === 'collection'
-  );
-
-  listButton?.classList.toggle(
-    'active',
-    viewMode === 'list'
+function closeModals() {
+  $$('.modal').forEach(
+    (modal) => {
+      modal.classList.add(
+        'hidden'
+      );
+    }
   );
 }
 
 
-/* =========================================================
-   EVENT LISTENERS
-   ========================================================= */
-
-function setupEvents() {
-
-  /* -------------------------
-     Upload buttons
-     ------------------------- */
-
-  const uploadBtn =
-    $('#uploadBtn');
-
-  const emptyUploadBtn =
-    $('#emptyUploadBtn');
-
-  const emptyCollectionUpload =
-    $('#collectionEmptyUpload');
-
-  uploadBtn?.addEventListener(
-    'click',
-    () => {
-      showElement(
-        '#uploadModal'
-      );
-    }
-  );
-
-  emptyUploadBtn?.addEventListener(
-    'click',
-    () => {
-      showElement(
-        '#uploadModal'
-      );
-    }
-  );
-
-  emptyCollectionUpload?.addEventListener(
-    'click',
-    () => {
-      showElement(
-        '#uploadModal'
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Playlist button
-     ------------------------- */
-
-  const newPlaylistBtn =
-    $('#newPlaylistBtn');
-
-  newPlaylistBtn?.addEventListener(
-    'click',
-    () => {
-      showElement(
-        '#playlistModal'
-      );
-    }
-  );
-
-
-  /* -------------------------
-     View buttons
-     ------------------------- */
-
-  $('#viewCollection')?.addEventListener(
-    'click',
-    () => setView('collection')
-  );
-
-  $('#viewList')?.addEventListener(
-    'click',
-    () => setView('list')
-  );
-
-
-  /* -------------------------
-     Close buttons
-     ------------------------- */
-
+function setupModals() {
   $$('[data-close]').forEach(
     (button) => {
       button.addEventListener(
         'click',
         () => {
-          const modalId =
+          const id =
             button.dataset.close;
 
-          if (modalId) {
-            hideElement(
-              `#${modalId}`
-            );
-          }
+          $(`#${id}`)?.classList.add(
+            'hidden'
+          );
         }
       );
     }
   );
-
-
-  /* -------------------------
-     Modal background
-     ------------------------- */
 
   $$('.modal').forEach(
     (modal) => {
@@ -2012,222 +2358,24 @@ function setupEvents() {
       );
     }
   );
+}
 
 
-  /* -------------------------
-     Auth forms
-     ------------------------- */
+/* =========================================================
+   MAIN EVENTS
+   ========================================================= */
 
-  $('#loginForm')?.addEventListener(
-    'submit',
-    async (event) => {
-      event.preventDefault();
+function setupEvents() {
 
-      const form =
-        event.currentTarget;
+  /* Navigation */
 
-      const email =
-        form.querySelector(
-          '[name="email"]'
-        )?.value.trim();
-
-      const password =
-        form.querySelector(
-          '[name="password"]'
-        )?.value;
-
-      if (!email || !password) {
-        alert(
-          'Enter your email and password.'
-        );
-
-        return;
-      }
-
-      await signIn(
-        email,
-        password
-      );
-    }
-  );
-
-
-  $('#signupForm')?.addEventListener(
-    'submit',
-    async (event) => {
-      event.preventDefault();
-
-      const form =
-        event.currentTarget;
-
-      const email =
-        form.querySelector(
-          '[name="email"]'
-        )?.value.trim();
-
-      const password =
-        form.querySelector(
-          '[name="password"]'
-        )?.value;
-
-      if (!email || !password) {
-        alert(
-          'Enter an email and password.'
-        );
-
-        return;
-      }
-
-      if (password.length < 6) {
-        alert(
-          'Password must be at least 6 characters.'
-        );
-
-        return;
-      }
-
-      await signUp(
-        email,
-        password
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Auth open buttons
-     ------------------------- */
-
-  $$('[data-auth="login"]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => openAuthModal('login')
-      );
-    }
-  );
-
-
-  $$('[data-auth="signup"]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => openAuthModal('signup')
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Sign out
-     ------------------------- */
-
-  $$('.sign-out').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        signOut
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Switch login/signup
-     ------------------------- */
-
-  $('#showSignup')?.addEventListener(
-    'click',
-    () => openAuthModal('signup')
-  );
-
-  $('#showLogin')?.addEventListener(
-    'click',
-    () => openAuthModal('login')
-  );
-
-
-  /* -------------------------
-     Upload form
-     ------------------------- */
-
-  $('#uploadForm')?.addEventListener(
-    'submit',
-    async (event) => {
-      event.preventDefault();
-
-      await uploadTrack(
-        event.currentTarget
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Playlist form
-     ------------------------- */
-
-  $('#playlistForm')?.addEventListener(
-    'submit',
-    async (event) => {
-      event.preventDefault();
-
-      await createPlaylist(
-        event.currentTarget
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Player
-     ------------------------- */
-
-  $$('.play-toggle').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        togglePlayback
-      );
-    }
-  );
-
-
-  $$('.next-button').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        playNext
-      );
-    }
-  );
-
-
-  $$('.previous-button').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        playPrevious
-      );
-    }
-  );
-
-
-  /* -------------------------
-     Shuffle
-     ------------------------- */
-
-  $$('.shuffle-button').forEach(
+  $$('.nav-item').forEach(
     (button) => {
       button.addEventListener(
         'click',
         () => {
-          shuffled =
-            !shuffled;
-
-          button.classList.toggle(
-            'active',
-            shuffled
+          switchPage(
+            button.dataset.page
           );
         }
       );
@@ -2235,183 +2383,342 @@ function setupEvents() {
   );
 
 
-  /* -------------------------
-     Repeat
-     ------------------------- */
+  /* View */
 
-  $$('.repeat-button').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          if (
-            repeatMode === 'off'
-          ) {
-            repeatMode = 'all';
-          } else if (
-            repeatMode === 'all'
-          ) {
-            repeatMode = 'one';
-          } else {
-            repeatMode = 'off';
-          }
+  $('#viewCollection')
+    ?.addEventListener(
+      'click',
+      () => {
+        setView(
+          'collection'
+        );
+      }
+    );
 
-          button.classList.toggle(
+  $('#viewList')
+    ?.addEventListener(
+      'click',
+      () => {
+        setView(
+          'list'
+        );
+      }
+    );
+
+
+  /* Upload */
+
+  $('#uploadBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+        $('#uploadModal')
+          .classList.remove(
+            'hidden'
+          );
+      }
+    );
+
+  $('#emptyUploadBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+        $('#uploadModal')
+          .classList.remove(
+            'hidden'
+          );
+      }
+    );
+
+
+  /* Playlist */
+
+  $('#newPlaylistBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+        $('#playlistModal')
+          .classList.remove(
+            'hidden'
+          );
+      }
+    );
+
+
+  /* Sign out */
+
+  $('#signOutBtn')
+    ?.addEventListener(
+      'click',
+      signOut
+    );
+
+
+  /* Upload form */
+
+  $('#uploadForm')
+    ?.addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+
+        await uploadTrack();
+      }
+    );
+
+
+  /* Playlist form */
+
+  $('#playlistForm')
+    ?.addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+
+        await createPlaylist();
+      }
+    );
+
+
+  /* Active carousel track */
+
+  $('#playActive')
+    ?.addEventListener(
+      'click',
+      () => {
+        playTrack(
+          carouselIndex
+        );
+      }
+    );
+
+
+  /* Player */
+
+  $('#playBtn')
+    ?.addEventListener(
+      'click',
+      togglePlayback
+    );
+
+  $('#prevBtn')
+    ?.addEventListener(
+      'click',
+      previousTrack
+    );
+
+  $('#nextBtn')
+    ?.addEventListener(
+      'click',
+      nextTrack
+    );
+
+
+  /* Shuffle */
+
+  $('#shuffleBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+        shuffled =
+          !shuffled;
+
+        $('#shuffleBtn')
+          .classList.toggle(
+            'active',
+            shuffled
+          );
+
+        toast(
+          shuffled
+            ? 'Shuffle on'
+            : 'Shuffle off'
+        );
+      }
+    );
+
+
+  /* Repeat */
+
+  $('#repeatBtn')
+    ?.addEventListener(
+      'click',
+      () => {
+
+        if (
+          repeatMode === 'off'
+        ) {
+          repeatMode = 'all';
+
+        } else if (
+          repeatMode === 'all'
+        ) {
+          repeatMode = 'one';
+
+        } else {
+          repeatMode = 'off';
+        }
+
+        $('#repeatBtn')
+          .classList.toggle(
             'active',
             repeatMode !== 'off'
           );
 
-          button.dataset.mode =
-            repeatMode;
+        const messages = {
+          off: 'Repeat off',
+          all: 'Repeat all',
+          one: 'Repeat one'
+        };
+
+        toast(
+          messages[
+            repeatMode
+          ]
+        );
+      }
+    );
+
+
+  /* Search */
+
+  $('#searchInput')
+    ?.addEventListener(
+      'input',
+      (event) => {
+        renderSearch(
+          event.target.value
+        );
+      }
+    );
+
+
+  /* Progress */
+
+  $('#progress')
+    ?.addEventListener(
+      'input',
+      (event) => {
+        if (
+          !audio.duration
+        ) {
+          return;
         }
-      );
-    }
-  );
 
-
-  /* -------------------------
-     Progress bar
-     ------------------------- */
-
-  const progress =
-    $('#progress');
-
-  progress?.addEventListener(
-    'input',
-    () => {
-      if (
-        !audio ||
-        !audio.duration
-      ) {
-        return;
+        audio.currentTime =
+          (
+            Number(
+              event.target.value
+            ) / 100
+          ) *
+          audio.duration;
       }
-
-      audio.currentTime =
-        (
-          Number(progress.value) /
-          100
-        ) *
-        audio.duration;
-    }
-  );
+    );
 
 
-  /* -------------------------
-     Volume
-     ------------------------- */
+  /* Volume */
 
-  const volume =
-    $('#volume');
-
-  volume?.addEventListener(
-    'input',
-    () => {
-      if (!audio) {
-        return;
-      }
-
-      audio.volume =
-        Number(volume.value);
-    }
-  );
-
-
-  /* -------------------------
-     Search
-     ------------------------- */
-
-  $$('.search-input').forEach(
-    (input) => {
-      input.addEventListener(
-        'input',
-        () => {
-          performSearch(
-            input.value
+  $('#volume')
+    ?.addEventListener(
+      'input',
+      (event) => {
+        audio.volume =
+          Number(
+            event.target.value
           );
-        }
-      );
-    }
-  );
+      }
+    );
+}
 
 
-  /* -------------------------
-     Audio events
-     ------------------------- */
+/* =========================================================
+   AUDIO EVENTS
+   ========================================================= */
 
-  audio?.addEventListener(
+function setupAudio() {
+
+  audio.volume = 0.8;
+
+  audio.addEventListener(
     'play',
     updatePlayButton
   );
 
-  audio?.addEventListener(
+  audio.addEventListener(
     'pause',
     updatePlayButton
   );
 
-  audio?.addEventListener(
+
+  audio.addEventListener(
     'timeupdate',
     () => {
+
       if (
-        !audio ||
         !audio.duration
       ) {
         return;
       }
 
-      const percent =
+      const percentage =
         (
           audio.currentTime /
           audio.duration
         ) * 100;
 
-      if (progress) {
-        progress.value =
-          percent;
-      }
+      $('#progress').value =
+        percentage;
 
       setText(
         '#currentTime',
-        formatDuration(
+        formatTime(
           audio.currentTime
         )
       );
 
       setText(
-        '#totalTime',
-        formatDuration(
+        '#duration',
+        formatTime(
           audio.duration
         )
       );
     }
   );
 
-  audio?.addEventListener(
+
+  audio.addEventListener(
     'ended',
     async () => {
+
       if (
         repeatMode === 'one'
       ) {
-        audio.currentTime = 0;
+        audio.currentTime =
+          0;
 
         await audio.play();
 
         return;
       }
 
-      await playNext();
+      await nextTrack();
     }
   );
+}
 
 
-  /* -------------------------
-     Keyboard shortcuts
-     ------------------------- */
+/* =========================================================
+   KEYBOARD
+   ========================================================= */
 
+function setupKeyboard() {
   document.addEventListener(
     'keydown',
     (event) => {
+
       const tag =
-        document.activeElement?.tagName;
+        document.activeElement
+          ?.tagName;
 
       if (
         tag === 'INPUT' ||
@@ -2422,7 +2729,8 @@ function setupEvents() {
       }
 
       if (
-        event.code === 'Space'
+        event.code ===
+        'Space'
       ) {
         event.preventDefault();
 
@@ -2430,21 +2738,24 @@ function setupEvents() {
       }
 
       if (
-        event.code === 'ArrowRight'
+        event.key ===
+        'ArrowRight'
       ) {
-        playNext();
+        nextTrack();
       }
 
       if (
-        event.code === 'ArrowLeft'
+        event.key ===
+        'ArrowLeft'
       ) {
-        playPrevious();
+        previousTrack();
       }
 
       if (
-        event.code === 'Escape'
+        event.key ===
+        'Escape'
       ) {
-        closeAllModals();
+        closeModals();
       }
     }
   );
@@ -2452,22 +2763,12 @@ function setupEvents() {
 
 
 /* =========================================================
-   SUPABASE AUTH STATE
+   RENDER CURRENT PAGE
    ========================================================= */
 
-function setupAuthListener() {
-  if (!sb) {
-    return;
-  }
-
-  sb.auth.onAuthStateChange(
-    async (_event, session) => {
-      currentUser =
-        session?.user || null;
-
-      await refreshAuthUI();
-      await loadAll();
-    }
+function renderCurrentPage() {
+  switchPage(
+    currentPage
   );
 }
 
@@ -2477,30 +2778,84 @@ function setupAuthListener() {
    ========================================================= */
 
 async function init() {
+
   console.log(
-    'Frequency starting...'
+    'Frequency initializing...'
   );
 
-  if (!supabaseConfigured) {
+
+  if (!supabaseReady) {
+
     console.warn(
-      'Frequency: Supabase publishable key has not been configured.'
+      'Frequency: Supabase publishable key is missing or invalid.'
+    );
+
+    $('#authStatus').textContent =
+      'Add your current Supabase sb_publishable_ key to app.js.';
+
+  } else {
+
+    console.log(
+      'Frequency: Supabase configured.'
     );
   }
 
+
+  setupAuth();
+
   setupEvents();
 
-  setupAuthListener();
+  setupModals();
+
+  setupAudio();
+
+  setupKeyboard();
+
+  setupCarouselGestures();
+
 
   if (sb) {
+
     currentUser =
-      await getCurrentUser();
+      await getUser();
+
+    if (currentUser) {
+
+      await showApp();
+
+    } else {
+
+      $('#authView')
+        .classList.remove(
+          'hidden'
+        );
+
+      $('#appView')
+        .classList.add(
+          'hidden'
+        );
+    }
+
+    setupAuthListener();
+
+  } else {
+
+    $('#authView')
+      .classList.remove(
+        'hidden'
+      );
+
+    $('#appView')
+      .classList.add(
+        'hidden'
+      );
   }
 
-  await refreshAuthUI();
 
-  await loadAll();
+  setView(
+    viewMode
+  );
 
-  setView(viewMode);
 
   console.log(
     'Frequency ready.'
@@ -2513,12 +2868,16 @@ async function init() {
    ========================================================= */
 
 if (
-  document.readyState === 'loading'
+  document.readyState ===
+  'loading'
 ) {
+
   document.addEventListener(
     'DOMContentLoaded',
     init
   );
+
 } else {
+
   init();
 }
