@@ -15,7 +15,7 @@ const SUPABASE_URL = 'https://nmiodppvxqpzfrideduv.supabase.co';
 
   Do NOT use the secret/service_role key.
 */
-const SUPABASE_PUBLISHABLE_KEY = 'PASTE_YOUR_CURRENT_SB_PUBLISHABLE_KEY_HERE';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_S7SpRNfMTiY7SB4Y19LRDQ_WBzH_TPc';
 
 
 /* =========================================================
