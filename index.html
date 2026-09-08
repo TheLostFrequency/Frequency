@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070708" />
+  <title>Frequency — Personal Music Vault</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+  <div id="authView" class="auth-view">
+    <div class="auth-card">
+      <div class="brand">FREQUENCY</div>
+      <p class="eyebrow">YOUR MUSIC. YOUR SPACE.</p>
+      <h1>Private music, without the noise.</h1>
+      <p class="muted">Create your private Frequency library and keep your music, artwork and playlists in one place.</p>
+      <form id="authForm">
+        <input id="authEmail" type="email" placeholder="Email" required autocomplete="email" />
+        <input id="authPassword" type="password" placeholder="Password" required minlength="6" autocomplete="current-password" />
+        <button class="primary" type="submit" id="authSubmit">Sign in</button>
+      </form>
+      <button class="text-button" id="authToggle">Need an account? Sign up</button>
+      <p id="authStatus" class="status"></p>
+    </div>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand">FREQUENCY</div>
+      <nav>
+        <button class="nav-item active" data-page="library">Library</button>
+        <button class="nav-item" data-page="search">Search</button>
+        <button class="nav-item" data-page="albums">Albums</button>
+        <button class="nav-item" data-page="playlists">Playlists</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button id="uploadBtn" class="upload-button">＋ Upload music</button>
+        <button id="signOutBtn" class="text-button">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PRIVATE MUSIC VAULT</p>
+          <h2 id="pageTitle">Library</h2>
+        </div>
+        <div class="top-actions">
+          <button id="viewCollection" class="icon-button active" title="Collection view">Collection</button>
+          <button id="viewList" class="icon-button" title="List view">List</button>
+        </div>
+      </header>
+
+      <section id="page-library" class="page active-page">
+        <div class="library-heading">
+          <div>
+            <h3>Your Collection</h3>
+            <p class="muted">Swipe, drag or scroll through your music.</p>
+          </div>
+          <span id="trackCount" class="count">0 tracks</span>
+        </div>
+        <div id="emptyLibrary" class="empty-state">
+          <div class="empty-art">F</div>
+          <h3>Your collection is empty</h3>
+          <p class="muted">Upload your first song and Frequency will build your collection around it.</p>
+          <button class="primary" id="emptyUploadBtn">Upload your first track</button>
+        </div>
+        <div id="collectionView" class="collection-wrap hidden">
+          <div id="carousel" class="carousel" tabindex="0"></div>
+          <div class="carousel-meta">
+            <p id="activeArtist" class="eyebrow">—</p>
+            <h3 id="activeTitle">—</h3>
+            <p id="activeAlbum" class="muted">—</p>
+            <button id="playActive" class="primary">Play</button>
+          </div>
+        </div>
+        <div id="listView" class="list hidden"></div>
+      </section>
+
+      <section id="page-search" class="page">
+        <div class="search-box"><input id="searchInput" placeholder="Search your library…" /></div>
+        <div id="searchResults" class="list"></div>
+      </section>
+
+      <section id="page-albums" class="page">
+        <div id="albumsGrid" class="grid"></div>
+      </section>
+
+      <section id="page-playlists" class="page">
+        <div class="library-heading"><div><h3>Your Playlists</h3><p class="muted">Make your own worlds.</p></div><button class="primary" id="newPlaylistBtn">＋ New playlist</button></div>
+        <div id="playlistsGrid" class="grid"></div>
+      </section>
+    </main>
+
+    <footer class="player">
+      <div class="player-track">
+        <div id="playerCover" class="mini-art">F</div>
+        <div><strong id="playerTitle">Nothing playing</strong><span id="playerArtist">Choose a track</span></div>
+      </div>
+      <div class="player-center">
+        <div class="controls">
+          <button id="shuffleBtn">⇄</button><button id="prevBtn">◀</button><button id="playBtn" class="play-main">▶</button><button id="nextBtn">▶</button><button id="repeatBtn">↻</button>
+        </div>
+        <div class="progress-row"><span id="currentTime">0:00</span><input id="progress" type="range" min="0" max="100" value="0" /><span id="duration">0:00</span></div>
+      </div>
+      <div class="player-volume"><span>Vol</span><input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" /></div>
+    </footer>
+  </div>
+
+  <div id="uploadModal" class="modal hidden"><div class="modal-card"><button class="close" data-close="uploadModal">×</button><p class="eyebrow">ADD TO FREQUENCY</p><h2>Upload music</h2><form id="uploadForm"><input id="trackFile" type="file" accept="audio/*" required /><input id="coverFile" type="file" accept="image/*" /><input id="trackTitle" placeholder="Title" required /><input id="trackArtist" placeholder="Artist" required /><input id="trackAlbum" placeholder="Album" /><input id="trackGenre" placeholder="Genre" /><input id="trackYear" type="number" placeholder="Year" /><button class="primary" type="submit">Upload track</button><p id="uploadStatus" class="status"></p></form></div></div>
+
+  <div id="playlistModal" class="modal hidden"><div class="modal-card"><button class="close" data-close="playlistModal">×</button><p class="eyebrow">PLAYLIST</p><h2>Create playlist</h2><form id="playlistForm"><input id="playlistName" placeholder="Playlist name" required /><input id="playlistDescription" placeholder="Description" /><input id="playlistCover" type="file" accept="image/*" /><button class="primary" type="submit">Create playlist</button><p id="playlistStatus" class="status"></p></form></div></div>
+
+  <audio id="audio" preload="metadata"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
