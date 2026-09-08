@@ -1,159 +1,101 @@
 /* =========================================================
-   FREQUENCY — REAL SUPABASE MUSIC APP
+   FREQUENCY
+   Main application
    ========================================================= */
 
 const SUPABASE_URL = 'https://nmiodppvxqpzfrideduv.supabase.co';
-const SUPABASE_ANON_KEY = 'Yb_publishable_REPLACE_WITH_YOUR_KEY';
 
-const configured =
-  !SUPABASE_URL.startsWith('YOUR_') &&
-  !SUPABASE_ANON_KEY.startsWith('YOUR_') &&
-  SUPABASE_ANON_KEY.includes('publishable_');
+/*
+  IMPORTANT:
+  Replace the value below with your CURRENT Supabase
+  PUBLISHABLE key.
 
-const sb = configured
-  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+  It should begin with:
+  sb_publishable_
+
+  Do NOT use the secret/service_role key.
+*/
+const SUPABASE_PUBLISHABLE_KEY = 'PASTE_YOUR_CURRENT_SB_PUBLISHABLE_KEY_HERE';
 
 
 /* =========================================================
-   GLOBAL STATE
+   SUPABASE
    ========================================================= */
 
-const $ = (selector) => document.querySelector(selector);
+const supabaseConfigured =
+  SUPABASE_URL.startsWith('https://') &&
+  SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
 
-const audio = $('#audio');
-
-let tracks = [];
-let playlists = [];
-let currentIndex = -1;
-
-let shuffle = false;
-let repeat = false;
-
-let authMode = 'signin';
-
-let viewMode =
-  localStorage.getItem('frequency-view') || 'collection';
-
-let dragStartX = null;
-let dragMoved = false;
+const sb = supabaseConfigured
+  ? supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    )
+  : null;
 
 
 /* =========================================================
    HELPERS
    ========================================================= */
 
-function toast(message) {
-  const t = $('#toast');
+const $ = (selector) => document.querySelector(selector);
 
-  if (!t) return;
+const $$ = (selector) => Array.from(
+  document.querySelectorAll(selector)
+);
 
-  t.textContent = message;
-  t.classList.add('show');
+const audio = $('#audio');
 
-  clearTimeout(window.__toast);
+let currentUser = null;
+let tracks = [];
+let playlists = [];
 
-  window.__toast = setTimeout(() => {
-    t.classList.remove('show');
-  }, 2600);
-}
+let currentTrackIndex = -1;
+let shuffled = false;
+let repeatMode = 'off';
 
-
-function escapeHtml(value = '') {
-  return String(value).replace(
-    /[&<>'"]/g,
-    (char) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      })[char]
-  );
-}
-
-
-function fmt(seconds) {
-  if (!Number.isFinite(seconds)) {
-    return '0:00';
-  }
-
-  seconds = Math.floor(seconds);
-
-  return `${Math.floor(seconds / 60)}:${String(
-    seconds % 60
-  ).padStart(2, '0')}`;
-}
-
-
-function placeholder(label = 'F') {
-  const letter = escapeHtml(
-    String(label).charAt(0).toUpperCase() || 'F'
-  );
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
-      <rect width="600" height="600" fill="#111216"/>
-      <circle
-        cx="300"
-        cy="300"
-        r="220"
-        fill="none"
-        stroke="#343842"
-        stroke-width="2"
-      />
-      <circle
-        cx="300"
-        cy="300"
-        r="160"
-        fill="none"
-        stroke="#22242b"
-        stroke-width="1"
-      />
-      <text
-        x="50%"
-        y="52%"
-        text-anchor="middle"
-        fill="#f2f3f5"
-        font-family="Arial"
-        font-size="90"
-        font-weight="700"
-      >${letter}</text>
-    </svg>
-  `)}`;
-}
+let viewMode =
+  localStorage.getItem('frequency-view') || 'collection';
 
 
 /* =========================================================
-   SUPABASE STORAGE
+   DOM HELPERS
    ========================================================= */
 
-async function signed(bucket, path) {
-  if (!path || !configured || !sb) {
-    return null;
+function showElement(selector) {
+  const element = $(selector);
+
+  if (element) {
+    element.classList.remove('hidden');
   }
-
-  const { data, error } =
-    await sb.storage
-      .from(bucket)
-      .createSignedUrl(path, 3600);
-
-  if (error) {
-    console.error(error);
-    return null;
-  }
-
-  return data?.signedUrl || null;
 }
 
 
-async function coverFor(track) {
-  if (!track?.cover_path) {
-    return null;
-  }
+function hideElement(selector) {
+  const element = $(selector);
 
-  return signed('covers', track.cover_path);
+  if (element) {
+    element.classList.add('hidden');
+  }
+}
+
+
+function setText(selector, text) {
+  const element = $(selector);
+
+  if (element) {
+    element.textContent = text ?? '';
+  }
+}
+
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 
@@ -161,479 +103,498 @@ async function coverFor(track) {
    AUTH
    ========================================================= */
 
-function setAuthVisible(loggedIn) {
-  const authView = $('#authView');
-  const appView = $('#appView');
-
-  if (authView) {
-    authView.classList.toggle('hidden', loggedIn);
+async function getCurrentUser() {
+  if (!sb) {
+    return null;
   }
 
-  if (appView) {
-    appView.classList.toggle('hidden', !loggedIn);
+  const { data, error } = await sb.auth.getUser();
+
+  if (error) {
+    console.error('Auth error:', error);
+    return null;
+  }
+
+  return data.user || null;
+}
+
+
+async function refreshAuthUI() {
+  currentUser = await getCurrentUser();
+
+  const authButtons = $$('.auth-button');
+  const signOutButtons = $$('.sign-out');
+
+  authButtons.forEach((button) => {
+    button.classList.toggle('hidden', !!currentUser);
+  });
+
+  signOutButtons.forEach((button) => {
+    button.classList.toggle('hidden', !currentUser);
+  });
+
+  const userEmail = $('#userEmail');
+
+  if (userEmail && currentUser) {
+    userEmail.textContent =
+      currentUser.email || 'Signed in';
   }
 }
 
 
-function authMessage(message = '') {
-  const status = $('#authStatus');
-
-  if (status) {
-    status.textContent = message;
-  }
-}
-
-
-async function boot() {
-
-  if (!configured) {
-
-    setAuthVisible(false);
-
-    authMessage(
-      'Supabase is not configured. Add your publishable key in app.js.'
+async function signIn(email, password) {
+  if (!sb) {
+    alert(
+      'Supabase is not configured. Add your current sb_publishable_ key to app.js first.'
     );
+    return;
+  }
+
+  const { data, error } = await sb.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  currentUser = data.user;
+
+  closeAllModals();
+
+  await refreshAuthUI();
+  await loadAll();
+
+  alert('Welcome back to Frequency.');
+}
+
+
+async function signUp(email, password) {
+  if (!sb) {
+    alert(
+      'Supabase is not configured. Add your current sb_publishable_ key to app.js first.'
+    );
+    return;
+  }
+
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  if (data.session) {
+    currentUser = data.user;
+
+    closeAllModals();
+
+    await refreshAuthUI();
+    await loadAll();
+
+    alert('Your Frequency account is ready.');
+  } else {
+    alert(
+      'Account created. Check your email to confirm your account, then sign in.'
+    );
+  }
+}
+
+
+async function signOut() {
+  if (!sb) {
+    return;
+  }
+
+  const { error } = await sb.auth.signOut();
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  currentUser = null;
+  tracks = [];
+  playlists = [];
+  currentTrackIndex = -1;
+
+  stopAudio();
+  await refreshAuthUI();
+  renderAll();
+}
+
+
+/* =========================================================
+   AUTH MODAL
+   ========================================================= */
+
+function openAuthModal(mode = 'login') {
+  const modal = $('#authModal');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.classList.remove('hidden');
+
+  const loginForm = $('#loginForm');
+  const signupForm = $('#signupForm');
+
+  if (mode === 'signup') {
+    loginForm?.classList.add('hidden');
+    signupForm?.classList.remove('hidden');
+  } else {
+    signupForm?.classList.add('hidden');
+    loginForm?.classList.remove('hidden');
+  }
+}
+
+
+function closeAllModals() {
+  $$('.modal').forEach((modal) => {
+    modal.classList.add('hidden');
+  });
+}
+
+
+/* =========================================================
+   DATABASE
+   ========================================================= */
+
+async function loadTracks() {
+  if (!sb || !currentUser) {
+    tracks = [];
+    return;
+  }
+
+  const { data, error } = await sb
+    .from('tracks')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', {
+      ascending: false
+    });
+
+  if (error) {
+    console.error('Tracks error:', error);
+
+    tracks = [];
 
     return;
   }
 
-  const {
-    data: { session }
-  } = await sb.auth.getSession();
+  tracks = data || [];
+}
 
-  setAuthVisible(!!session);
 
-  if (session) {
-    await loadAll();
+async function loadPlaylists() {
+  if (!sb || !currentUser) {
+    playlists = [];
+    return;
   }
 
-  sb.auth.onAuthStateChange(
-    async (_event, session) => {
+  const { data, error } = await sb
+    .from('playlists')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', {
+      ascending: false
+    });
 
-      setAuthVisible(!!session);
+  if (error) {
+    console.error('Playlists error:', error);
 
-      if (session) {
-        await loadAll();
-      }
-    }
-  );
+    playlists = [];
+
+    return;
+  }
+
+  playlists = data || [];
 }
 
-
-/* =========================================================
-   SIGN IN / SIGN UP
-   ========================================================= */
-
-const authToggle = $('#authToggle');
-
-if (authToggle) {
-
-  authToggle.onclick = () => {
-
-    authMode =
-      authMode === 'signin'
-        ? 'signup'
-        : 'signin';
-
-    const submit = $('#authSubmit');
-
-    if (submit) {
-      submit.textContent =
-        authMode === 'signin'
-          ? 'Sign in'
-          : 'Create account';
-    }
-
-    authToggle.textContent =
-      authMode === 'signin'
-        ? 'Need an account? Sign up'
-        : 'Already have an account? Sign in';
-
-    authMessage('');
-  };
-}
-
-
-const authForm = $('#authForm');
-
-if (authForm) {
-
-  authForm.onsubmit = async (event) => {
-
-    event.preventDefault();
-
-    if (!sb) {
-      authMessage('Supabase is not connected.');
-      return;
-    }
-
-    const email =
-      $('#authEmail')?.value.trim();
-
-    const password =
-      $('#authPassword')?.value;
-
-    if (!email || !password) {
-      authMessage(
-        'Enter your email and password.'
-      );
-      return;
-    }
-
-    authMessage('Working…');
-
-    let result;
-
-    if (authMode === 'signin') {
-
-      result =
-        await sb.auth.signInWithPassword({
-          email,
-          password
-        });
-
-    } else {
-
-      result =
-        await sb.auth.signUp({
-          email,
-          password
-        });
-    }
-
-    if (result.error) {
-
-      authMessage(
-        result.error.message
-      );
-
-      return;
-    }
-
-    authMessage(
-      authMode === 'signup'
-        ? 'Account created. Check your email if confirmation is enabled.'
-        : 'Signed in.'
-    );
-  };
-}
-
-
-const signOutBtn = $('#signOutBtn');
-
-if (signOutBtn) {
-
-  signOutBtn.onclick = async () => {
-
-    if (sb) {
-      await sb.auth.signOut();
-    }
-  };
-}
-
-
-/* =========================================================
-   LOAD DATABASE
-   ========================================================= */
 
 async function loadAll() {
+  if (!currentUser) {
+    tracks = [];
+    playlists = [];
 
-  if (!sb) return;
+    renderAll();
 
-  const [
-    tracksResult,
-    playlistsResult
-  ] = await Promise.all([
+    return;
+  }
 
-    sb
-      .from('tracks')
-      .select('*')
-      .order('created_at', {
-        ascending: false
-      }),
-
-    sb
-      .from('playlists')
-      .select('*')
-      .order('created_at', {
-        ascending: false
-      })
+  await Promise.all([
+    loadTracks(),
+    loadPlaylists()
   ]);
-
-
-  if (tracksResult.error) {
-
-    console.error(tracksResult.error);
-
-    toast(
-      tracksResult.error.message
-    );
-
-    return;
-  }
-
-
-  if (playlistsResult.error) {
-
-    console.error(
-      playlistsResult.error
-    );
-
-    toast(
-      playlistsResult.error.message
-    );
-
-    return;
-  }
-
-
-  tracks =
-    tracksResult.data || [];
-
-  playlists =
-    playlistsResult.data || [];
-
 
   renderAll();
 }
 
 
 /* =========================================================
-   MAIN RENDER
+   STORAGE URLS
    ========================================================= */
 
-function renderAll() {
-
-  const trackCount = $('#trackCount');
-
-  if (trackCount) {
-
-    trackCount.textContent =
-      `${tracks.length} track${
-        tracks.length === 1
-          ? ''
-          : 's'
-      }`;
+async function getSignedUrl(bucket, path) {
+  if (!sb || !path) {
+    return '';
   }
 
+  const { data, error } = await sb.storage
+    .from(bucket)
+    .createSignedUrl(path, 60 * 60);
 
-  const emptyLibrary =
-    $('#emptyLibrary');
-
-  const collectionView =
-    $('#collectionView');
-
-  const listView =
-    $('#listView');
-
-
-  if (emptyLibrary) {
-
-    emptyLibrary.classList.toggle(
-      'hidden',
-      tracks.length > 0
+  if (error) {
+    console.error(
+      `Signed URL error for ${bucket}:`,
+      error
     );
+
+    return '';
   }
 
+  return data?.signedUrl || '';
+}
 
-  if (collectionView) {
 
-    collectionView.classList.toggle(
-      'hidden',
-      tracks.length === 0 ||
-      viewMode !== 'collection'
-    );
+async function getAudioUrl(track) {
+  if (!track?.audio_path) {
+    return '';
   }
 
+  return getSignedUrl('audio', track.audio_path);
+}
 
-  if (listView) {
 
-    listView.classList.toggle(
-      'hidden',
-      tracks.length === 0 ||
-      viewMode !== 'list'
-    );
+async function getCoverUrl(track) {
+  if (!track?.cover_path) {
+    return '';
   }
 
-
-  const viewCollection =
-    $('#viewCollection');
-
-  const viewList =
-    $('#viewList');
-
-
-  if (viewCollection) {
-
-    viewCollection.classList.toggle(
-      'active',
-      viewMode === 'collection'
-    );
-  }
-
-
-  if (viewList) {
-
-    viewList.classList.toggle(
-      'active',
-      viewMode === 'list'
-    );
-  }
-
-
-  renderCarousel();
-
-  renderList(
-    tracks,
-    $('#listView')
-  );
-
-  renderAlbums();
-
-  renderPlaylists();
+  return getSignedUrl('covers', track.cover_path);
 }
 
 
 /* =========================================================
-   CIRCULAR COLLECTION
+   AUDIO DURATION
    ========================================================= */
 
-async function renderCarousel() {
+function getAudioDuration(file) {
+  return new Promise((resolve) => {
+    const tempAudio = document.createElement('audio');
 
-  const carousel = $('#carousel');
+    tempAudio.preload = 'metadata';
 
-  if (!carousel) return;
+    tempAudio.onloadedmetadata = () => {
+      const duration = tempAudio.duration;
 
-  carousel.innerHTML = '';
+      URL.revokeObjectURL(tempAudio.src);
 
-  if (!tracks.length) {
+      resolve(
+        Number.isFinite(duration)
+          ? duration
+          : null
+      );
+    };
+
+    tempAudio.onerror = () => {
+      URL.revokeObjectURL(tempAudio.src);
+      resolve(null);
+    };
+
+    tempAudio.src = URL.createObjectURL(file);
+  });
+}
+
+
+/* =========================================================
+   FORMATTERS
+   ========================================================= */
+
+function formatDuration(seconds) {
+  if (!seconds || !Number.isFinite(Number(seconds))) {
+    return '--:--';
+  }
+
+  seconds = Math.floor(Number(seconds));
+
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+
+  return `${minutes}:${String(remaining).padStart(2, '0')}`;
+}
+
+
+function formatDate(dateString) {
+  if (!dateString) {
+    return '';
+  }
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleDateString(
+    undefined,
+    {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }
+  );
+}
+
+
+/* =========================================================
+   COVER PLACEHOLDER
+   ========================================================= */
+
+function coverPlaceholder(track) {
+  const title =
+    track?.title ||
+    'Frequency';
+
+  const firstLetter =
+    title.charAt(0).toUpperCase() || 'F';
+
+  return `
+    <div class="cover-placeholder">
+      <span>${escapeHtml(firstLetter)}</span>
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   COLLECTION VIEW
+   ========================================================= */
+
+async function renderCollection() {
+  const container =
+    $('#collection') ||
+    $('#collectionView') ||
+    $('#musicCollection');
+
+  if (!container) {
     return;
   }
 
+  if (!currentUser) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2>Your Frequency</h2>
+        <p>Sign in to access your private music library.</p>
+        <button class="primary-button" id="collectionLoginBtn">
+          Sign in
+        </button>
+      </div>
+    `;
 
-  if (
-    currentIndex < 0 ||
-    currentIndex >= tracks.length
-  ) {
-    currentIndex = 0;
+    $('#collectionLoginBtn')?.addEventListener(
+      'click',
+      () => openAuthModal('login')
+    );
+
+    return;
   }
 
+  if (!tracks.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-art">◯</div>
 
-  const center = currentIndex;
+        <h2>Your collection is empty</h2>
 
-  const visible =
-    Math.min(tracks.length, 7);
+        <p>
+          Upload your first track and start building
+          your personal Frequency.
+        </p>
 
-  const half =
-    Math.floor(visible / 2);
+        <button
+          class="primary-button"
+          id="collectionEmptyUpload"
+        >
+          ＋ Upload music
+        </button>
+      </div>
+    `;
 
+    $('#collectionEmptyUpload')?.addEventListener(
+      'click',
+      () => showElement('#uploadModal')
+    );
 
-  for (
-    let offset = -half;
-    offset <= half;
-    offset++
-  ) {
-
-    const index =
-      (center + offset + tracks.length) %
-      tracks.length;
-
-    const track =
-      tracks[index];
-
-
-    const card =
-      document.createElement('button');
-
-    card.className =
-      'carousel-card ' +
-      (offset === 0
-        ? 'active'
-        : '');
-
-    card.dataset.index =
-      index;
-
-
-    const img =
-      document.createElement('img');
-
-    img.alt =
-      `${track.title} artwork`;
-
-    img.src =
-      placeholder(track.title);
-
-
-    const cover =
-      await coverFor(track);
-
-    if (cover) {
-      img.src = cover;
-    }
-
-
-    card.appendChild(img);
-
-
-    const x =
-      offset * 235;
-
-    const y =
-      Math.abs(offset) * 18;
-
-    const z =
-      10 - Math.abs(offset);
-
-
-    const scale =
-      offset === 0
-        ? 1
-        : Math.max(
-            0.58,
-            0.78 -
-            Math.abs(offset) * 0.04
-          );
-
-
-    card.style.transform =
-      `translateX(${x}px)
-       translateY(${y}px)
-       scale(${scale})`;
-
-    card.style.zIndex = z;
-
-    card.style.opacity =
-      offset === 0
-        ? 1
-        : Math.max(
-            0.22,
-            1 -
-            Math.abs(offset) * 0.18
-          );
-
-    card.style.filter =
-      offset === 0
-        ? 'none'
-        : 'brightness(.65)';
-
-
-    card.onclick = () => {
-
-      if (dragMoved) {
-        return;
-      }
-
-      currentIndex = index;
-
-      renderCarousel();
-
-      playTrack(index);
-    };
-
-
-    carousel.appendChild(card);
+    return;
   }
+
+  const cards = [];
+
+  for (const track of tracks) {
+    const cover = await getCoverUrl(track);
+
+    cards.push(`
+      <article
+        class="track-card"
+        data-track-id="${escapeHtml(track.id)}"
+      >
+        <button
+          class="artwork-button"
+          data-play-track="${escapeHtml(track.id)}"
+          aria-label="Play ${escapeHtml(track.title)}"
+        >
+          ${
+            cover
+              ? `<img
+                  src="${cover}"
+                  alt="${escapeHtml(track.title)} cover"
+                  loading="lazy"
+                >`
+              : coverPlaceholder(track)
+          }
+
+          <span class="artwork-play">
+            ▶
+          </span>
+        </button>
+
+        <div class="track-card-info">
+          <strong>
+            ${escapeHtml(track.title)}
+          </strong>
+
+          <span>
+            ${escapeHtml(track.artist)}
+          </span>
+        </div>
+      </article>
+    `);
+  }
+
+  container.innerHTML = `
+    <div class="artwork-carousel" id="artworkCarousel">
+      ${cards.join('')}
+    </div>
+
+    <div class="carousel-caption" id="carouselCaption">
+      <span>
+        Swipe, drag, or scroll
+      </span>
+    </div>
+  `;
+
+  attachTrackButtons();
+  setupCarousel();
 }
 
 
@@ -641,112 +602,93 @@ async function renderCarousel() {
    LIST VIEW
    ========================================================= */
 
-function renderList(items, target) {
+async function renderList() {
+  const container =
+    $('#list') ||
+    $('#listView') ||
+    $('#musicList');
 
-  if (!target) return;
+  if (!container) {
+    return;
+  }
 
-
-  if (!items.length) {
-
-    target.innerHTML =
-      '<p class="muted">No results.</p>';
+  if (!currentUser) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2>Your Frequency</h2>
+        <p>Sign in to see your music.</p>
+      </div>
+    `;
 
     return;
   }
 
+  if (!tracks.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2>No music yet</h2>
+        <p>Upload a track to begin.</p>
+      </div>
+    `;
 
-  target.innerHTML =
-    items
-      .map(
-        (track) => `
+    return;
+  }
 
-        <div class="track-row">
+  const rows = [];
 
-          <img
-            class="track-art"
-            data-cover="${escapeHtml(track.id)}"
-            src="${placeholder(track.title)}"
-            alt=""
-          >
+  for (const track of tracks) {
+    const cover = await getCoverUrl(track);
 
-          <div class="track-info">
+    rows.push(`
+      <div
+        class="track-row"
+        data-track-id="${escapeHtml(track.id)}"
+      >
+        <button
+          class="list-play"
+          data-play-track="${escapeHtml(track.id)}"
+        >
+          ${
+            cover
+              ? `<img
+                  src="${cover}"
+                  alt=""
+                  loading="lazy"
+                >`
+              : coverPlaceholder(track)
+          }
 
-            <strong>
-              ${escapeHtml(track.title)}
-            </strong>
+          <span>▶</span>
+        </button>
 
-            <span>
-              ${escapeHtml(track.artist)}
-              ${
-                track.album
-                  ? ' · ' +
-                    escapeHtml(track.album)
-                  : ''
-              }
-            </span>
+        <div class="track-row-main">
+          <strong>
+            ${escapeHtml(track.title)}
+          </strong>
 
-          </div>
-
-          <div class="row-actions">
-
-            <button
-              class="small-btn"
-              data-play="${escapeHtml(track.id)}"
-            >
-              Play
-            </button>
-
-          </div>
-
+          <span>
+            ${escapeHtml(track.artist)}
+          </span>
         </div>
-      `
-      )
-      .join('');
 
+        <div class="track-row-album">
+          ${escapeHtml(track.album || '—')}
+        </div>
 
-  target
-    .querySelectorAll('[data-play]')
-    .forEach((button) => {
+        <div class="track-row-duration">
+          ${formatDuration(track.duration)}
+        </div>
+      </div>
+    `);
+  }
 
-      button.onclick = () => {
+  container.innerHTML = `
+    <div class="track-list">
+      ${rows.join('')}
+    </div>
+  `;
 
-        const index =
-          tracks.findIndex(
-            (track) =>
-              track.id ===
-              button.dataset.play
-          );
-
-        if (index >= 0) {
-
-          currentIndex = index;
-
-          renderCarousel();
-
-          playTrack(index);
-        }
-      };
-    });
-
-
-  target
-    .querySelectorAll('[data-cover]')
-    .forEach(async (img) => {
-
-      const track =
-        tracks.find(
-          (item) =>
-            item.id ===
-            img.dataset.cover
-        );
-
-      const url =
-        await coverFor(track);
-
-      if (url) {
-        img.src = url;
-      }
-    });
+  attachTrackButtons();
 }
 
 
@@ -755,86 +697,76 @@ function renderList(items, target) {
    ========================================================= */
 
 async function renderAlbums() {
+  const container = $('#albums');
 
-  const grid =
-    $('#albumsGrid');
+  if (!container) {
+    return;
+  }
 
-  if (!grid) return;
-
-
-  const albums =
-    new Map();
-
-
-  tracks.forEach((track) => {
-
-    const name =
-      track.album ||
-      'Singles';
-
-    if (!albums.has(name)) {
-      albums.set(name, track);
-    }
-  });
-
-
-  if (!albums.size) {
-
-    grid.innerHTML =
-      '<p class="muted">Albums will appear here after you upload music.</p>';
+  if (!tracks.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2>No albums yet</h2>
+      </div>
+    `;
 
     return;
   }
 
+  const albumMap = new Map();
 
-  grid.innerHTML =
-    [...albums.entries()]
-      .map(
-        ([name, track]) => `
+  tracks.forEach((track) => {
+    const albumName =
+      track.album?.trim() ||
+      'Singles';
 
-        <div class="grid-card">
+    if (!albumMap.has(albumName)) {
+      albumMap.set(albumName, []);
+    }
 
-          <img
-            class="grid-art"
-            data-album-cover="${escapeHtml(track.id)}"
-            src="${placeholder(name)}"
-            alt=""
-          >
+    albumMap.get(albumName).push(track);
+  });
 
+  const albums = [];
+
+  for (const [name, albumTracks] of albumMap) {
+    const cover =
+      await getCoverUrl(albumTracks[0]);
+
+    albums.push(`
+      <article
+        class="album-card"
+        data-album="${escapeHtml(name)}"
+      >
+        ${
+          cover
+            ? `<img
+                src="${cover}"
+                alt="${escapeHtml(name)}"
+                loading="lazy"
+              >`
+            : coverPlaceholder({
+                title: name
+              })
+        }
+
+        <div>
           <strong>
             ${escapeHtml(name)}
           </strong>
 
           <span>
-            ${escapeHtml(track.artist)}
+            ${albumTracks.length}
+            ${albumTracks.length === 1
+              ? 'track'
+              : 'tracks'}
           </span>
-
         </div>
-      `
-      )
-      .join('');
+      </article>
+    `);
+  }
 
-
-  grid
-    .querySelectorAll(
-      '[data-album-cover]'
-    )
-    .forEach(async (img) => {
-
-      const track =
-        tracks.find(
-          (item) =>
-            item.id ===
-            img.dataset.albumCover
-        );
-
-      const url =
-        await coverFor(track);
-
-      if (url) {
-        img.src = url;
-      }
-    });
+  container.innerHTML = albums.join('');
 }
 
 
@@ -843,788 +775,405 @@ async function renderAlbums() {
    ========================================================= */
 
 async function renderPlaylists() {
+  const container = $('#playlists');
 
-  const grid =
-    $('#playlistsGrid');
+  if (!container) {
+    return;
+  }
 
-  if (!grid) return;
-
-
-  if (!playlists.length) {
-
-    grid.innerHTML =
-      '<p class="muted">No playlists yet.</p>';
+  if (!currentUser) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2>Your playlists</h2>
+        <p>Sign in to create playlists.</p>
+      </div>
+    `;
 
     return;
   }
 
+  if (!playlists.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h2>No playlists yet</h2>
 
-  grid.innerHTML =
-    playlists
-      .map(
-        (playlist) => `
+        <p>
+          Create your first playlist.
+        </p>
 
-        <div class="grid-card">
+        <button
+          class="primary-button"
+          id="emptyPlaylistBtn"
+        >
+          ＋ New playlist
+        </button>
+      </div>
+    `;
 
-          <img
-            class="grid-art"
-            data-playlist-cover="${escapeHtml(
-              playlist.id
-            )}"
-            src="${placeholder(
-              playlist.name
-            )}"
-            alt=""
-          >
+    $('#emptyPlaylistBtn')?.addEventListener(
+      'click',
+      () => showElement('#playlistModal')
+    );
 
+    return;
+  }
+
+  const cards = [];
+
+  for (const playlist of playlists) {
+    let cover = '';
+
+    if (playlist.cover_path) {
+      cover = await getSignedUrl(
+        'covers',
+        playlist.cover_path
+      );
+    }
+
+    cards.push(`
+      <article class="playlist-card">
+        ${
+          cover
+            ? `<img
+                src="${cover}"
+                alt="${escapeHtml(playlist.name)}"
+                loading="lazy"
+              >`
+            : `
+              <div class="playlist-placeholder">
+                ♫
+              </div>
+            `
+        }
+
+        <div>
           <strong>
-            ${escapeHtml(
-              playlist.name
-            )}
+            ${escapeHtml(playlist.name)}
           </strong>
 
-          <span>
-            ${escapeHtml(
-              playlist.description ||
-              'Playlist'
-            )}
-          </span>
-
+          ${
+            playlist.description
+              ? `<span>
+                  ${escapeHtml(
+                    playlist.description
+                  )}
+                </span>`
+              : ''
+          }
         </div>
-      `
-      )
-      .join('');
+      </article>
+    `);
+  }
 
-
-  grid
-    .querySelectorAll(
-      '[data-playlist-cover]'
-    )
-    .forEach(async (img) => {
-
-      const playlist =
-        playlists.find(
-          (item) =>
-            item.id ===
-            img.dataset.playlistCover
-        );
-
-      if (!playlist) return;
-
-      const url =
-        await signed(
-          'covers',
-          playlist.cover_path
-        );
-
-      if (url) {
-        img.src = url;
-      }
-    });
+  container.innerHTML = cards.join('');
 }
 
 
 /* =========================================================
-   MUSIC PLAYER
+   RENDER ALL
    ========================================================= */
 
+async function renderAll() {
+  const collection =
+    $('#collection') ||
+    $('#collectionView') ||
+    $('#musicCollection');
+
+  const list =
+    $('#list') ||
+    $('#listView') ||
+    $('#musicList');
+
+  if (collection) {
+    collection.classList.toggle(
+      'hidden',
+      viewMode !== 'collection'
+    );
+  }
+
+  if (list) {
+    list.classList.toggle(
+      'hidden',
+      viewMode !== 'list'
+    );
+  }
+
+  await renderCollection();
+  await renderList();
+  await renderAlbums();
+  await renderPlaylists();
+
+  updateLibraryCounts();
+}
+
+
+/* =========================================================
+   COUNTS
+   ========================================================= */
+
+function updateLibraryCounts() {
+  const trackCount =
+    tracks.length;
+
+  const albumCount =
+    new Set(
+      tracks.map(
+        (track) =>
+          track.album?.trim() || 'Singles'
+      )
+    ).size;
+
+  setText(
+    '#trackCount',
+    String(trackCount)
+  );
+
+  setText(
+    '#albumCount',
+    String(albumCount)
+  );
+
+  setText(
+    '#playlistCount',
+    String(playlists.length)
+  );
+}
+
+
+/* =========================================================
+   PLAY TRACK
+   ========================================================= */
+
+async function playTrackById(trackId) {
+  const index =
+    tracks.findIndex(
+      (track) =>
+        String(track.id) === String(trackId)
+    );
+
+  if (index === -1) {
+    return;
+  }
+
+  await playTrack(index);
+}
+
+
 async function playTrack(index) {
-
-  if (!tracks[index]) {
+  if (
+    index < 0 ||
+    index >= tracks.length
+  ) {
     return;
   }
 
-  if (!sb) {
-    toast(
-      'Connect Supabase before playing music.'
-    );
-    return;
-  }
+  const track = tracks[index];
 
+  const audioUrl =
+    await getAudioUrl(track);
 
-  currentIndex = index;
-
-  const track =
-    tracks[index];
-
-
-  const url =
-    await signed(
-      'audio',
-      track.audio_path
-    );
-
-
-  if (!url) {
-
-    toast(
-      'Could not access this audio file.'
+  if (!audioUrl) {
+    alert(
+      'Unable to load this track. Check that the audio file exists in Supabase Storage.'
     );
 
     return;
   }
 
+  currentTrackIndex = index;
 
-  audio.src = url;
+  audio.src = audioUrl;
 
-  audio.currentTime = 0;
+  audio.dataset.trackId =
+    track.id;
 
+  updatePlayer(track);
 
   try {
-
     await audio.play();
-
   } catch (error) {
-
-    console.error(error);
-
-    toast(
-      'Press play to start the track.'
+    console.error(
+      'Playback error:',
+      error
     );
   }
 
-
-  const playerTitle =
-    $('#playerTitle');
-
-  const playerArtist =
-    $('#playerArtist');
-
-  const playerCover =
-    $('#playerCover');
+  updatePlayButton();
+}
 
 
-  if (playerTitle) {
-    playerTitle.textContent =
-      track.title;
+function stopAudio() {
+  if (!audio) {
+    return;
   }
 
-  if (playerArtist) {
-    playerArtist.textContent =
-      track.artist;
+  audio.pause();
+  audio.currentTime = 0;
+  audio.removeAttribute('src');
+  audio.load();
+
+  updatePlayButton();
+}
+
+
+/* =========================================================
+   PLAYER
+   ========================================================= */
+
+async function updatePlayer(track) {
+  if (!track) {
+    return;
   }
 
+  setText(
+    '#playerTitle',
+    track.title
+  );
 
-  if (playerCover) {
+  setText(
+    '#playerArtist',
+    track.artist
+  );
 
-    const cover =
-      await coverFor(track);
+  setText(
+    '#nowPlayingTitle',
+    track.title
+  );
+
+  setText(
+    '#nowPlayingArtist',
+    track.artist
+  );
+
+  const cover =
+    await getCoverUrl(track);
+
+  const images = [
+    $('#playerCover'),
+    $('#nowPlayingCover')
+  ];
+
+  images.forEach((image) => {
+    if (!image) {
+      return;
+    }
 
     if (cover) {
-
-      playerCover.style.backgroundImage =
-        `url("${cover}")`;
-
-      playerCover.style.backgroundSize =
-        'cover';
-
-      playerCover.textContent = '';
-
-    } else {
-
-      playerCover.style.backgroundImage =
-        '';
-
-      playerCover.textContent =
-        String(
-          track.title || 'F'
-        ).charAt(0).toUpperCase();
+      image.src = cover;
+      image.classList.remove(
+        'hidden'
+      );
     }
+  });
+}
+
+
+function updatePlayButton() {
+  const playing =
+    audio &&
+    !audio.paused;
+
+  $$('.play-toggle').forEach(
+    (button) => {
+      button.textContent =
+        playing
+          ? '❚❚'
+          : '▶';
+    }
+  );
+
+  const player =
+    $('#player');
+
+  if (player) {
+    player.classList.toggle(
+      'is-playing',
+      playing
+    );
   }
 }
 
 
-function next() {
+function togglePlayback() {
+  if (!audio) {
+    return;
+  }
 
+  if (!audio.src) {
+    if (tracks.length) {
+      playTrack(0);
+    }
+
+    return;
+  }
+
+  if (audio.paused) {
+    audio.play();
+  } else {
+    audio.pause();
+  }
+
+  updatePlayButton();
+}
+
+
+async function playNext() {
   if (!tracks.length) {
     return;
   }
 
+  let nextIndex;
 
-  let index;
-
-
-  if (shuffle) {
-
-    index =
+  if (shuffled) {
+    nextIndex =
       Math.floor(
         Math.random() *
         tracks.length
       );
-
   } else {
+    nextIndex =
+      currentTrackIndex + 1;
 
-    index =
-      (currentIndex + 1) %
-      tracks.length;
+    if (
+      nextIndex >= tracks.length
+    ) {
+      if (repeatMode === 'all') {
+        nextIndex = 0;
+      } else {
+        stopAudio();
+        return;
+      }
+    }
   }
 
-
-  if (
-    !repeat &&
-    !shuffle &&
-    currentIndex ===
-      tracks.length - 1
-  ) {
-
-    audio.pause();
-
-    return;
-  }
-
-
-  playTrack(index);
+  await playTrack(nextIndex);
 }
 
 
-function prev() {
-
+async function playPrevious() {
   if (!tracks.length) {
     return;
   }
 
-
-  if (audio.currentTime > 4) {
-
+  if (
+    audio &&
+    audio.currentTime > 3
+  ) {
     audio.currentTime = 0;
-
     return;
   }
 
-
-  const index =
-    (
-      currentIndex -
-      1 +
-      tracks.length
-    ) %
-    tracks.length;
-
-
-  playTrack(index);
-}
-
-
-/* =========================================================
-   PLAYER CONTROLS
-   ========================================================= */
-
-const playBtn = $('#playBtn');
-
-if (playBtn) {
-
-  playBtn.onclick = () => {
-
-    if (
-      !audio.src &&
-      tracks.length
-    ) {
-
-      playTrack(
-        currentIndex >= 0
-          ? currentIndex
-          : 0
-      );
-
-      return;
-    }
-
-
-    if (audio.paused) {
-
-      audio.play();
-
-    } else {
-
-      audio.pause();
-    }
-  };
-}
-
-
-const nextBtn = $('#nextBtn');
-
-if (nextBtn) {
-  nextBtn.onclick = next;
-}
-
-
-const prevBtn = $('#prevBtn');
-
-if (prevBtn) {
-  prevBtn.onclick = prev;
-}
-
-
-const shuffleBtn =
-  $('#shuffleBtn');
-
-if (shuffleBtn) {
-
-  shuffleBtn.onclick = () => {
-
-    shuffle = !shuffle;
-
-    shuffleBtn.classList.toggle(
-      'active',
-      shuffle
-    );
-  };
-}
-
-
-const repeatBtn =
-  $('#repeatBtn');
-
-if (repeatBtn) {
-
-  repeatBtn.onclick = () => {
-
-    repeat = !repeat;
-
-    repeatBtn.classList.toggle(
-      'active',
-      repeat
-    );
-  };
-}
-
-
-if (audio) {
-
-  audio.onplay = () => {
-
-    if (playBtn) {
-      playBtn.textContent = '❚❚';
-    }
-  };
-
-
-  audio.onpause = () => {
-
-    if (playBtn) {
-      playBtn.textContent = '▶';
-    }
-  };
-
-
-  audio.onended = next;
-
-
-  audio.ontimeupdate = () => {
-
-    const currentTime =
-      $('#currentTime');
-
-    const progress =
-      $('#progress');
-
-
-    if (currentTime) {
-
-      currentTime.textContent =
-        fmt(audio.currentTime);
-    }
-
-
-    if (progress) {
-
-      progress.value =
-        audio.duration
-          ? (
-              audio.currentTime /
-              audio.duration *
-              100
-            )
-          : 0;
-    }
-  };
-
-
-  audio.onloadedmetadata = () => {
-
-    const duration =
-      $('#duration');
-
-    if (duration) {
-
-      duration.textContent =
-        fmt(audio.duration);
-    }
-  };
-}
-
-
-const progress =
-  $('#progress');
-
-if (progress && audio) {
-
-  progress.oninput = (event) => {
-
-    if (audio.duration) {
-
-      audio.currentTime =
-        (
-          Number(event.target.value) /
-          100
-        ) *
-        audio.duration;
-    }
-  };
-}
-
-
-const volume =
-  $('#volume');
-
-if (volume && audio) {
-
-  volume.oninput = (event) => {
-
-    audio.volume =
-      Number(event.target.value);
-  };
-
-  audio.volume = 0.8;
-}
-
-
-/* =========================================================
-   NAVIGATION
-   ========================================================= */
-
-function switchPage(page) {
-
-  document
-    .querySelectorAll('.nav-item')
-    .forEach((button) => {
-
-      button.classList.toggle(
-        'active',
-        button.dataset.page === page
-      );
-    });
-
-
-  document
-    .querySelectorAll('.page')
-    .forEach((section) => {
-
-      section.classList.remove(
-        'active-page'
-      );
-    });
-
-
-  const pageElement =
-    $(`#page-${page}`);
-
-  if (pageElement) {
-
-    pageElement.classList.add(
-      'active-page'
-    );
+  let previousIndex =
+    currentTrackIndex - 1;
+
+  if (
+    previousIndex < 0
+  ) {
+    previousIndex =
+      tracks.length - 1;
   }
 
-
-  const title =
-    $('#pageTitle');
-
-  if (title) {
-
-    title.textContent =
-      page.charAt(0).toUpperCase() +
-      page.slice(1);
-  }
-}
-
-
-document
-  .querySelectorAll('.nav-item')
-  .forEach((button) => {
-
-    button.onclick = () => {
-
-      switchPage(
-        button.dataset.page
-      );
-    };
-  });
-
-
-/* =========================================================
-   COLLECTION / LIST TOGGLE
-   ========================================================= */
-
-const viewCollection =
-  $('#viewCollection');
-
-if (viewCollection) {
-
-  viewCollection.onclick = () => {
-
-    viewMode = 'collection';
-
-    localStorage.setItem(
-      'frequency-view',
-      viewMode
-    );
-
-    renderAll();
-  };
-}
-
-
-const viewList =
-  $('#viewList');
-
-if (viewList) {
-
-  viewList.onclick = () => {
-
-    viewMode = 'list';
-
-    localStorage.setItem(
-      'frequency-view',
-      viewMode
-    );
-
-    renderAll();
-  };
-}
-
-
-/* =========================================================
-   UPLOAD BUTTONS
-   ========================================================= */
-
-const uploadBtn =
-  $('#uploadBtn');
-
-const emptyUploadBtn =
-  $('#emptyUploadBtn');
-
-
-if (uploadBtn) {
-
-  uploadBtn.onclick = () => {
-
-    const modal =
-      $('#uploadModal');
-
-    if (modal) {
-
-      modal.classList.remove(
-        'hidden'
-      );
-    }
-  };
-}
-
-
-if (emptyUploadBtn) {
-
-  emptyUploadBtn.onclick = () => {
-
-    const modal =
-      $('#uploadModal');
-
-    if (modal) {
-
-      modal.classList.remove(
-        'hidden'
-      );
-    }
-  };
-}
-
-
-/* =========================================================
-   PLAYLIST BUTTON
-   ========================================================= */
-
-const newPlaylistBtn =
-  $('#newPlaylistBtn');
-
-if (newPlaylistBtn) {
-
-  newPlaylistBtn.onclick = () => {
-
-    const modal =
-      $('#playlistModal');
-
-    if (modal) {
-
-      modal.classList.remove(
-        'hidden'
-      );
-    }
-  };
-}
-
-
-/* =========================================================
-   CLOSE MODALS
-   ========================================================= */
-
-document
-  .querySelectorAll('[data-close]')
-  .forEach((button) => {
-
-    button.onclick = () => {
-
-      const id =
-        button.dataset.close;
-
-      const modal =
-        $(`#${id}`);
-
-      if (modal) {
-
-        modal.classList.add(
-          'hidden'
-        );
-      }
-    };
-  });
-
-
-/* =========================================================
-   COLLECTION DRAG / SWIPE
-   ========================================================= */
-
-const carousel =
-  $('#carousel');
-
-if (carousel) {
-
-  carousel.addEventListener(
-    'pointerdown',
-    (event) => {
-
-      dragStartX =
-        event.clientX;
-
-      dragMoved = false;
-
-      carousel.setPointerCapture?.(
-        event.pointerId
-      );
-    }
-  );
-
-
-  carousel.addEventListener(
-    'pointermove',
-    (event) => {
-
-      if (
-        dragStartX !== null &&
-        Math.abs(
-          event.clientX -
-          dragStartX
-        ) > 12
-      ) {
-
-        dragMoved = true;
-      }
-    }
-  );
-
-
-  carousel.addEventListener(
-    'pointerup',
-    (event) => {
-
-      if (dragStartX === null) {
-        return;
-      }
-
-
-      const distance =
-        event.clientX -
-        dragStartX;
-
-
-      if (
-        Math.abs(distance) >
-        50 &&
-        tracks.length
-      ) {
-
-        currentIndex =
-          (
-            currentIndex +
-            (
-              distance < 0
-                ? 1
-                : -1
-            ) +
-            tracks.length
-          ) %
-          tracks.length;
-
-
-        renderCarousel();
-      }
-
-
-      dragStartX = null;
-
-
-      setTimeout(() => {
-
-        dragMoved = false;
-
-      }, 80);
-    }
-  );
-
-
-  carousel.addEventListener(
-    'pointercancel',
-    () => {
-
-      dragStartX = null;
-
-      dragMoved = false;
-    }
-  );
-
-
-  carousel.addEventListener(
-    'wheel',
-    (event) => {
-
-      if (!tracks.length) {
-        return;
-      }
-
-      event.preventDefault();
-
-
-      currentIndex =
-        (
-          currentIndex +
-          (
-            event.deltaY +
-            event.deltaX >
-            0
-              ? 1
-              : -1
-          ) +
-          tracks.length
-        ) %
-        tracks.length;
-
-
-      renderCarousel();
-    },
-    {
-      passive: false
-    }
-  );
+  await playTrack(previousIndex);
 }
 
 
@@ -1632,646 +1181,1344 @@ if (carousel) {
    SEARCH
    ========================================================= */
 
-const searchInput =
-  $('#searchInput');
+function performSearch(value) {
+  const query =
+    String(value || '')
+      .trim()
+      .toLowerCase();
 
-if (searchInput) {
-
-  searchInput.oninput = () => {
-
-    const query =
-      searchInput.value
-        .toLowerCase()
-        .trim();
-
-
-    const results =
-      tracks.filter((track) => {
-
-        return `
-          ${track.title}
-          ${track.artist}
-          ${track.album || ''}
-          ${track.genre || ''}
-        `
-          .toLowerCase()
-          .includes(query);
-      });
-
-
-    renderList(
-      results,
-      $('#searchResults')
+  if (!query) {
+    tracks.forEach(
+      (track) => {
+        document
+          .querySelectorAll(
+            `[data-track-id="${track.id}"]`
+          )
+          .forEach(
+            (element) => {
+              element.classList.remove(
+                'search-hidden'
+              );
+            }
+          );
+      }
     );
-  };
+
+    return;
+  }
+
+  tracks.forEach((track) => {
+    const searchable = [
+      track.title,
+      track.artist,
+      track.album,
+      track.genre,
+      track.year
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    const match =
+      searchable.includes(query);
+
+    document
+      .querySelectorAll(
+        `[data-track-id="${track.id}"]`
+      )
+      .forEach((element) => {
+        element.classList.toggle(
+          'search-hidden',
+          !match
+        );
+      });
+  });
 }
 
 
 /* =========================================================
-   REAL MUSIC UPLOAD
+   TRACK BUTTONS
    ========================================================= */
 
-const uploadForm =
-  $('#uploadForm');
-
-
-if (uploadForm) {
-
-  uploadForm.onsubmit =
-    async (event) => {
-
-      event.preventDefault();
-
-
-      if (!sb) {
-
-        const status =
-          $('#uploadStatus');
-
-        if (status) {
-
-          status.textContent =
-            'Supabase is not connected.';
-        }
-
-        return;
-      }
-
-
-      const {
-        data: {
-          user
-        }
-      } =
-        await sb.auth.getUser();
-
-
-      if (!user) {
-
-        toast(
-          'You must be signed in.'
-        );
-
-        return;
-      }
-
-
-      const audioFile =
-        $('#trackFile')
-          ?.files?.[0];
-
-
-      const coverFile =
-        $('#coverFile')
-          ?.files?.[0];
-
-
-      const status =
-        $('#uploadStatus');
-
-
-      if (!audioFile) {
-
-        if (status) {
-
-          status.textContent =
-            'Please choose an audio file.';
-        }
-
-        return;
-      }
-
-
-      if (status) {
-
-        status.textContent =
-          'Uploading audio…';
-      }
-
-
-      try {
-
-        /* -----------------------------------------
-           AUDIO PATH
-           ----------------------------------------- */
-
-        const cleanAudioName =
-          audioFile.name
-            .replace(
-              /[^a-zA-Z0-9._-]/g,
-              '_'
-            );
-
-
-        const audioPath =
-          `${user.id}/${crypto.randomUUID()}-${cleanAudioName}`;
-
-
-        let result =
-          await sb.storage
-            .from('audio')
-            .upload(
-              audioPath,
-              audioFile,
-              {
-                upsert: false,
-                contentType:
-                  audioFile.type ||
-                  'audio/mpeg'
-              }
-            );
-
-
-        if (result.error) {
-          throw result.error;
-        }
-
-
-        /* -----------------------------------------
-           COVER PATH
-           ----------------------------------------- */
-
-        let coverPath = null;
-
-
-        if (coverFile) {
-
-          if (status) {
-
-            status.textContent =
-              'Uploading artwork…';
-          }
-
-
-          const cleanCoverName =
-            coverFile.name
-              .replace(
-                /[^a-zA-Z0-9._-]/g,
-                '_'
-              );
-
-
-          coverPath =
-            `${user.id}/${crypto.randomUUID()}-${cleanCoverName}`;
-
-
-          result =
-            await sb.storage
-              .from('covers')
-              .upload(
-                coverPath,
-                coverFile,
-                {
-                  upsert: false,
-                  contentType:
-                    coverFile.type ||
-                    'image/jpeg'
-                }
-              );
-
-
-          if (result.error) {
-            throw result.error;
-          }
-        }
-
-
-        /* -----------------------------------------
-           AUDIO DURATION
-           ----------------------------------------- */
-
-        let duration = null;
-
-
-        try {
-
-          const temporaryUrl =
-            URL.createObjectURL(
-              audioFile
-            );
-
-
-          const tempAudio =
-            document.createElement(
-              'audio'
-            );
-
-
-          tempAudio.preload =
-            'metadata';
-
-
-          duration =
-            await new Promise(
-              (resolve) => {
-
-                tempAudio.onloadedmetadata =
-                  () => {
-
-                    const value =
-                      Number.isFinite(
-                        tempAudio.duration
-                      )
-                        ? tempAudio.duration
-                        : null;
-
-                    URL.revokeObjectURL(
-                      temporaryUrl
-                    );
-
-                    resolve(value);
-                  };
-
-
-                tempAudio.onerror =
-                  () => {
-
-                    URL.revokeObjectURL(
-                      temporaryUrl
-                    );
-
-                    resolve(null);
-                  };
-
-
-                tempAudio.src =
-                  temporaryUrl;
-              }
-            );
-
-        } catch (error) {
-
-          console.warn(
-            'Could not read duration.',
-            error
+function attachTrackButtons() {
+  $$('[data-play-track]').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        async (event) => {
+          event.stopPropagation();
+
+          const trackId =
+            button.dataset.playTrack;
+
+          await playTrackById(
+            trackId
           );
         }
-
-
-        /* -----------------------------------------
-           DATABASE RECORD
-           ----------------------------------------- */
-
-        if (status) {
-
-          status.textContent =
-            'Saving track…';
-        }
-
-
-        const metadata = {
-
-          user_id: user.id,
-
-          title:
-            $('#trackTitle')
-              ?.value
-              .trim() ||
-            audioFile.name
-              .replace(
-                /\.[^/.]+$/,
-                ''
-              ),
-
-          artist:
-            $('#trackArtist')
-              ?.value
-              .trim() ||
-            'Unknown Artist',
-
-          album:
-            $('#trackAlbum')
-              ?.value
-              .trim() ||
-            null,
-
-          genre:
-            $('#trackGenre')
-              ?.value
-              .trim() ||
-            null,
-
-          year:
-            $('#trackYear')
-              ?.value
-              ? Number(
-                  $('#trackYear').value
-                )
-              : null,
-
-          duration,
-
-          audio_path:
-            audioPath,
-
-          cover_path:
-            coverPath
-        };
-
-
-        result =
-          await sb
-            .from('tracks')
-            .insert(
-              metadata
-            );
-
-
-        if (result.error) {
-          throw result.error;
-        }
-
-
-        if (status) {
-
-          status.textContent =
-            'Uploaded successfully.';
-        }
-
-
-        uploadForm.reset();
-
-
-        await loadAll();
-
-
-        setTimeout(() => {
-
-          const modal =
-            $('#uploadModal');
-
-          if (modal) {
-
-            modal.classList.add(
-              'hidden'
-            );
-          }
-
-          if (status) {
-
-            status.textContent =
-              '';
-          }
-
-        }, 700);
-
-
-        toast(
-          'Track added to Frequency.'
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          'Frequency upload error:',
-          error
-        );
-
-
-        if (status) {
-
-          status.textContent =
-            error?.message ||
-            'Upload failed.';
-        }
-
-
-        toast(
-          error?.message ||
-          'Upload failed.'
-        );
-      }
-    };
+      );
+    }
+  );
 }
 
 
 /* =========================================================
-   PLAYLIST CREATION
+   CAROUSEL
    ========================================================= */
 
-const playlistForm =
-  $('#playlistForm');
+function setupCarousel() {
+  const carousel =
+    $('#artworkCarousel');
 
+  if (!carousel) {
+    return;
+  }
 
-if (playlistForm) {
+  const cards =
+    Array.from(
+      carousel.querySelectorAll(
+        '.track-card'
+      )
+    );
 
-  playlistForm.onsubmit =
-    async (event) => {
+  let activeIndex = 0;
+  let pointerStartX = null;
+  let pointerDown = false;
 
-      event.preventDefault();
+  function updateCarousel() {
+    cards.forEach(
+      (card, index) => {
+        const offset =
+          index - activeIndex;
 
+        const distance =
+          Math.abs(offset);
 
-      if (!sb) {
-        return;
-      }
+        const scale =
+          Math.max(
+            0.72,
+            1 - distance * 0.08
+          );
 
+        const opacity =
+          Math.max(
+            0.35,
+            1 - distance * 0.18
+          );
 
-      const {
-        data: {
-          user
-        }
-      } =
-        await sb.auth.getUser();
+        const rotate =
+          offset * -4;
 
+        const translate =
+          offset * 42;
 
-      if (!user) {
-
-        toast(
-          'You must be signed in.'
+        card.style.setProperty(
+          '--carousel-x',
+          `${translate}%`
         );
 
-        return;
-      }
-
-
-      const file =
-        $('#playlistCover')
-          ?.files?.[0];
-
-
-      const status =
-        $('#playlistStatus');
-
-
-      if (status) {
-
-        status.textContent =
-          'Creating…';
-      }
-
-
-      try {
-
-        let coverPath = null;
-
-
-        if (file) {
-
-          const cleanName =
-            file.name
-              .replace(
-                /[^a-zA-Z0-9._-]/g,
-                '_'
-              );
-
-
-          coverPath =
-            `${user.id}/playlist-${crypto.randomUUID()}-${cleanName}`;
-
-
-          const upload =
-            await sb.storage
-              .from('covers')
-              .upload(
-                coverPath,
-                file,
-                {
-                  upsert: false,
-                  contentType:
-                    file.type ||
-                    'image/jpeg'
-                }
-              );
-
-
-          if (upload.error) {
-            throw upload.error;
-          }
-        }
-
-
-        const name =
-          $('#playlistName')
-            ?.value
-            .trim();
-
-
-        if (!name) {
-
-          if (status) {
-
-            status.textContent =
-              'Give your playlist a name.';
-          }
-
-          return;
-        }
-
-
-        const result =
-          await sb
-            .from('playlists')
-            .insert({
-
-              user_id:
-                user.id,
-
-              name,
-
-              description:
-                $('#playlistDescription')
-                  ?.value
-                  .trim() ||
-                null,
-
-              cover_path:
-                coverPath
-            });
-
-
-        if (result.error) {
-          throw result.error;
-        }
-
-
-        playlistForm.reset();
-
-
-        if (status) {
-
-          status.textContent =
-            'Created.';
-        }
-
-
-        await loadAll();
-
-
-        setTimeout(() => {
-
-          const modal =
-            $('#playlistModal');
-
-          if (modal) {
-
-            modal.classList.add(
-              'hidden'
-            );
-          }
-
-          if (status) {
-
-            status.textContent =
-              '';
-          }
-
-        }, 700);
-
-
-        toast(
-          'Playlist created.'
+        card.style.setProperty(
+          '--carousel-scale',
+          scale
         );
 
-
-      } catch (error) {
-
-        console.error(
-          error
+        card.style.setProperty(
+          '--carousel-opacity',
+          opacity
         );
 
+        card.style.setProperty(
+          '--carousel-rotate',
+          `${rotate}deg`
+        );
 
-        if (status) {
-
-          status.textContent =
-            error?.message ||
-            'Could not create playlist.';
-        }
+        card.classList.toggle(
+          'is-active',
+          index === activeIndex
+        );
       }
-    };
-}
+    );
 
+    const activeTrack =
+      tracks[activeIndex];
 
-/* =========================================================
-   PLAY ACTIVE
-   ========================================================= */
+    if (activeTrack) {
+      setText(
+        '#carouselTitle',
+        activeTrack.title
+      );
 
-const playActive =
-  $('#playActive');
+      setText(
+        '#carouselArtist',
+        activeTrack.artist
+      );
 
-if (playActive) {
+      setText(
+        '#carouselAlbum',
+        activeTrack.album || ''
+      );
+    }
+  }
 
-  playActive.onclick = () => {
-
-    if (!tracks.length) {
+  function move(direction) {
+    if (!cards.length) {
       return;
     }
 
+    activeIndex += direction;
 
-    if (currentIndex < 0) {
-      currentIndex = 0;
+    if (activeIndex < 0) {
+      activeIndex =
+        cards.length - 1;
     }
 
+    if (
+      activeIndex >= cards.length
+    ) {
+      activeIndex = 0;
+    }
 
-    playTrack(
-      currentIndex
-    );
-  };
+    updateCarousel();
+  }
+
+  carousel.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+
+      if (
+        Math.abs(event.deltaX) >
+        Math.abs(event.deltaY)
+      ) {
+        move(
+          event.deltaX > 0
+            ? 1
+            : -1
+        );
+      } else {
+        move(
+          event.deltaY > 0
+            ? 1
+            : -1
+        );
+      }
+    },
+    {
+      passive: false
+    }
+  );
+
+  carousel.addEventListener(
+    'pointerdown',
+    (event) => {
+      pointerDown = true;
+      pointerStartX =
+        event.clientX;
+
+      carousel.setPointerCapture(
+        event.pointerId
+      );
+    }
+  );
+
+  carousel.addEventListener(
+    'pointerup',
+    (event) => {
+      if (!pointerDown) {
+        return;
+      }
+
+      pointerDown = false;
+
+      const difference =
+        event.clientX -
+        pointerStartX;
+
+      if (
+        Math.abs(difference) > 35
+      ) {
+        move(
+          difference < 0
+            ? 1
+            : -1
+        );
+      }
+    }
+  );
+
+  carousel.addEventListener(
+    'pointercancel',
+    () => {
+      pointerDown = false;
+    }
+  );
+
+  carousel.addEventListener(
+    'dblclick',
+    () => {
+      if (tracks[activeIndex]) {
+        playTrack(activeIndex);
+      }
+    }
+  );
+
+  updateCarousel();
 }
 
 
 /* =========================================================
-   START FREQUENCY
+   UPLOAD TRACK
    ========================================================= */
 
-boot();
+async function uploadTrack(form) {
+  if (!currentUser) {
+    alert(
+      'Please sign in before uploading music.'
+    );
+
+    openAuthModal('login');
+
+    return;
+  }
+
+  if (!sb) {
+    alert(
+      'Supabase is not configured. Add your current publishable key first.'
+    );
+
+    return;
+  }
+
+  const formData =
+    new FormData(form);
+
+  const audioFile =
+    formData.get('audio');
+
+  const coverFile =
+    formData.get('cover');
+
+  const title =
+    String(
+      formData.get('title') || ''
+    ).trim();
+
+  const artist =
+    String(
+      formData.get('artist') || ''
+    ).trim();
+
+  const album =
+    String(
+      formData.get('album') || ''
+    ).trim();
+
+  const genre =
+    String(
+      formData.get('genre') || ''
+    ).trim();
+
+  const yearValue =
+    String(
+      formData.get('year') || ''
+    ).trim();
+
+  if (
+    !audioFile ||
+    !audioFile.name
+  ) {
+    alert(
+      'Please choose an audio file.'
+    );
+
+    return;
+  }
+
+  if (!title) {
+    alert(
+      'Please enter a song title.'
+    );
+
+    return;
+  }
+
+  if (!artist) {
+    alert(
+      'Please enter an artist name.'
+    );
+
+    return;
+  }
+
+  const submitButton =
+    form.querySelector(
+      '[type="submit"]'
+    );
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent =
+      'Uploading...';
+  }
+
+  try {
+    const duration =
+      await getAudioDuration(
+        audioFile
+      );
+
+    const safeAudioName =
+      audioFile.name
+        .replace(
+          /[^a-zA-Z0-9._-]/g,
+          '_'
+        );
+
+    const audioPath =
+      `${currentUser.id}/${crypto.randomUUID()}-${safeAudioName}`;
+
+    const {
+      error: audioError
+    } = await sb.storage
+      .from('audio')
+      .upload(
+        audioPath,
+        audioFile,
+        {
+          cacheControl: '3600',
+          upsert: false,
+          contentType:
+            audioFile.type ||
+            'audio/mpeg'
+        }
+      );
+
+    if (audioError) {
+      throw audioError;
+    }
+
+    let coverPath = null;
+
+    if (
+      coverFile &&
+      coverFile.name
+    ) {
+      const safeCoverName =
+        coverFile.name
+          .replace(
+            /[^a-zA-Z0-9._-]/g,
+            '_'
+          );
+
+      coverPath =
+        `${currentUser.id}/${crypto.randomUUID()}-${safeCoverName}`;
+
+      const {
+        error: coverError
+      } = await sb.storage
+        .from('covers')
+        .upload(
+          coverPath,
+          coverFile,
+          {
+            cacheControl: '3600',
+            upsert: false,
+            contentType:
+              coverFile.type ||
+              'image/jpeg'
+          }
+        );
+
+      if (coverError) {
+        throw coverError;
+      }
+    }
+
+    const year =
+      yearValue
+        ? Number(yearValue)
+        : null;
+
+    const {
+      error: insertError
+    } = await sb
+      .from('tracks')
+      .insert({
+        user_id:
+          currentUser.id,
+
+        title,
+
+        artist,
+
+        album:
+          album || null,
+
+        genre:
+          genre || null,
+
+        year:
+          Number.isFinite(year)
+            ? year
+            : null,
+
+        duration,
+
+        audio_path:
+          audioPath,
+
+        cover_path:
+          coverPath
+      });
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    form.reset();
+
+    closeAllModals();
+
+    await loadAll();
+
+    alert(
+      'Track uploaded successfully.'
+    );
+
+  } catch (error) {
+    console.error(
+      'Upload error:',
+      error
+    );
+
+    alert(
+      error.message ||
+      'Something went wrong while uploading the track.'
+    );
+
+  } finally {
+    if (submitButton) {
+      submitButton.disabled =
+        false;
+
+      submitButton.textContent =
+        'Upload track';
+    }
+  }
+}
+
+
+/* =========================================================
+   CREATE PLAYLIST
+   ========================================================= */
+
+async function createPlaylist(form) {
+  if (!currentUser) {
+    alert(
+      'Please sign in first.'
+    );
+
+    return;
+  }
+
+  if (!sb) {
+    return;
+  }
+
+  const formData =
+    new FormData(form);
+
+  const name =
+    String(
+      formData.get('name') || ''
+    ).trim();
+
+  const description =
+    String(
+      formData.get('description') || ''
+    ).trim();
+
+  const coverFile =
+    formData.get('cover');
+
+  if (!name) {
+    alert(
+      'Please enter a playlist name.'
+    );
+
+    return;
+  }
+
+  const submitButton =
+    form.querySelector(
+      '[type="submit"]'
+    );
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent =
+      'Creating...';
+  }
+
+  try {
+    let coverPath = null;
+
+    if (
+      coverFile &&
+      coverFile.name
+    ) {
+      const safeName =
+        coverFile.name
+          .replace(
+            /[^a-zA-Z0-9._-]/g,
+            '_'
+          );
+
+      coverPath =
+        `${currentUser.id}/playlists/${crypto.randomUUID()}-${safeName}`;
+
+      const {
+        error: coverError
+      } = await sb.storage
+        .from('covers')
+        .upload(
+          coverPath,
+          coverFile,
+          {
+            cacheControl: '3600',
+            upsert: false,
+            contentType:
+              coverFile.type ||
+              'image/jpeg'
+          }
+        );
+
+      if (coverError) {
+        throw coverError;
+      }
+    }
+
+    const {
+      error
+    } = await sb
+      .from('playlists')
+      .insert({
+        user_id:
+          currentUser.id,
+
+        name,
+
+        description:
+          description || null,
+
+        cover_path:
+          coverPath
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    form.reset();
+
+    closeAllModals();
+
+    await loadAll();
+
+    alert(
+      'Playlist created.'
+    );
+
+  } catch (error) {
+    console.error(
+      'Playlist error:',
+      error
+    );
+
+    alert(
+      error.message ||
+      'Unable to create playlist.'
+    );
+
+  } finally {
+    if (submitButton) {
+      submitButton.disabled =
+        false;
+
+      submitButton.textContent =
+        'Create playlist';
+    }
+  }
+}
+
+
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
+
+function setView(mode) {
+  if (
+    mode !== 'collection' &&
+    mode !== 'list'
+  ) {
+    return;
+  }
+
+  viewMode = mode;
+
+  localStorage.setItem(
+    'frequency-view',
+    viewMode
+  );
+
+  renderAll();
+
+  const collectionButton =
+    $('#viewCollection');
+
+  const listButton =
+    $('#viewList');
+
+  collectionButton?.classList.toggle(
+    'active',
+    viewMode === 'collection'
+  );
+
+  listButton?.classList.toggle(
+    'active',
+    viewMode === 'list'
+  );
+}
+
+
+/* =========================================================
+   EVENT LISTENERS
+   ========================================================= */
+
+function setupEvents() {
+
+  /* -------------------------
+     Upload buttons
+     ------------------------- */
+
+  const uploadBtn =
+    $('#uploadBtn');
+
+  const emptyUploadBtn =
+    $('#emptyUploadBtn');
+
+  const emptyCollectionUpload =
+    $('#collectionEmptyUpload');
+
+  uploadBtn?.addEventListener(
+    'click',
+    () => {
+      showElement(
+        '#uploadModal'
+      );
+    }
+  );
+
+  emptyUploadBtn?.addEventListener(
+    'click',
+    () => {
+      showElement(
+        '#uploadModal'
+      );
+    }
+  );
+
+  emptyCollectionUpload?.addEventListener(
+    'click',
+    () => {
+      showElement(
+        '#uploadModal'
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Playlist button
+     ------------------------- */
+
+  const newPlaylistBtn =
+    $('#newPlaylistBtn');
+
+  newPlaylistBtn?.addEventListener(
+    'click',
+    () => {
+      showElement(
+        '#playlistModal'
+      );
+    }
+  );
+
+
+  /* -------------------------
+     View buttons
+     ------------------------- */
+
+  $('#viewCollection')?.addEventListener(
+    'click',
+    () => setView('collection')
+  );
+
+  $('#viewList')?.addEventListener(
+    'click',
+    () => setView('list')
+  );
+
+
+  /* -------------------------
+     Close buttons
+     ------------------------- */
+
+  $$('[data-close]').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          const modalId =
+            button.dataset.close;
+
+          if (modalId) {
+            hideElement(
+              `#${modalId}`
+            );
+          }
+        }
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Modal background
+     ------------------------- */
+
+  $$('.modal').forEach(
+    (modal) => {
+      modal.addEventListener(
+        'click',
+        (event) => {
+          if (
+            event.target === modal
+          ) {
+            modal.classList.add(
+              'hidden'
+            );
+          }
+        }
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Auth forms
+     ------------------------- */
+
+  $('#loginForm')?.addEventListener(
+    'submit',
+    async (event) => {
+      event.preventDefault();
+
+      const form =
+        event.currentTarget;
+
+      const email =
+        form.querySelector(
+          '[name="email"]'
+        )?.value.trim();
+
+      const password =
+        form.querySelector(
+          '[name="password"]'
+        )?.value;
+
+      if (!email || !password) {
+        alert(
+          'Enter your email and password.'
+        );
+
+        return;
+      }
+
+      await signIn(
+        email,
+        password
+      );
+    }
+  );
+
+
+  $('#signupForm')?.addEventListener(
+    'submit',
+    async (event) => {
+      event.preventDefault();
+
+      const form =
+        event.currentTarget;
+
+      const email =
+        form.querySelector(
+          '[name="email"]'
+        )?.value.trim();
+
+      const password =
+        form.querySelector(
+          '[name="password"]'
+        )?.value;
+
+      if (!email || !password) {
+        alert(
+          'Enter an email and password.'
+        );
+
+        return;
+      }
+
+      if (password.length < 6) {
+        alert(
+          'Password must be at least 6 characters.'
+        );
+
+        return;
+      }
+
+      await signUp(
+        email,
+        password
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Auth open buttons
+     ------------------------- */
+
+  $$('[data-auth="login"]').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => openAuthModal('login')
+      );
+    }
+  );
+
+
+  $$('[data-auth="signup"]').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => openAuthModal('signup')
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Sign out
+     ------------------------- */
+
+  $$('.sign-out').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        signOut
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Switch login/signup
+     ------------------------- */
+
+  $('#showSignup')?.addEventListener(
+    'click',
+    () => openAuthModal('signup')
+  );
+
+  $('#showLogin')?.addEventListener(
+    'click',
+    () => openAuthModal('login')
+  );
+
+
+  /* -------------------------
+     Upload form
+     ------------------------- */
+
+  $('#uploadForm')?.addEventListener(
+    'submit',
+    async (event) => {
+      event.preventDefault();
+
+      await uploadTrack(
+        event.currentTarget
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Playlist form
+     ------------------------- */
+
+  $('#playlistForm')?.addEventListener(
+    'submit',
+    async (event) => {
+      event.preventDefault();
+
+      await createPlaylist(
+        event.currentTarget
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Player
+     ------------------------- */
+
+  $$('.play-toggle').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        togglePlayback
+      );
+    }
+  );
+
+
+  $$('.next-button').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        playNext
+      );
+    }
+  );
+
+
+  $$('.previous-button').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        playPrevious
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Shuffle
+     ------------------------- */
+
+  $$('.shuffle-button').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          shuffled =
+            !shuffled;
+
+          button.classList.toggle(
+            'active',
+            shuffled
+          );
+        }
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Repeat
+     ------------------------- */
+
+  $$('.repeat-button').forEach(
+    (button) => {
+      button.addEventListener(
+        'click',
+        () => {
+          if (
+            repeatMode === 'off'
+          ) {
+            repeatMode = 'all';
+          } else if (
+            repeatMode === 'all'
+          ) {
+            repeatMode = 'one';
+          } else {
+            repeatMode = 'off';
+          }
+
+          button.classList.toggle(
+            'active',
+            repeatMode !== 'off'
+          );
+
+          button.dataset.mode =
+            repeatMode;
+        }
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Progress bar
+     ------------------------- */
+
+  const progress =
+    $('#progress');
+
+  progress?.addEventListener(
+    'input',
+    () => {
+      if (
+        !audio ||
+        !audio.duration
+      ) {
+        return;
+      }
+
+      audio.currentTime =
+        (
+          Number(progress.value) /
+          100
+        ) *
+        audio.duration;
+    }
+  );
+
+
+  /* -------------------------
+     Volume
+     ------------------------- */
+
+  const volume =
+    $('#volume');
+
+  volume?.addEventListener(
+    'input',
+    () => {
+      if (!audio) {
+        return;
+      }
+
+      audio.volume =
+        Number(volume.value);
+    }
+  );
+
+
+  /* -------------------------
+     Search
+     ------------------------- */
+
+  $$('.search-input').forEach(
+    (input) => {
+      input.addEventListener(
+        'input',
+        () => {
+          performSearch(
+            input.value
+          );
+        }
+      );
+    }
+  );
+
+
+  /* -------------------------
+     Audio events
+     ------------------------- */
+
+  audio?.addEventListener(
+    'play',
+    updatePlayButton
+  );
+
+  audio?.addEventListener(
+    'pause',
+    updatePlayButton
+  );
+
+  audio?.addEventListener(
+    'timeupdate',
+    () => {
+      if (
+        !audio ||
+        !audio.duration
+      ) {
+        return;
+      }
+
+      const percent =
+        (
+          audio.currentTime /
+          audio.duration
+        ) * 100;
+
+      if (progress) {
+        progress.value =
+          percent;
+      }
+
+      setText(
+        '#currentTime',
+        formatDuration(
+          audio.currentTime
+        )
+      );
+
+      setText(
+        '#totalTime',
+        formatDuration(
+          audio.duration
+        )
+      );
+    }
+  );
+
+  audio?.addEventListener(
+    'ended',
+    async () => {
+      if (
+        repeatMode === 'one'
+      ) {
+        audio.currentTime = 0;
+
+        await audio.play();
+
+        return;
+      }
+
+      await playNext();
+    }
+  );
+
+
+  /* -------------------------
+     Keyboard shortcuts
+     ------------------------- */
+
+  document.addEventListener(
+    'keydown',
+    (event) => {
+      const tag =
+        document.activeElement?.tagName;
+
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT'
+      ) {
+        return;
+      }
+
+      if (
+        event.code === 'Space'
+      ) {
+        event.preventDefault();
+
+        togglePlayback();
+      }
+
+      if (
+        event.code === 'ArrowRight'
+      ) {
+        playNext();
+      }
+
+      if (
+        event.code === 'ArrowLeft'
+      ) {
+        playPrevious();
+      }
+
+      if (
+        event.code === 'Escape'
+      ) {
+        closeAllModals();
+      }
+    }
+  );
+}
+
+
+/* =========================================================
+   SUPABASE AUTH STATE
+   ========================================================= */
+
+function setupAuthListener() {
+  if (!sb) {
+    return;
+  }
+
+  sb.auth.onAuthStateChange(
+    async (_event, session) => {
+      currentUser =
+        session?.user || null;
+
+      await refreshAuthUI();
+      await loadAll();
+    }
+  );
+}
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+async function init() {
+  console.log(
+    'Frequency starting...'
+  );
+
+  if (!supabaseConfigured) {
+    console.warn(
+      'Frequency: Supabase publishable key has not been configured.'
+    );
+  }
+
+  setupEvents();
+
+  setupAuthListener();
+
+  if (sb) {
+    currentUser =
+      await getCurrentUser();
+  }
+
+  await refreshAuthUI();
+
+  await loadAll();
+
+  setView(viewMode);
+
+  console.log(
+    'Frequency ready.'
+  );
+}
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+if (
+  document.readyState === 'loading'
+) {
+  document.addEventListener(
+    'DOMContentLoaded',
+    init
+  );
+} else {
+  init();
+}
