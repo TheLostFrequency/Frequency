@@ -19,6 +19,57 @@ const supabaseReady =
   SUPABASE_URL.startsWith('https://') &&
   SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
 
+
+/* =========================================================
+   AUTH STORAGE
+   ========================================================= */
+
+const authStorage = {
+  getItem(key) {
+    const remember =
+      localStorage.getItem(
+        'frequency-keep-logged-in'
+      ) !== 'false';
+
+    return remember
+      ? localStorage.getItem(key)
+      : sessionStorage.getItem(key);
+  },
+
+  setItem(key, value) {
+    const remember =
+      localStorage.getItem(
+        'frequency-keep-logged-in'
+      ) !== 'false';
+
+    if (remember) {
+      localStorage.setItem(
+        key,
+        value
+      );
+
+      sessionStorage.removeItem(
+        key
+      );
+    } else {
+      sessionStorage.setItem(
+        key,
+        value
+      );
+
+      localStorage.removeItem(
+        key
+      );
+    }
+  },
+
+  removeItem(key) {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  }
+};
+
+
 const sb = supabaseReady
   ? supabase.createClient(
       SUPABASE_URL,
@@ -27,7 +78,8 @@ const sb = supabaseReady
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: true
+          detectSessionInUrl: true,
+          storage: authStorage
         }
       }
     )
@@ -42,7 +94,9 @@ const $ = (selector) =>
   document.querySelector(selector);
 
 const $$ = (selector) =>
-  Array.from(document.querySelectorAll(selector));
+  Array.from(
+    document.querySelectorAll(selector)
+  );
 
 const audio = $('#audio');
 
@@ -59,10 +113,12 @@ let playlists = [];
 let currentTrackIndex = -1;
 
 let viewMode =
-  localStorage.getItem('frequency-view') ||
-  'collection';
+  localStorage.getItem(
+    'frequency-view'
+  ) || 'collection';
 
 let shuffled = false;
+
 let repeatMode = 'off';
 
 let currentPage = 'library';
@@ -71,10 +127,11 @@ let carouselIndex = 0;
 
 let carouselDragging = false;
 let carouselStartX = 0;
-let carouselCurrentX = 0;
 
 let searchRenderToken = 0;
 let libraryLoadToken = 0;
+
+let carouselRenderToken = 0;
 
 
 /* =========================================================
@@ -84,13 +141,75 @@ let libraryLoadToken = 0;
 const coverUrlCache = new Map();
 const audioUrlCache = new Map();
 
-function clearTrackUrlCache(trackId) {
-  if (!trackId) {
+const URL_CACHE_TIME =
+  55 * 60 * 1000;
+
+function getCachedUrl(
+  cache,
+  key
+) {
+  const cached =
+    cache.get(key);
+
+  if (!cached) {
+    return null;
+  }
+
+  if (
+    Date.now() >
+    cached.expiresAt
+  ) {
+    cache.delete(key);
+    return null;
+  }
+
+  return cached.url;
+}
+
+
+function setCachedUrl(
+  cache,
+  key,
+  url
+) {
+  cache.set(
+    key,
+    {
+      url,
+      expiresAt:
+        Date.now() +
+        URL_CACHE_TIME
+    }
+  );
+}
+
+
+function clearTrackUrlCache(track) {
+  if (!track) {
     return;
   }
 
-  coverUrlCache.delete(trackId);
-  audioUrlCache.delete(trackId);
+  if (track.id) {
+    coverUrlCache.delete(
+      track.id
+    );
+
+    audioUrlCache.delete(
+      track.id
+    );
+  }
+
+  if (track.cover_path) {
+    coverUrlCache.delete(
+      `covers:${track.cover_path}`
+    );
+  }
+
+  if (track.audio_path) {
+    audioUrlCache.delete(
+      `audio:${track.audio_path}`
+    );
+  }
 }
 
 
@@ -99,21 +218,34 @@ function clearTrackUrlCache(trackId) {
    ========================================================= */
 
 function toast(message) {
-  const element = $('#toast');
+  const element =
+    $('#toast');
 
   if (!element) {
     console.log(message);
     return;
   }
 
-  element.textContent = message;
-  element.classList.add('show');
+  element.textContent =
+    message;
 
-  clearTimeout(toast.timeout);
+  element.classList.add(
+    'show'
+  );
 
-  toast.timeout = setTimeout(() => {
-    element.classList.remove('show');
-  }, 3000);
+  clearTimeout(
+    toast.timeout
+  );
+
+  toast.timeout =
+    setTimeout(
+      () => {
+        element.classList.remove(
+          'show'
+        );
+      },
+      3000
+    );
 }
 
 
@@ -122,59 +254,91 @@ function toast(message) {
    ========================================================= */
 
 function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(
+    value ?? ''
+  )
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+    .replace(
+      /</g,
+      '&lt;'
+    )
+    .replace(
+      />/g,
+      '&gt;'
+    )
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+    .replace(
+      /'/g,
+      '&#039;'
+    );
 }
 
 
-function show(element) {
-  if (element) {
-    element.classList.remove('hidden');
-  }
+function escapeAttribute(value) {
+  return escapeHtml(value)
+    .replace(
+      /`/g,
+      '&#096;'
+    );
 }
 
 
-function hide(element) {
-  if (element) {
-    element.classList.add('hidden');
-  }
-}
-
-
-function setText(selector, value) {
-  const element = $(selector);
+function setText(
+  selector,
+  value
+) {
+  const element =
+    $(selector);
 
   if (element) {
-    element.textContent = value ?? '';
+    element.textContent =
+      value ?? '';
   }
 }
 
 
 function formatTime(seconds) {
   if (
-    !Number.isFinite(Number(seconds)) ||
+    !Number.isFinite(
+      Number(seconds)
+    ) ||
     Number(seconds) < 0
   ) {
     return '0:00';
   }
 
-  const total = Math.floor(Number(seconds));
+  const total =
+    Math.floor(
+      Number(seconds)
+    );
 
-  const minutes = Math.floor(total / 60);
+  const minutes =
+    Math.floor(
+      total / 60
+    );
 
-  const secondsPart = total % 60;
+  const secondsPart =
+    total % 60;
 
   return `${minutes}:${String(
     secondsPart
-  ).padStart(2, '0')}`;
+  ).padStart(
+    2,
+    '0'
+  )}`;
 }
 
 
-function formatCount(count, singular) {
+function formatCount(
+  count,
+  singular
+) {
   return `${count} ${
     count === 1
       ? singular
@@ -184,7 +348,9 @@ function formatCount(count, singular) {
 
 
 function safeFileName(name) {
-  return String(name || 'file')
+  return String(
+    name || 'file'
+  )
     .replace(
       /[^a-zA-Z0-9._-]/g,
       '_'
@@ -192,9 +358,23 @@ function safeFileName(name) {
 }
 
 
-function escapeAttribute(value) {
-  return escapeHtml(value)
-    .replace(/`/g, '&#096;');
+function getTrackDisplayTitle(
+  track
+) {
+  return (
+    track?.title ||
+    'Untitled'
+  );
+}
+
+
+function getTrackDisplayArtist(
+  track
+) {
+  return (
+    track?.artist ||
+    'Unknown artist'
+  );
 }
 
 
@@ -221,14 +401,45 @@ async function getUser() {
     return null;
   }
 
-  return data?.user || null;
+  return (
+    data?.user ||
+    null
+  );
 }
 
 
-async function signIn(email, password) {
+function getKeepLoggedInPreference() {
+  const checkbox =
+    $('#keepLoggedIn');
+
+  if (!checkbox) {
+    return true;
+  }
+
+  return checkbox.checked;
+}
+
+
+function saveKeepLoggedInPreference() {
+  const remember =
+    getKeepLoggedInPreference();
+
+  localStorage.setItem(
+    'frequency-keep-logged-in',
+    remember
+      ? 'true'
+      : 'false'
+  );
+}
+
+
+async function signIn(
+  email,
+  password
+) {
   if (!sb) {
     $('#authStatus').textContent =
-      'Supabase is not configured. Put your current sb_publishable_ key into app.js.';
+      'Supabase is not configured.';
 
     return;
   }
@@ -239,6 +450,8 @@ async function signIn(email, password) {
   const button =
     $('#authSubmit');
 
+  saveKeepLoggedInPreference();
+
   status.textContent =
     'Signing in...';
 
@@ -248,17 +461,19 @@ async function signIn(email, password) {
     const {
       data,
       error
-    } = await sb.auth.signInWithPassword({
-      email,
-      password
-    });
+    } =
+      await sb.auth.signInWithPassword({
+        email,
+        password
+      });
 
     if (error) {
       throw error;
     }
 
     currentUser =
-      data.user;
+      data?.user ||
+      null;
 
     status.textContent =
       '';
@@ -285,10 +500,13 @@ async function signIn(email, password) {
 }
 
 
-async function signUp(email, password) {
+async function signUp(
+  email,
+  password
+) {
   if (!sb) {
     $('#authStatus').textContent =
-      'Supabase is not configured. Put your current sb_publishable_ key into app.js.';
+      'Supabase is not configured.';
 
     return;
   }
@@ -299,6 +517,8 @@ async function signUp(email, password) {
   const button =
     $('#authSubmit');
 
+  saveKeepLoggedInPreference();
+
   status.textContent =
     'Creating account...';
 
@@ -308,20 +528,21 @@ async function signUp(email, password) {
     const {
       data,
       error
-    } = await sb.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo:
-          window.location.origin
-      }
-    });
+    } =
+      await sb.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo:
+            window.location.origin
+        }
+      });
 
     if (error) {
       throw error;
     }
 
-    if (data.session) {
+    if (data?.session) {
       currentUser =
         data.user;
 
@@ -337,7 +558,6 @@ async function signUp(email, password) {
     } else {
       status.textContent =
         'Account created. Check your email to confirm your account.';
-
     }
 
   } catch (error) {
@@ -363,7 +583,8 @@ async function signOut() {
 
   const {
     error
-  } = await sb.auth.signOut();
+  } =
+    await sb.auth.signOut();
 
   if (error) {
     console.error(
@@ -371,54 +592,70 @@ async function signOut() {
       error
     );
 
-    toast(error.message);
+    toast(
+      error.message
+    );
+
     return;
   }
 
   currentUser = null;
+
   tracks = [];
+
   playlists = [];
 
   currentTrackIndex = -1;
+
   carouselIndex = 0;
 
   coverUrlCache.clear();
+
   audioUrlCache.clear();
 
   stopAudio();
 
-  $('#appView')?.classList.add(
-    'hidden'
-  );
+  $('#appView')
+    ?.classList.add(
+      'hidden'
+    );
 
-  $('#authView')?.classList.remove(
-    'hidden'
-  );
+  $('#authView')
+    ?.classList.remove(
+      'hidden'
+    );
 
   if ($('#authEmail')) {
-    $('#authEmail').value = '';
+    $('#authEmail').value =
+      '';
   }
 
   if ($('#authPassword')) {
-    $('#authPassword').value = '';
+    $('#authPassword').value =
+      '';
   }
 
   if ($('#authStatus')) {
-    $('#authStatus').textContent = '';
+    $('#authStatus').textContent =
+      '';
   }
 
-  toast('Signed out.');
+  toast(
+    'Signed out.'
+  );
 }
 
 
 async function showApp() {
-  $('#authView')?.classList.add(
-    'hidden'
-  );
+  $('#authView')
+    ?.classList.add(
+      'hidden'
+    );
 
-  $('#appView')?.classList.remove(
-    'hidden'
-  );
+  $('#appView')
+    ?.classList.remove(
+      'hidden'
+    );
 
   await loadLibrary();
 
@@ -433,6 +670,25 @@ function setupAuth() {
   const toggle =
     $('#authToggle');
 
+  const keepLoggedIn =
+    $('#keepLoggedIn');
+
+  if (
+    keepLoggedIn
+  ) {
+    const saved =
+      localStorage.getItem(
+        'frequency-keep-logged-in'
+      );
+
+    if (
+      saved === 'false'
+    ) {
+      keepLoggedIn.checked =
+        false;
+    }
+  }
+
   if (!form || !toggle) {
     return;
   }
@@ -445,10 +701,12 @@ function setupAuth() {
       event.preventDefault();
 
       const email =
-        $('#authEmail')?.value.trim();
+        $('#authEmail')
+          ?.value.trim();
 
       const password =
-        $('#authPassword')?.value;
+        $('#authPassword')
+          ?.value;
 
       if (!email || !password) {
         $('#authStatus').textContent =
@@ -457,14 +715,20 @@ function setupAuth() {
         return;
       }
 
-      if (password.length < 6) {
+      if (
+        password.length < 6
+      ) {
         $('#authStatus').textContent =
           'Password must be at least 6 characters.';
 
         return;
       }
 
-      if (mode === 'login') {
+      saveKeepLoggedInPreference();
+
+      if (
+        mode === 'login'
+      ) {
         await signIn(
           email,
           password
@@ -487,17 +751,20 @@ function setupAuth() {
           ? 'signup'
           : 'login';
 
-      if (mode === 'signup') {
+      if (
+        mode === 'signup'
+      ) {
         $('#authSubmit').textContent =
           'Create account';
 
         toggle.textContent =
           'Already have an account? Sign in';
 
-        $('#authPassword').setAttribute(
-          'autocomplete',
-          'new-password'
-        );
+        $('#authPassword')
+          ?.setAttribute(
+            'autocomplete',
+            'new-password'
+          );
 
       } else {
         $('#authSubmit').textContent =
@@ -506,10 +773,11 @@ function setupAuth() {
         toggle.textContent =
           'Need an account? Sign up';
 
-        $('#authPassword').setAttribute(
-          'autocomplete',
-          'current-password'
-        );
+        $('#authPassword')
+          ?.setAttribute(
+            'autocomplete',
+            'current-password'
+          );
       }
 
       $('#authStatus').textContent =
@@ -529,31 +797,62 @@ function setupAuthListener() {
   }
 
   sb.auth.onAuthStateChange(
-    async (_event, session) => {
+    async (
+      event,
+      session
+    ) => {
+
       currentUser =
-        session?.user || null;
+        session?.user ||
+        null;
 
-      if (currentUser) {
-        $('#authView')?.classList.add(
-          'hidden'
-        );
+      if (
+        currentUser
+      ) {
 
-        $('#appView')?.classList.remove(
-          'hidden'
-        );
+        $('#authView')
+          ?.classList.add(
+            'hidden'
+          );
 
-        await loadLibrary();
+        $('#appView')
+          ?.classList.remove(
+            'hidden'
+          );
 
-        renderCurrentPage();
+        /*
+         * Don't reload the entire library
+         * on token refreshes.
+         */
+
+        if (
+          event ===
+            'SIGNED_IN' ||
+          event ===
+            'INITIAL_SESSION'
+        ) {
+          await loadLibrary();
+
+          renderCurrentPage();
+        }
 
       } else {
-        $('#authView')?.classList.remove(
-          'hidden'
-        );
 
-        $('#appView')?.classList.add(
-          'hidden'
-        );
+        tracks = [];
+
+        playlists = [];
+
+        currentTrackIndex = -1;
+
+        $('#authView')
+          ?.classList.remove(
+            'hidden'
+          );
+
+        $('#appView')
+          ?.classList.add(
+            'hidden'
+          );
       }
     }
   );
@@ -565,7 +864,10 @@ function setupAuthListener() {
    ========================================================= */
 
 async function loadTracks() {
-  if (!sb || !currentUser) {
+  if (
+    !sb ||
+    !currentUser
+  ) {
     tracks = [];
     return;
   }
@@ -573,19 +875,20 @@ async function loadTracks() {
   const {
     data,
     error
-  } = await sb
-    .from('tracks')
-    .select('*')
-    .eq(
-      'user_id',
-      currentUser.id
-    )
-    .order(
-      'created_at',
-      {
-        ascending: false
-      }
-    );
+  } =
+    await sb
+      .from('tracks')
+      .select('*')
+      .eq(
+        'user_id',
+        currentUser.id
+      )
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      );
 
   if (error) {
     console.error(
@@ -602,20 +905,35 @@ async function loadTracks() {
     return;
   }
 
-  tracks = data || [];
+  tracks =
+    data || [];
 
-  if (carouselIndex >= tracks.length) {
+  if (
+    carouselIndex >=
+    tracks.length
+  ) {
     carouselIndex =
       Math.max(
         0,
         tracks.length - 1
       );
   }
+
+  if (
+    currentTrackIndex >=
+    tracks.length
+  ) {
+    currentTrackIndex =
+      -1;
+  }
 }
 
 
 async function loadPlaylists() {
-  if (!sb || !currentUser) {
+  if (
+    !sb ||
+    !currentUser
+  ) {
     playlists = [];
     return;
   }
@@ -623,19 +941,20 @@ async function loadPlaylists() {
   const {
     data,
     error
-  } = await sb
-    .from('playlists')
-    .select('*')
-    .eq(
-      'user_id',
-      currentUser.id
-    )
-    .order(
-      'created_at',
-      {
-        ascending: false
-      }
-    );
+  } =
+    await sb
+      .from('playlists')
+      .select('*')
+      .eq(
+        'user_id',
+        currentUser.id
+      )
+      .order(
+        'created_at',
+        {
+          ascending: false
+        }
+      );
 
   if (error) {
     console.error(
@@ -648,7 +967,8 @@ async function loadPlaylists() {
     return;
   }
 
-  playlists = data || [];
+  playlists =
+    data || [];
 }
 
 
@@ -667,7 +987,10 @@ async function loadLibrary() {
     loadPlaylists()
   ]);
 
-  if (token !== libraryLoadToken) {
+  if (
+    token !==
+    libraryLoadToken
+  ) {
     return;
   }
 
@@ -684,26 +1007,36 @@ async function signedUrl(
   path,
   cache
 ) {
-  if (!sb || !path) {
+  if (
+    !sb ||
+    !path
+  ) {
     return null;
   }
 
   const cacheKey =
     `${bucket}:${path}`;
 
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey);
+  const cached =
+    getCachedUrl(
+      cache,
+      cacheKey
+    );
+
+  if (cached) {
+    return cached;
   }
 
   const {
     data,
     error
-  } = await sb.storage
-    .from(bucket)
-    .createSignedUrl(
-      path,
-      60 * 60
-    );
+  } =
+    await sb.storage
+      .from(bucket)
+      .createSignedUrl(
+        path,
+        60 * 60
+      );
 
   if (error) {
     console.error(
@@ -715,10 +1048,12 @@ async function signedUrl(
   }
 
   const url =
-    data?.signedUrl || null;
+    data?.signedUrl ||
+    null;
 
   if (url) {
-    cache.set(
+    setCachedUrl(
+      cache,
       cacheKey,
       url
     );
@@ -728,61 +1063,71 @@ async function signedUrl(
 }
 
 
-async function audioUrl(track) {
-  if (!track?.audio_path) {
+async function audioUrl(
+  track
+) {
+  if (
+    !track?.audio_path
+  ) {
     return null;
   }
 
   const cacheKey =
     `audio:${track.audio_path}`;
 
-  if (audioUrlCache.has(cacheKey)) {
-    return audioUrlCache.get(
+  const cached =
+    getCachedUrl(
+      audioUrlCache,
       cacheKey
     );
+
+  if (cached) {
+    return cached;
   }
 
   const url =
     await signedUrl(
       'audio',
       track.audio_path,
-      new Map()
+      audioUrlCache
     );
-
-  if (url) {
-    audioUrlCache.set(
-      cacheKey,
-      url
-    );
-  }
 
   return url;
 }
 
 
-async function coverUrl(track) {
-  if (!track?.cover_path) {
+async function coverUrl(
+  track
+) {
+  if (
+    !track?.cover_path
+  ) {
     return null;
   }
 
   const cacheKey =
     `covers:${track.cover_path}`;
 
-  if (coverUrlCache.has(cacheKey)) {
-    return coverUrlCache.get(
+  const cached =
+    getCachedUrl(
+      coverUrlCache,
       cacheKey
     );
+
+  if (cached) {
+    return cached;
   }
 
   const {
     data,
     error
-  } = await sb.storage
-    .from('covers')
-    .createSignedUrl(
-      track.cover_path,
-      60 * 60
-    );
+  } =
+    await sb.storage
+      .from('covers')
+      .createSignedUrl(
+        track.cover_path,
+        60 * 60
+      );
 
   if (error) {
     console.error(
@@ -794,10 +1139,12 @@ async function coverUrl(track) {
   }
 
   const url =
-    data?.signedUrl || null;
+    data?.signedUrl ||
+    null;
 
   if (url) {
-    coverUrlCache.set(
+    setCachedUrl(
+      coverUrlCache,
       cacheKey,
       url
     );
@@ -812,13 +1159,10 @@ async function coverUrl(track) {
    ========================================================= */
 
 function updateCounts() {
-  const trackCount =
-    tracks.length;
-
   setText(
     '#trackCount',
     formatCount(
-      trackCount,
+      tracks.length,
       'track'
     )
   );
@@ -829,55 +1173,78 @@ function updateCounts() {
    NAVIGATION
    ========================================================= */
 
-function switchPage(page) {
-  currentPage = page;
+function switchPage(
+  page
+) {
+  currentPage =
+    page;
 
-  $$('.nav-item').forEach(
-    (button) => {
-      button.classList.toggle(
-        'active',
-        button.dataset.page === page
-      );
-    }
-  );
+  $$('.nav-item')
+    .forEach(
+      (button) => {
+        button.classList.toggle(
+          'active',
+          button.dataset.page ===
+            page
+        );
+      }
+    );
 
-  $$('.page').forEach(
-    (section) => {
-      section.classList.toggle(
-        'active-page',
-        section.id ===
-          `page-${page}`
-      );
-    }
-  );
+  $$('.page')
+    .forEach(
+      (section) => {
+        section.classList.toggle(
+          'active-page',
+          section.id ===
+            `page-${page}`
+        );
+      }
+    );
 
   const titles = {
     library: 'Library',
     search: 'Search',
     albums: 'Albums',
     playlists: 'Playlists',
-    transmissions: 'Transmissions',
+    transmissions:
+      'Transmissions',
     home: 'Home'
   };
 
   setText(
     '#pageTitle',
-    titles[page] || 'Library'
+    titles[page] ||
+      'Library'
   );
 
-  if (page === 'library') {
+  if (
+    page ===
+    'library'
+  ) {
     renderLibrary();
   }
 
-  if (page === 'search') {
-    renderSearch();
+  if (
+    page ===
+    'search'
+  ) {
+    renderSearch(
+      $('#searchInput')
+        ?.value || ''
+    );
   }
 
-  if (page === 'albums') {
+  if (
+    page ===
+    'albums'
+  ) {
     renderAlbums();
   }
 
-  if (page === 'playlists') {
+  if (
+    page ===
+    'playlists'
+  ) {
     renderPlaylists();
   }
 }
@@ -887,8 +1254,11 @@ function switchPage(page) {
    VIEW MODE
    ========================================================= */
 
-function setView(mode) {
-  viewMode = mode;
+function setView(
+  mode
+) {
+  viewMode =
+    mode;
 
   localStorage.setItem(
     'frequency-view',
@@ -898,13 +1268,15 @@ function setView(mode) {
   $('#viewCollection')
     ?.classList.toggle(
       'active',
-      mode === 'collection'
+      mode ===
+        'collection'
     );
 
   $('#viewList')
     ?.classList.toggle(
       'active',
-      mode === 'list'
+      mode ===
+        'list'
     );
 
   renderLibrary();
@@ -916,17 +1288,20 @@ function setView(mode) {
    ========================================================= */
 
 function renderEmptyLibrary() {
-  $('#emptyLibrary')?.classList.remove(
-    'hidden'
-  );
+  $('#emptyLibrary')
+    ?.classList.remove(
+      'hidden'
+    );
 
-  $('#collectionView')?.classList.add(
-    'hidden'
-  );
+  $('#collectionView')
+    ?.classList.add(
+      'hidden'
+    );
 
-  $('#listView')?.classList.add(
-    'hidden'
-  );
+  $('#listView')
+    ?.classList.add(
+      'hidden'
+    );
 }
 
 
@@ -944,29 +1319,39 @@ async function renderLibrary() {
     return;
   }
 
-  $('#emptyLibrary')?.classList.add(
-    'hidden'
-  );
-
-  if (viewMode === 'collection') {
-    $('#collectionView')?.classList.remove(
+  $('#emptyLibrary')
+    ?.classList.add(
       'hidden'
     );
 
-    $('#listView')?.classList.add(
-      'hidden'
-    );
+  if (
+    viewMode ===
+    'collection'
+  ) {
+
+    $('#collectionView')
+      ?.classList.remove(
+        'hidden'
+      );
+
+    $('#listView')
+      ?.classList.add(
+        'hidden'
+      );
 
     await renderCarousel();
 
   } else {
-    $('#collectionView')?.classList.add(
-      'hidden'
-    );
 
-    $('#listView')?.classList.remove(
-      'hidden'
-    );
+    $('#collectionView')
+      ?.classList.add(
+        'hidden'
+      );
+
+    $('#listView')
+      ?.classList.remove(
+        'hidden'
+      );
 
     await renderList();
   }
@@ -986,37 +1371,48 @@ async function renderCarousel() {
   }
 
   if (!tracks.length) {
-    carousel.innerHTML = '';
+    carousel.innerHTML =
+      '';
+
     return;
   }
 
   if (
     carouselIndex < 0 ||
-    carouselIndex >= tracks.length
+    carouselIndex >=
+      tracks.length
   ) {
     carouselIndex = 0;
   }
 
-  /*
-   * Only build the cards when necessary.
-   * Once they're built, movement is handled
-   * entirely by updateCarouselPosition().
-   */
+  const token =
+    ++carouselRenderToken;
 
-  const existingItems =
+  const existing =
     $$('.carousel-card');
 
+  /*
+   * Only create DOM cards when the
+   * track count changes.
+   */
+
   if (
-    existingItems.length !==
+    existing.length !==
     tracks.length
   ) {
-    carousel.innerHTML = '';
+
+    carousel.innerHTML =
+      '';
 
     const fragment =
       document.createDocumentFragment();
 
     tracks.forEach(
-      (track, index) => {
+      (
+        track,
+        index
+      ) => {
+
         const card =
           document.createElement(
             'div'
@@ -1029,12 +1425,14 @@ async function renderCarousel() {
           index;
 
         card.innerHTML = `
-          <div class="carousel-loading">
+          <div class="carousel-placeholder">
             ${escapeHtml(
               (
                 track.title ||
                 'F'
-              ).charAt(0)
+              )
+                .charAt(0)
+                .toUpperCase()
             )}
           </div>
         `;
@@ -1042,6 +1440,7 @@ async function renderCarousel() {
         card.addEventListener(
           'click',
           () => {
+
             const clickedIndex =
               Number(
                 card.dataset.index
@@ -1054,7 +1453,9 @@ async function renderCarousel() {
               playTrack(
                 clickedIndex
               );
+
             } else {
+
               carouselIndex =
                 clickedIndex;
 
@@ -1073,25 +1474,27 @@ async function renderCarousel() {
       fragment
     );
 
-    /*
-     * Load artwork without blocking
-     * the carousel positioning.
-     */
-
-    await hydrateCarouselArtwork();
+    await hydrateCarouselArtwork(
+      token
+    );
   }
 
   updateCarouselPosition();
 }
 
 
-async function hydrateCarouselArtwork() {
+async function hydrateCarouselArtwork(
+  token
+) {
   const items =
     $$('.carousel-card');
 
   await Promise.all(
     items.map(
-      async (card) => {
+      async (
+        card
+      ) => {
+
         const index =
           Number(
             card.dataset.index
@@ -1105,34 +1508,50 @@ async function hydrateCarouselArtwork() {
         }
 
         const cover =
-          await coverUrl(track);
+          await coverUrl(
+            track
+          );
 
-        if (!card.isConnected) {
+        if (
+          token !==
+          carouselRenderToken
+        ) {
+          return;
+        }
+
+        if (
+          !card.isConnected
+        ) {
           return;
         }
 
         if (cover) {
+
           card.innerHTML = `
             <img
-              src="${escapeAttribute(cover)}"
+              src="${escapeAttribute(
+                cover
+              )}"
               alt="${escapeAttribute(
-                track.title ||
-                'Frequency artwork'
+                getTrackDisplayTitle(
+                  track
+                )
               )}"
               draggable="false"
             >
           `;
+
         } else {
+
           card.innerHTML = `
             <div class="carousel-placeholder">
-              <span>
-                ${escapeHtml(
-                  (
-                    track.title ||
-                    'F'
-                  ).charAt(0)
-                )}
-              </span>
+              ${escapeHtml(
+                getTrackDisplayTitle(
+                  track
+                )
+                  .charAt(0)
+                  .toUpperCase()
+              )}
             </div>
           `;
         }
@@ -1151,7 +1570,11 @@ function updateCarouselPosition() {
   }
 
   items.forEach(
-    (item, index) => {
+    (
+      item,
+      index
+    ) => {
+
       let offset =
         index -
         carouselIndex;
@@ -1163,18 +1586,22 @@ function updateCarouselPosition() {
         offset >
         total / 2
       ) {
-        offset -= total;
+        offset -=
+          total;
       }
 
       if (
         offset <
         -total / 2
       ) {
-        offset += total;
+        offset +=
+          total;
       }
 
       const distance =
-        Math.abs(offset);
+        Math.abs(
+          offset
+        );
 
       const x =
         offset * 235;
@@ -1183,14 +1610,16 @@ function updateCarouselPosition() {
         Math.max(
           0.58,
           1 -
-            distance * 0.12
+            distance *
+              0.12
         );
 
       const opacity =
         Math.max(
           0.28,
           1 -
-            distance * 0.2
+            distance *
+              0.2
         );
 
       const rotate =
@@ -1211,13 +1640,16 @@ function updateCarouselPosition() {
 
       item.classList.toggle(
         'active',
-        index === carouselIndex
+        index ===
+          carouselIndex
       );
     }
   );
 
   const active =
-    tracks[carouselIndex];
+    tracks[
+      carouselIndex
+    ];
 
   if (!active) {
     return;
@@ -1225,14 +1657,16 @@ function updateCarouselPosition() {
 
   setText(
     '#activeArtist',
-    active.artist ||
-      'Unknown artist'
+    getTrackDisplayArtist(
+      active
+    )
   );
 
   setText(
     '#activeTitle',
-    active.title ||
-      'Untitled'
+    getTrackDisplayTitle(
+      active
+    )
   );
 
   setText(
@@ -1250,8 +1684,10 @@ function carouselNext() {
 
   carouselIndex =
     (
-      carouselIndex + 1
-    ) % tracks.length;
+      carouselIndex +
+      1
+    ) %
+    tracks.length;
 
   updateCarouselPosition();
 }
@@ -1267,14 +1703,15 @@ function carouselPrevious() {
       carouselIndex -
       1 +
       tracks.length
-    ) % tracks.length;
+    ) %
+    tracks.length;
 
   updateCarouselPosition();
 }
 
 
 /* =========================================================
-   CAROUSEL TOUCH / DRAG
+   CAROUSEL GESTURES
    ========================================================= */
 
 function setupCarouselGestures() {
@@ -1288,20 +1725,19 @@ function setupCarouselGestures() {
   carousel.addEventListener(
     'pointerdown',
     (event) => {
+
       if (
         event.pointerType ===
-        'mouse' &&
+          'mouse' &&
         event.button !== 0
       ) {
         return;
       }
 
-      carouselDragging = true;
+      carouselDragging =
+        true;
 
       carouselStartX =
-        event.clientX;
-
-      carouselCurrentX =
         event.clientX;
 
       carousel.setPointerCapture?.(
@@ -1312,39 +1748,33 @@ function setupCarouselGestures() {
 
 
   carousel.addEventListener(
-    'pointermove',
-    (event) => {
-      if (!carouselDragging) {
-        return;
-      }
-
-      carouselCurrentX =
-        event.clientX;
-    }
-  );
-
-
-  carousel.addEventListener(
     'pointerup',
     (event) => {
-      if (!carouselDragging) {
+
+      if (
+        !carouselDragging
+      ) {
         return;
       }
 
-      carouselDragging = false;
+      carouselDragging =
+        false;
 
       const distance =
         event.clientX -
         carouselStartX;
 
       if (
-        Math.abs(distance) <
-        40
+        Math.abs(
+          distance
+        ) < 40
       ) {
         return;
       }
 
-      if (distance < 0) {
+      if (
+        distance < 0
+      ) {
         carouselNext();
       } else {
         carouselPrevious();
@@ -1356,7 +1786,8 @@ function setupCarouselGestures() {
   carousel.addEventListener(
     'pointercancel',
     () => {
-      carouselDragging = false;
+      carouselDragging =
+        false;
     }
   );
 
@@ -1364,13 +1795,16 @@ function setupCarouselGestures() {
   carousel.addEventListener(
     'wheel',
     (event) => {
+
       event.preventDefault();
 
       if (
-        Math.abs(event.deltaY) <
-        5 &&
-        Math.abs(event.deltaX) <
-        5
+        Math.abs(
+          event.deltaY
+        ) < 5 &&
+        Math.abs(
+          event.deltaX
+        ) < 5
       ) {
         return;
       }
@@ -1403,18 +1837,23 @@ async function renderList() {
     return;
   }
 
-  container.innerHTML = '';
+  container.innerHTML =
+    '';
 
   for (
     let index = 0;
-    index < tracks.length;
+    index <
+      tracks.length;
     index++
   ) {
+
     const track =
       tracks[index];
 
     const cover =
-      await coverUrl(track);
+      await coverUrl(
+        track
+      );
 
     const row =
       document.createElement(
@@ -1429,8 +1868,9 @@ async function renderList() {
         class="track-art-button"
         data-list-index="${index}"
         aria-label="Play ${escapeAttribute(
-          track.title ||
-          'track'
+          getTrackDisplayTitle(
+            track
+          )
         )}"
       >
         ${
@@ -1438,7 +1878,9 @@ async function renderList() {
             ? `
               <img
                 class="track-art"
-                src="${escapeAttribute(cover)}"
+                src="${escapeAttribute(
+                  cover
+                )}"
                 alt=""
                 draggable="false"
               >
@@ -1446,10 +1888,11 @@ async function renderList() {
             : `
               <div class="track-art list-placeholder">
                 ${escapeHtml(
-                  (
-                    track.title ||
-                    'F'
-                  ).charAt(0)
+                  getTrackDisplayTitle(
+                    track
+                  )
+                    .charAt(0)
+                    .toUpperCase()
                 )}
               </div>
             `
@@ -1459,23 +1902,38 @@ async function renderList() {
       <div class="track-info">
         <strong>
           ${escapeHtml(
-            track.title ||
-            'Untitled'
+            getTrackDisplayTitle(
+              track
+            )
           )}
         </strong>
 
         <span>
           ${escapeHtml(
-            track.artist ||
-            'Unknown artist'
+            getTrackDisplayArtist(
+              track
+            )
           )}
         </span>
+
+        ${
+          track.album
+            ? `
+              <small>
+                ${escapeHtml(
+                  track.album
+                )}
+              </small>
+            `
+            : ''
+        }
       </div>
 
       <div class="row-actions">
         <button
           class="small-btn"
           data-list-play="${index}"
+          type="button"
         >
           Play
         </button>
@@ -1483,6 +1941,7 @@ async function renderList() {
         <button
           class="small-btn"
           data-edit-track="${index}"
+          type="button"
         >
           Edit
         </button>
@@ -1490,6 +1949,7 @@ async function renderList() {
         <button
           class="small-btn"
           data-delete-track="${index}"
+          type="button"
         >
           Delete
         </button>
@@ -1502,68 +1962,80 @@ async function renderList() {
   }
 
 
-  $$('.track-art-button').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          playTrack(
-            Number(
-              button.dataset.listIndex
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('.track-art-button')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          () => {
+            playTrack(
+              Number(
+                button.dataset
+                  .listIndex
+              )
+            );
+          }
+        );
+      }
+    );
 
 
-  $$('[data-list-play]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          playTrack(
-            Number(
-              button.dataset.listPlay
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('[data-list-play]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          () => {
+            playTrack(
+              Number(
+                button.dataset
+                  .listPlay
+              )
+            );
+          }
+        );
+      }
+    );
 
 
-  $$('[data-edit-track]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          editTrack(
-            Number(
-              button.dataset.editTrack
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('[data-edit-track]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          (event) => {
+            event.stopPropagation();
+
+            editTrack(
+              Number(
+                button.dataset
+                  .editTrack
+              )
+            );
+          }
+        );
+      }
+    );
 
 
-  $$('[data-delete-track]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          deleteTrack(
-            Number(
-              button.dataset.deleteTrack
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('[data-delete-track]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          (event) => {
+            event.stopPropagation();
+
+            deleteTrack(
+              Number(
+                button.dataset
+                  .deleteTrack
+              )
+            );
+          }
+        );
+      }
+    );
 }
 
 
@@ -1571,8 +2043,17 @@ async function renderList() {
    EDIT SONG
    ========================================================= */
 
-async function editTrack(index) {
-  if (!sb || !currentUser) {
+async function editTrack(
+  index
+) {
+  if (
+    !sb ||
+    !currentUser
+  ) {
+    toast(
+      'Please sign in first.'
+    );
+
     return;
   }
 
@@ -1580,8 +2061,13 @@ async function editTrack(index) {
     tracks[index];
 
   if (!track) {
+    toast(
+      'Track not found.'
+    );
+
     return;
   }
+
 
   const title =
     window.prompt(
@@ -1589,9 +2075,12 @@ async function editTrack(index) {
       track.title || ''
     );
 
-  if (title === null) {
+  if (
+    title === null
+  ) {
     return;
   }
+
 
   const artist =
     window.prompt(
@@ -1599,9 +2088,12 @@ async function editTrack(index) {
       track.artist || ''
     );
 
-  if (artist === null) {
+  if (
+    artist === null
+  ) {
     return;
   }
+
 
   const album =
     window.prompt(
@@ -1609,9 +2101,12 @@ async function editTrack(index) {
       track.album || ''
     );
 
-  if (album === null) {
+  if (
+    album === null
+  ) {
     return;
   }
+
 
   const genre =
     window.prompt(
@@ -1619,74 +2114,202 @@ async function editTrack(index) {
       track.genre || ''
     );
 
-  if (genre === null) {
+  if (
+    genre === null
+  ) {
     return;
   }
+
 
   const yearInput =
     window.prompt(
       'Year:',
-      track.year || ''
+      track.year ?? ''
     );
-
-  if (yearInput === null) {
-    return;
-  }
-
-  const year =
-    yearInput.trim()
-      ? Number(yearInput)
-      : null;
 
   if (
-    yearInput.trim() &&
-    !Number.isFinite(year)
+    yearInput === null
   ) {
-    toast(
-      'Year must be a number.'
-    );
-
     return;
   }
 
-  try {
-    const {
-      error
-    } = await sb
-      .from('tracks')
-      .update({
-        title:
-          title.trim() ||
-          'Untitled',
 
-        artist:
-          artist.trim() ||
-          'Unknown artist',
+  const cleanedTitle =
+    title.trim() ||
+    'Untitled';
 
-        album:
-          album.trim() ||
-          null,
+  const cleanedArtist =
+    artist.trim() ||
+    'Unknown artist';
 
-        genre:
-          genre.trim() ||
-          null,
+  const cleanedAlbum =
+    album.trim() ||
+    null;
 
-        year
-      })
-      .eq(
-        'id',
-        track.id
-      )
-      .eq(
-        'user_id',
-        currentUser.id
+  const cleanedGenre =
+    genre.trim() ||
+    null;
+
+
+  let cleanedYear =
+    null;
+
+  if (
+    yearInput.trim()
+  ) {
+
+    cleanedYear =
+      Number(
+        yearInput.trim()
       );
 
+    if (
+      !Number.isInteger(
+        cleanedYear
+      ) ||
+      cleanedYear < 0 ||
+      cleanedYear > 9999
+    ) {
+
+      toast(
+        'Year must be a valid number.'
+      );
+
+      return;
+    }
+  }
+
+
+  try {
+
+    toast(
+      'Saving changes...'
+    );
+
+
+    const {
+      data,
+      error
+    } =
+      await sb
+        .from('tracks')
+        .update({
+          title:
+            cleanedTitle,
+
+          artist:
+            cleanedArtist,
+
+          album:
+            cleanedAlbum,
+
+          genre:
+            cleanedGenre,
+
+          year:
+            cleanedYear
+        })
+        .eq(
+          'id',
+          track.id
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .select()
+        .single();
+
+
     if (error) {
+
+      console.error(
+        'Supabase edit error:',
+        error
+      );
+
       throw error;
     }
 
-    await loadLibrary();
+
+    /*
+     * This catches a very common
+     * RLS/update-policy problem.
+     */
+
+    if (!data) {
+      throw new Error(
+        'The song was not updated. Your Supabase tracks table may need an UPDATE policy.'
+      );
+    }
+
+
+    /*
+     * Update the local track immediately.
+     */
+
+    tracks[index] = {
+      ...tracks[index],
+      ...data
+    };
+
+
+    /*
+     * Update active carousel information.
+     */
+
+    if (
+      carouselIndex ===
+      index
+    ) {
+
+      setText(
+        '#activeArtist',
+        data.artist ||
+          'Unknown artist'
+      );
+
+      setText(
+        '#activeTitle',
+        data.title ||
+          'Untitled'
+      );
+
+      setText(
+        '#activeAlbum',
+        data.album ||
+          'Single'
+      );
+    }
+
+
+    /*
+     * Update player if this song
+     * is currently playing.
+     */
+
+    if (
+      currentTrackIndex ===
+      index
+    ) {
+
+      setText(
+        '#playerTitle',
+        data.title ||
+          'Untitled'
+      );
+
+      setText(
+        '#playerArtist',
+        data.artist ||
+          'Unknown artist'
+      );
+    }
+
+
+    /*
+     * Re-render the current page.
+     */
 
     renderCurrentPage();
 
@@ -1695,6 +2318,7 @@ async function editTrack(index) {
     );
 
   } catch (error) {
+
     console.error(
       'Edit track error:',
       error
@@ -1712,8 +2336,13 @@ async function editTrack(index) {
    DELETE SONG
    ========================================================= */
 
-async function deleteTrack(index) {
-  if (!sb || !currentUser) {
+async function deleteTrack(
+  index
+) {
+  if (
+    !sb ||
+    !currentUser
+  ) {
     return;
   }
 
@@ -1724,25 +2353,31 @@ async function deleteTrack(index) {
     return;
   }
 
+
   const confirmed =
     window.confirm(
-      `Delete "${track.title || 'this song'}" from Frequency?\n\nThis will remove the song from your Library.`
+      `Delete "${getTrackDisplayTitle(
+        track
+      )}" from Frequency?\n\nThis removes the song from your Library and deletes its stored files.`
     );
 
   if (!confirmed) {
     return;
   }
 
+
   try {
+
     /*
-     * Stop the player first if this is
-     * currently playing.
+     * Stop playback if deleting
+     * the current song.
      */
 
     if (
       currentTrackIndex ===
       index
     ) {
+
       stopAudio();
 
       currentTrackIndex =
@@ -1750,41 +2385,55 @@ async function deleteTrack(index) {
     }
 
 
+    toast(
+      'Deleting track...'
+    );
+
+
     /*
-     * Delete database record first.
+     * Remove database record.
      */
 
     const {
-      error: databaseError
-    } = await sb
-      .from('tracks')
-      .delete()
-      .eq(
-        'id',
-        track.id
-      )
-      .eq(
-        'user_id',
-        currentUser.id
-      );
+      error:
+        databaseError
+    } =
+      await sb
+        .from('tracks')
+        .delete()
+        .eq(
+          'id',
+          track.id
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        );
 
-    if (databaseError) {
+
+    if (
+      databaseError
+    ) {
       throw databaseError;
     }
 
 
     /*
-     * Remove audio file.
+     * Remove audio.
      */
 
-    if (track.audio_path) {
+    if (
+      track.audio_path
+    ) {
+
       const {
         error
-      } = await sb.storage
-        .from('audio')
-        .remove([
-          track.audio_path
-        ]);
+      } =
+        await sb.storage
+          .from('audio')
+          .remove([
+            track.audio_path
+          ]);
 
       if (error) {
         console.warn(
@@ -1799,14 +2448,18 @@ async function deleteTrack(index) {
      * Remove artwork.
      */
 
-    if (track.cover_path) {
+    if (
+      track.cover_path
+    ) {
+
       const {
         error
-      } = await sb.storage
-        .from('covers')
-        .remove([
-          track.cover_path
-        ]);
+      } =
+        await sb.storage
+          .from('covers')
+          .remove([
+            track.cover_path
+          ]);
 
       if (error) {
         console.warn(
@@ -1818,23 +2471,21 @@ async function deleteTrack(index) {
 
 
     clearTrackUrlCache(
-      track.id
+      track
     );
 
-    if (
-      track.audio_path
-    ) {
-      audioUrlCache.delete(
-        `audio:${track.audio_path}`
-      );
-    }
+
+    /*
+     * If we deleted the currently
+     * selected track, reset the index.
+     */
 
     if (
-      track.cover_path
+      currentTrackIndex ===
+      index
     ) {
-      coverUrlCache.delete(
-        `covers:${track.cover_path}`
-      );
+      currentTrackIndex =
+        -1;
     }
 
 
@@ -1847,6 +2498,7 @@ async function deleteTrack(index) {
     );
 
   } catch (error) {
+
     console.error(
       'Delete track error:',
       error
@@ -1882,9 +2534,11 @@ async function renderSearch(
       .trim()
       .toLowerCase();
 
+
   const results =
     tracks.filter(
       (track) => {
+
         if (!search) {
           return true;
         }
@@ -1899,13 +2553,19 @@ async function renderSearch(
           .filter(Boolean)
           .join(' ')
           .toLowerCase()
-          .includes(search);
+          .includes(
+            search
+          );
       }
     );
 
-  container.innerHTML = '';
+
+  container.innerHTML =
+    '';
+
 
   if (!results.length) {
+
     container.innerHTML = `
       <div class="empty-state">
         <h3>No results</h3>
@@ -1922,26 +2582,36 @@ async function renderSearch(
   for (
     const track of results
   ) {
+
     if (
-      token !== searchRenderToken
+      token !==
+      searchRenderToken
     ) {
       return;
     }
+
 
     const originalIndex =
       tracks.findIndex(
         (item) =>
-          item.id === track.id
+          item.id ===
+          track.id
       );
 
+
     const cover =
-      await coverUrl(track);
+      await coverUrl(
+        track
+      );
+
 
     if (
-      token !== searchRenderToken
+      token !==
+      searchRenderToken
     ) {
       return;
     }
+
 
     const row =
       document.createElement(
@@ -1951,17 +2621,21 @@ async function renderSearch(
     row.className =
       'track-row';
 
+
     row.innerHTML = `
       <button
         class="track-art-button"
         data-search-index="${originalIndex}"
+        type="button"
       >
         ${
           cover
             ? `
               <img
                 class="track-art"
-                src="${escapeAttribute(cover)}"
+                src="${escapeAttribute(
+                  cover
+                )}"
                 alt=""
                 draggable="false"
               >
@@ -1969,10 +2643,11 @@ async function renderSearch(
             : `
               <div class="track-art list-placeholder">
                 ${escapeHtml(
-                  (
-                    track.title ||
-                    'F'
-                  ).charAt(0)
+                  getTrackDisplayTitle(
+                    track
+                  )
+                    .charAt(0)
+                    .toUpperCase()
                 )}
               </div>
             `
@@ -1982,23 +2657,39 @@ async function renderSearch(
       <div class="track-info">
         <strong>
           ${escapeHtml(
-            track.title ||
-            'Untitled'
+            getTrackDisplayTitle(
+              track
+            )
           )}
         </strong>
 
         <span>
           ${escapeHtml(
-            track.artist ||
-            'Unknown artist'
+            getTrackDisplayArtist(
+              track
+            )
           )}
         </span>
+
+        ${
+          track.album
+            ? `
+              <small>
+                ${escapeHtml(
+                  track.album
+                )}
+              </small>
+            `
+            : ''
+        }
       </div>
 
       <div class="row-actions">
+
         <button
           class="small-btn"
           data-search-play="${originalIndex}"
+          type="button"
         >
           Play
         </button>
@@ -2006,11 +2697,22 @@ async function renderSearch(
         <button
           class="small-btn"
           data-search-edit="${originalIndex}"
+          type="button"
         >
           Edit
         </button>
+
+        <button
+          class="small-btn"
+          data-search-delete="${originalIndex}"
+          type="button"
+        >
+          Delete
+        </button>
+
       </div>
     `;
+
 
     container.appendChild(
       row
@@ -2018,52 +2720,76 @@ async function renderSearch(
   }
 
 
-  $$('[data-search-index]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          playTrack(
-            Number(
-              button.dataset.searchIndex
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('[data-search-index]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          () => {
+            playTrack(
+              Number(
+                button.dataset
+                  .searchIndex
+              )
+            );
+          }
+        );
+      }
+    );
 
 
-  $$('[data-search-play]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          playTrack(
-            Number(
-              button.dataset.searchPlay
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('[data-search-play]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          () => {
+            playTrack(
+              Number(
+                button.dataset
+                  .searchPlay
+              )
+            );
+          }
+        );
+      }
+    );
 
 
-  $$('[data-search-edit]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          editTrack(
-            Number(
-              button.dataset.searchEdit
-            )
-          );
-        }
-      );
-    }
-  );
+  $$('[data-search-edit]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          () => {
+            editTrack(
+              Number(
+                button.dataset
+                  .searchEdit
+              )
+            );
+          }
+        );
+      }
+    );
+
+
+  $$('[data-search-delete]')
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          'click',
+          () => {
+            deleteTrack(
+              Number(
+                button.dataset
+                  .searchDelete
+              )
+            );
+          }
+        );
+      }
+    );
 }
 
 
@@ -2079,9 +2805,12 @@ async function renderAlbums() {
     return;
   }
 
-  grid.innerHTML = '';
+  grid.innerHTML =
+    '';
+
 
   if (!tracks.length) {
+
     grid.innerHTML = `
       <div class="empty-state">
         <h3>No albums yet</h3>
@@ -2094,16 +2823,23 @@ async function renderAlbums() {
     return;
   }
 
+
   const albumMap =
     new Map();
 
+
   tracks.forEach(
     (track) => {
+
       const album =
         track.album?.trim() ||
         'Singles';
 
-      if (!albumMap.has(album)) {
+      if (
+        !albumMap.has(
+          album
+        )
+      ) {
         albumMap.set(
           album,
           []
@@ -2123,10 +2859,12 @@ async function renderAlbums() {
       albumTracks
     ] of albumMap
   ) {
+
     const cover =
       await coverUrl(
         albumTracks[0]
       );
+
 
     const card =
       document.createElement(
@@ -2136,14 +2874,17 @@ async function renderAlbums() {
     card.className =
       'grid-card';
 
+
     card.innerHTML = `
       <div class="grid-art">
+
         ${
           cover
             ? `
               <img
-                class="grid-art"
-                src="${escapeAttribute(cover)}"
+                src="${escapeAttribute(
+                  cover
+                )}"
                 alt="${escapeAttribute(
                   albumName
                 )}"
@@ -2152,11 +2893,14 @@ async function renderAlbums() {
             : `
               <div class="album-placeholder">
                 ${escapeHtml(
-                  albumName.charAt(0)
+                  albumName
+                    .charAt(0)
+                    .toUpperCase()
                 )}
               </div>
             `
         }
+
       </div>
 
       <strong>
@@ -2173,9 +2917,11 @@ async function renderAlbums() {
       </span>
     `;
 
+
     card.addEventListener(
       'click',
       () => {
+
         const firstIndex =
           tracks.findIndex(
             (track) =>
@@ -2184,7 +2930,8 @@ async function renderAlbums() {
           );
 
         if (
-          firstIndex !== -1
+          firstIndex !==
+          -1
         ) {
           playTrack(
             firstIndex
@@ -2192,6 +2939,7 @@ async function renderAlbums() {
         }
       }
     );
+
 
     grid.appendChild(
       card
@@ -2212,9 +2960,12 @@ async function renderPlaylists() {
     return;
   }
 
-  grid.innerHTML = '';
+  grid.innerHTML =
+    '';
+
 
   if (!playlists.length) {
+
     grid.innerHTML = `
       <div class="empty-state">
         <h3>No playlists yet</h3>
@@ -2231,14 +2982,16 @@ async function renderPlaylists() {
   for (
     const playlist of playlists
   ) {
+
     const cover =
       playlist.cover_path
         ? await signedUrl(
             'covers',
             playlist.cover_path,
-            new Map()
+            coverUrlCache
           )
         : null;
+
 
     const card =
       document.createElement(
@@ -2248,14 +3001,17 @@ async function renderPlaylists() {
     card.className =
       'grid-card';
 
+
     card.innerHTML = `
       <div class="grid-art">
+
         ${
           cover
             ? `
               <img
-                class="grid-art"
-                src="${escapeAttribute(cover)}"
+                src="${escapeAttribute(
+                  cover
+                )}"
                 alt="${escapeAttribute(
                   playlist.name
                 )}"
@@ -2267,6 +3023,7 @@ async function renderPlaylists() {
               </div>
             `
         }
+
       </div>
 
       <strong>
@@ -2288,6 +3045,7 @@ async function renderPlaylists() {
       }
     `;
 
+
     grid.appendChild(
       card
     );
@@ -2299,10 +3057,13 @@ async function renderPlaylists() {
    PLAYBACK
    ========================================================= */
 
-async function playTrack(index) {
+async function playTrack(
+  index
+) {
   if (
     index < 0 ||
-    index >= tracks.length
+    index >=
+      tracks.length
   ) {
     return;
   }
@@ -2310,16 +3071,22 @@ async function playTrack(index) {
   const track =
     tracks[index];
 
+
   const url =
-    await audioUrl(track);
+    await audioUrl(
+      track
+    );
+
 
   if (!url) {
+
     toast(
       'Could not load this track.'
     );
 
     return;
   }
+
 
   currentTrackIndex =
     index;
@@ -2329,22 +3096,29 @@ async function playTrack(index) {
 
   audio.load();
 
+
   await updatePlayer(
     track
   );
+
 
   updateCarouselForTrack(
     index
   );
 
+
   try {
+
     await audio.play();
+
   } catch (error) {
+
     console.error(
       'Playback error:',
       error
     );
   }
+
 
   updatePlayButton();
 }
@@ -2355,7 +3129,8 @@ function updateCarouselForTrack(
 ) {
   if (
     index < 0 ||
-    index >= tracks.length
+    index >=
+      tracks.length
   ) {
     return;
   }
@@ -2379,42 +3154,58 @@ async function updatePlayer(
     return;
   }
 
+
   setText(
     '#playerTitle',
-    track.title ||
-      'Nothing playing'
+    getTrackDisplayTitle(
+      track
+    )
   );
+
 
   setText(
     '#playerArtist',
-    track.artist ||
-      'Choose a track'
+    getTrackDisplayArtist(
+      track
+    )
   );
 
+
   const cover =
-    await coverUrl(track);
+    await coverUrl(
+      track
+    );
+
 
   const playerCover =
     $('#playerCover');
+
 
   if (!playerCover) {
     return;
   }
 
+
   if (cover) {
+
     playerCover.innerHTML = `
       <img
-        src="${escapeAttribute(cover)}"
+        src="${escapeAttribute(
+          cover
+        )}"
         alt=""
         draggable="false"
       >
     `;
+
   } else {
+
     playerCover.textContent =
-      (
-        track.title ||
-        'F'
-      ).charAt(0);
+      getTrackDisplayTitle(
+        track
+      )
+        .charAt(0)
+        .toUpperCase();
   }
 }
 
@@ -2424,8 +3215,11 @@ function togglePlayback() {
     return;
   }
 
+
   if (!audio.src) {
+
     if (tracks.length) {
+
       playTrack(
         carouselIndex >= 0
           ? carouselIndex
@@ -2436,11 +3230,15 @@ function togglePlayback() {
     return;
   }
 
-  if (audio.paused) {
+
+  if (
+    audio.paused
+  ) {
     audio.play();
   } else {
     audio.pause();
   }
+
 
   updatePlayButton();
 }
@@ -2470,7 +3268,8 @@ function stopAudio() {
   audio.pause();
 
   try {
-    audio.currentTime = 0;
+    audio.currentTime =
+      0;
   } catch (error) {
     console.warn(error);
   }
@@ -2495,7 +3294,8 @@ function stopAudio() {
     $('#progress');
 
   if (progress) {
-    progress.value = 0;
+    progress.value =
+      0;
   }
 
   updatePlayButton();
@@ -2507,48 +3307,71 @@ async function nextTrack() {
     return;
   }
 
+
   let nextIndex;
 
+
   if (shuffled) {
-    if (tracks.length === 1) {
+
+    if (
+      tracks.length ===
+      1
+    ) {
+
       nextIndex = 0;
+
     } else {
+
       do {
+
         nextIndex =
           Math.floor(
             Math.random() *
             tracks.length
           );
+
       } while (
         nextIndex ===
         currentTrackIndex
       );
     }
 
+
   } else {
+
     nextIndex =
-      currentTrackIndex + 1;
+      currentTrackIndex +
+      1;
+
 
     if (
-      currentTrackIndex === -1
+      currentTrackIndex ===
+      -1
     ) {
       nextIndex = 0;
     }
+
 
     if (
       nextIndex >=
       tracks.length
     ) {
+
       if (
-        repeatMode === 'all'
+        repeatMode ===
+        'all'
       ) {
+
         nextIndex = 0;
+
       } else {
+
         stopAudio();
         return;
       }
     }
   }
+
 
   await playTrack(
     nextIndex
@@ -2561,22 +3384,32 @@ async function previousTrack() {
     return;
   }
 
+
   if (
-    audio.currentTime > 3
+    audio.currentTime >
+    3
   ) {
-    audio.currentTime = 0;
+
+    audio.currentTime =
+      0;
+
     return;
   }
 
+
   let previousIndex =
-    currentTrackIndex - 1;
+    currentTrackIndex -
+    1;
+
 
   if (
-    currentTrackIndex === -1
+    currentTrackIndex ===
+    -1
   ) {
     previousIndex =
       tracks.length - 1;
   }
+
 
   if (
     previousIndex < 0
@@ -2584,6 +3417,7 @@ async function previousTrack() {
     previousIndex =
       tracks.length - 1;
   }
+
 
   await playTrack(
     previousIndex
@@ -2595,9 +3429,12 @@ async function previousTrack() {
    UPLOAD
    ========================================================= */
 
-function getAudioDuration(file) {
+function getAudioDuration(
+  file
+) {
   return new Promise(
     (resolve) => {
+
       const temp =
         document.createElement(
           'audio'
@@ -2606,8 +3443,10 @@ function getAudioDuration(file) {
       temp.preload =
         'metadata';
 
+
       temp.onloadedmetadata =
         () => {
+
           const duration =
             temp.duration;
 
@@ -2624,13 +3463,17 @@ function getAudioDuration(file) {
           );
         };
 
-      temp.onerror = () => {
-        URL.revokeObjectURL(
-          temp.src
-        );
 
-        resolve(null);
-      };
+      temp.onerror =
+        () => {
+
+          URL.revokeObjectURL(
+            temp.src
+          );
+
+          resolve(null);
+        };
+
 
       temp.src =
         URL.createObjectURL(
@@ -2643,6 +3486,7 @@ function getAudioDuration(file) {
 
 async function uploadTrack() {
   if (!currentUser) {
+
     toast(
       'Please sign in first.'
     );
@@ -2650,66 +3494,85 @@ async function uploadTrack() {
     return;
   }
 
+
   const audioFile =
-    $('#trackFile')?.files[0];
+    $('#trackFile')
+      ?.files[0];
 
   const coverFile =
-    $('#coverFile')?.files[0];
+    $('#coverFile')
+      ?.files[0];
 
   const title =
-    $('#trackTitle')?.value.trim();
+    $('#trackTitle')
+      ?.value.trim();
 
   const artist =
-    $('#trackArtist')?.value.trim();
+    $('#trackArtist')
+      ?.value.trim();
 
   const album =
-    $('#trackAlbum')?.value.trim();
+    $('#trackAlbum')
+      ?.value.trim();
 
   const genre =
-    $('#trackGenre')?.value.trim();
+    $('#trackGenre')
+      ?.value.trim();
 
   const yearValue =
-    $('#trackYear')?.value.trim();
+    $('#trackYear')
+      ?.value.trim();
 
   const status =
     $('#uploadStatus');
 
+
   if (!audioFile) {
+
     status.textContent =
       'Choose an audio file.';
 
     return;
   }
 
+
   if (!title) {
+
     status.textContent =
       'Enter a title.';
 
     return;
   }
 
+
   if (!artist) {
+
     status.textContent =
       'Enter an artist.';
 
     return;
   }
 
+
   status.textContent =
     'Reading track...';
+
 
   const duration =
     await getAudioDuration(
       audioFile
     );
 
+
   const audioName =
     safeFileName(
       audioFile.name
     );
 
+
   const audioPath =
     `${currentUser.id}/${crypto.randomUUID()}-${audioName}`;
+
 
   let uploadedAudioPath =
     null;
@@ -2717,69 +3580,92 @@ async function uploadTrack() {
   let uploadedCoverPath =
     null;
 
+
   try {
+
     status.textContent =
       'Uploading audio...';
 
-    const {
-      error: audioError
-    } = await sb.storage
-      .from('audio')
-      .upload(
-        audioPath,
-        audioFile,
-        {
-          cacheControl:
-            '3600',
-          upsert: false,
-          contentType:
-            audioFile.type ||
-            'audio/mpeg'
-        }
-      );
 
-    if (audioError) {
+    const {
+      error:
+        audioError
+    } =
+      await sb.storage
+        .from('audio')
+        .upload(
+          audioPath,
+          audioFile,
+          {
+            cacheControl:
+              '3600',
+            upsert:
+              false,
+            contentType:
+              audioFile.type ||
+              'audio/mpeg'
+          }
+        );
+
+
+    if (
+      audioError
+    ) {
       throw audioError;
     }
+
 
     uploadedAudioPath =
       audioPath;
 
 
-    let coverPath = null;
+    let coverPath =
+      null;
+
 
     if (coverFile) {
+
       status.textContent =
         'Uploading artwork...';
+
 
       const coverName =
         safeFileName(
           coverFile.name
         );
 
+
       coverPath =
         `${currentUser.id}/${crypto.randomUUID()}-${coverName}`;
 
-      const {
-        error: coverError
-      } = await sb.storage
-        .from('covers')
-        .upload(
-          coverPath,
-          coverFile,
-          {
-            cacheControl:
-              '3600',
-            upsert: false,
-            contentType:
-              coverFile.type ||
-              'image/jpeg'
-          }
-        );
 
-      if (coverError) {
+      const {
+        error:
+          coverError
+      } =
+        await sb.storage
+          .from('covers')
+          .upload(
+            coverPath,
+            coverFile,
+            {
+              cacheControl:
+                '3600',
+              upsert:
+                false,
+              contentType:
+                coverFile.type ||
+                'image/jpeg'
+            }
+          );
+
+
+      if (
+        coverError
+      ) {
         throw coverError;
       }
+
 
       uploadedCoverPath =
         coverPath;
@@ -2789,78 +3675,110 @@ async function uploadTrack() {
     status.textContent =
       'Adding track to Frequency...';
 
-    const year =
+
+    let year =
       yearValue
-        ? Number(yearValue)
+        ? Number(
+            yearValue
+          )
         : null;
 
+
+    if (
+      year !== null &&
+      (
+        !Number.isInteger(
+          year
+        ) ||
+        year < 0 ||
+        year > 9999
+      )
+    ) {
+      year = null;
+    }
+
+
     const {
-      error: databaseError
-    } = await sb
-      .from('tracks')
-      .insert({
-        user_id:
-          currentUser.id,
+      error:
+        databaseError
+    } =
+      await sb
+        .from('tracks')
+        .insert({
+          user_id:
+            currentUser.id,
 
-        title,
+          title,
 
-        artist,
+          artist,
 
-        album:
-          album || null,
+          album:
+            album || null,
 
-        genre:
-          genre || null,
+          genre:
+            genre || null,
 
-        year:
-          Number.isFinite(year)
-            ? year
-            : null,
+          year,
 
-        duration,
+          duration,
 
-        audio_path:
-          audioPath,
+          audio_path:
+            audioPath,
 
-        cover_path:
-          coverPath
-      });
+          cover_path:
+            coverPath
+        });
 
-    if (databaseError) {
+
+    if (
+      databaseError
+    ) {
       throw databaseError;
     }
 
 
-    $('#uploadForm')?.reset();
+    $('#uploadForm')
+      ?.reset();
 
-    $('#uploadModal')?.classList.add(
-      'hidden'
-    );
 
-    status.textContent = '';
+    $('#uploadModal')
+      ?.classList.add(
+        'hidden'
+      );
+
+
+    status.textContent =
+      '';
+
 
     await loadLibrary();
 
     renderCurrentPage();
 
+
     toast(
       'Track added to Frequency.'
     );
 
+
   } catch (error) {
+
     console.error(
       'Upload error:',
       error
     );
 
+
     /*
-     * IMPORTANT:
-     * If something fails after a file was uploaded,
-     * clean up the storage so we don't leave
-     * orphaned files behind.
+     * Clean up anything that was
+     * successfully uploaded before
+     * the failure happened.
      */
 
-    if (uploadedCoverPath) {
+    if (
+      uploadedCoverPath
+    ) {
+
       await sb.storage
         .from('covers')
         .remove([
@@ -2868,13 +3786,18 @@ async function uploadTrack() {
         ]);
     }
 
-    if (uploadedAudioPath) {
+
+    if (
+      uploadedAudioPath
+    ) {
+
       await sb.storage
         .from('audio')
         .remove([
           uploadedAudioPath
         ]);
     }
+
 
     status.textContent =
       error.message ||
@@ -2889,12 +3812,14 @@ async function uploadTrack() {
 
 async function createPlaylist() {
   if (!currentUser) {
+
     toast(
       'Please sign in first.'
     );
 
     return;
   }
+
 
   const name =
     $('#playlistName')
@@ -2911,51 +3836,66 @@ async function createPlaylist() {
   const status =
     $('#playlistStatus');
 
+
   if (!name) {
+
     status.textContent =
       'Enter a playlist name.';
 
     return;
   }
 
+
   status.textContent =
     'Creating playlist...';
+
 
   let uploadedCoverPath =
     null;
 
+
   try {
-    let coverPath = null;
+
+    let coverPath =
+      null;
+
 
     if (coverFile) {
+
       const coverName =
         safeFileName(
           coverFile.name
         );
 
+
       coverPath =
         `${currentUser.id}/playlists/${crypto.randomUUID()}-${coverName}`;
 
+
       const {
         error
-      } = await sb.storage
-        .from('covers')
-        .upload(
-          coverPath,
-          coverFile,
-          {
-            cacheControl:
-              '3600',
-            upsert: false,
-            contentType:
-              coverFile.type ||
-              'image/jpeg'
-          }
-        );
+      } =
+        await sb.storage
+          .from('covers')
+          .upload(
+            coverPath,
+            coverFile,
+            {
+              cacheControl:
+                '3600',
+              upsert:
+                false,
+              contentType:
+                coverFile.type ||
+                'image/jpeg'
+            }
+          );
+
 
       if (error) {
         throw error;
       }
+
 
       uploadedCoverPath =
         coverPath;
@@ -2964,55 +3904,72 @@ async function createPlaylist() {
 
     const {
       error
-    } = await sb
-      .from('playlists')
-      .insert({
-        user_id:
-          currentUser.id,
+    } =
+      await sb
+        .from('playlists')
+        .insert({
+          user_id:
+            currentUser.id,
 
-        name,
+          name,
 
-        description:
-          description || null,
+          description:
+            description ||
+            null,
 
-        cover_path:
-          coverPath
-      });
+          cover_path:
+            coverPath
+        });
+
 
     if (error) {
       throw error;
     }
 
 
-    $('#playlistForm')?.reset();
+    $('#playlistForm')
+      ?.reset();
 
-    $('#playlistModal')?.classList.add(
-      'hidden'
-    );
 
-    status.textContent = '';
+    $('#playlistModal')
+      ?.classList.add(
+        'hidden'
+      );
+
+
+    status.textContent =
+      '';
+
 
     await loadLibrary();
 
     renderPlaylists();
 
+
     toast(
       'Playlist created.'
     );
 
+
   } catch (error) {
+
     console.error(
       'Playlist error:',
       error
     );
 
-    if (uploadedCoverPath) {
+
+    if (
+      uploadedCoverPath
+    ) {
+
       await sb.storage
         .from('covers')
         .remove([
           uploadedCoverPath
         ]);
     }
+
 
     status.textContent =
       error.message ||
@@ -3026,50 +3983,61 @@ async function createPlaylist() {
    ========================================================= */
 
 function closeModals() {
-  $$('.modal').forEach(
-    (modal) => {
-      modal.classList.add(
-        'hidden'
-      );
-    }
-  );
+  $$('.modal')
+    .forEach(
+      (modal) => {
+        modal.classList.add(
+          'hidden'
+        );
+      }
+    );
 }
 
 
 function setupModals() {
-  $$('[data-close]').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          const id =
-            button.dataset.close;
 
-          $(`#${id}`)?.classList.add(
-            'hidden'
-          );
-        }
-      );
-    }
-  );
+  $$('[data-close]')
+    .forEach(
+      (button) => {
 
+        button.addEventListener(
+          'click',
+          () => {
 
-  $$('.modal').forEach(
-    (modal) => {
-      modal.addEventListener(
-        'click',
-        (event) => {
-          if (
-            event.target === modal
-          ) {
-            modal.classList.add(
-              'hidden'
-            );
+            const id =
+              button.dataset.close;
+
+            $(`#${id}`)
+              ?.classList.add(
+                'hidden'
+              );
           }
-        }
-      );
-    }
-  );
+        );
+      }
+    );
+
+
+  $$('.modal')
+    .forEach(
+      (modal) => {
+
+        modal.addEventListener(
+          'click',
+          (event) => {
+
+            if (
+              event.target ===
+              modal
+            ) {
+
+              modal.classList.add(
+                'hidden'
+              );
+            }
+          }
+        );
+      }
+    );
 }
 
 
@@ -3081,18 +4049,21 @@ function setupEvents() {
 
   /* Navigation */
 
-  $$('.nav-item').forEach(
-    (button) => {
-      button.addEventListener(
-        'click',
-        () => {
-          switchPage(
-            button.dataset.page
-          );
-        }
-      );
-    }
-  );
+  $$('.nav-item')
+    .forEach(
+      (button) => {
+
+        button.addEventListener(
+          'click',
+          () => {
+
+            switchPage(
+              button.dataset.page
+            );
+          }
+        );
+      }
+    );
 
 
   /* View */
@@ -3125,6 +4096,7 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         $('#uploadModal')
           ?.classList.remove(
             'hidden'
@@ -3137,6 +4109,7 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         $('#uploadModal')
           ?.classList.remove(
             'hidden'
@@ -3151,6 +4124,7 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         $('#playlistModal')
           ?.classList.remove(
             'hidden'
@@ -3174,6 +4148,7 @@ function setupEvents() {
     ?.addEventListener(
       'submit',
       async (event) => {
+
         event.preventDefault();
 
         await uploadTrack();
@@ -3187,6 +4162,7 @@ function setupEvents() {
     ?.addEventListener(
       'submit',
       async (event) => {
+
         event.preventDefault();
 
         await createPlaylist();
@@ -3200,6 +4176,7 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         playTrack(
           carouselIndex
         );
@@ -3236,11 +4213,12 @@ function setupEvents() {
     ?.addEventListener(
       'click',
       () => {
+
         shuffled =
           !shuffled;
 
         $('#shuffleBtn')
-          .classList.toggle(
+          ?.classList.toggle(
             'active',
             shuffled
           );
@@ -3262,30 +4240,47 @@ function setupEvents() {
       () => {
 
         if (
-          repeatMode === 'off'
+          repeatMode ===
+          'off'
         ) {
-          repeatMode = 'all';
+
+          repeatMode =
+            'all';
 
         } else if (
-          repeatMode === 'all'
+          repeatMode ===
+          'all'
         ) {
-          repeatMode = 'one';
+
+          repeatMode =
+            'one';
 
         } else {
-          repeatMode = 'off';
+
+          repeatMode =
+            'off';
         }
 
+
         $('#repeatBtn')
-          .classList.toggle(
+          ?.classList.toggle(
             'active',
-            repeatMode !== 'off'
+            repeatMode !==
+              'off'
           );
 
+
         const messages = {
-          off: 'Repeat off',
-          all: 'Repeat all',
-          one: 'Repeat one'
+          off:
+            'Repeat off',
+
+          all:
+            'Repeat all',
+
+          one:
+            'Repeat one'
         };
+
 
         toast(
           messages[
@@ -3302,6 +4297,7 @@ function setupEvents() {
     ?.addEventListener(
       'input',
       (event) => {
+
         renderSearch(
           event.target.value
         );
@@ -3315,6 +4311,7 @@ function setupEvents() {
     ?.addEventListener(
       'input',
       (event) => {
+
         if (
           !audio ||
           !audio.duration
@@ -3322,11 +4319,13 @@ function setupEvents() {
           return;
         }
 
+
         audio.currentTime =
           (
             Number(
               event.target.value
-            ) / 100
+            ) /
+            100
           ) *
           audio.duration;
       }
@@ -3339,6 +4338,7 @@ function setupEvents() {
     ?.addEventListener(
       'input',
       (event) => {
+
         if (!audio) {
           return;
         }
@@ -3347,6 +4347,17 @@ function setupEvents() {
           Number(
             event.target.value
           );
+      }
+    );
+
+
+  /* Keep logged in */
+
+  $('#keepLoggedIn')
+    ?.addEventListener(
+      'change',
+      () => {
+        saveKeepLoggedInPreference();
       }
     );
 }
@@ -3361,7 +4372,9 @@ function setupAudio() {
     return;
   }
 
-  audio.volume = 0.8;
+
+  audio.volume =
+    0.8;
 
 
   audio.addEventListener(
@@ -3379,25 +4392,31 @@ function setupAudio() {
   audio.addEventListener(
     'timeupdate',
     () => {
+
       if (
         !audio.duration
       ) {
         return;
       }
 
+
       const percentage =
         (
           audio.currentTime /
           audio.duration
-        ) * 100;
+        ) *
+        100;
+
 
       const progress =
         $('#progress');
+
 
       if (progress) {
         progress.value =
           percentage;
       }
+
 
       setText(
         '#currentTime',
@@ -3405,6 +4424,7 @@ function setupAudio() {
           audio.currentTime
         )
       );
+
 
       setText(
         '#duration',
@@ -3419,6 +4439,7 @@ function setupAudio() {
   audio.addEventListener(
     'loadedmetadata',
     () => {
+
       setText(
         '#duration',
         formatTime(
@@ -3434,8 +4455,10 @@ function setupAudio() {
     async () => {
 
       if (
-        repeatMode === 'one'
+        repeatMode ===
+        'one'
       ) {
+
         audio.currentTime =
           0;
 
@@ -3444,7 +4467,24 @@ function setupAudio() {
         return;
       }
 
+
       await nextTrack();
+    }
+  );
+
+
+  audio.addEventListener(
+    'error',
+    () => {
+
+      console.error(
+        'Audio element error:',
+        audio.error
+      );
+
+      toast(
+        'There was a problem playing this track.'
+      );
     }
   );
 }
@@ -3463,6 +4503,7 @@ function setupKeyboard() {
         document.activeElement
           ?.tagName;
 
+
       if (
         tag === 'INPUT' ||
         tag === 'TEXTAREA' ||
@@ -3472,27 +4513,26 @@ function setupKeyboard() {
       }
 
 
-      /*
-       * Escape closes any open modal.
-       */
+      /* Escape */
 
       if (
         event.key ===
         'Escape'
       ) {
+
         closeModals();
+
         return;
       }
 
 
-      /*
-       * Space = play / pause.
-       */
+      /* Space */
 
       if (
         event.code ===
         'Space'
       ) {
+
         event.preventDefault();
 
         togglePlayback();
@@ -3501,29 +4541,26 @@ function setupKeyboard() {
       }
 
 
-      /*
-       * When looking at the Collection,
-       * arrow keys move through the artwork.
-       *
-       * Everywhere else, arrows control
-       * music playback.
-       */
+      /* Right */
 
       if (
         event.key ===
         'ArrowRight'
       ) {
+
         if (
           currentPage ===
             'library' &&
           viewMode ===
             'collection'
         ) {
+
           event.preventDefault();
 
           carouselNext();
 
         } else {
+
           nextTrack();
         }
 
@@ -3531,21 +4568,26 @@ function setupKeyboard() {
       }
 
 
+      /* Left */
+
       if (
         event.key ===
         'ArrowLeft'
       ) {
+
         if (
           currentPage ===
             'library' &&
           viewMode ===
             'collection'
         ) {
+
           event.preventDefault();
 
           carouselPrevious();
 
         } else {
+
           previousTrack();
         }
 
@@ -3613,6 +4655,7 @@ async function init() {
     currentUser =
       await getUser();
 
+
     if (currentUser) {
 
       await showApp();
@@ -3630,6 +4673,7 @@ async function init() {
         );
     }
 
+
     setupAuthListener();
 
   } else {
@@ -3646,9 +4690,24 @@ async function init() {
   }
 
 
-  setView(
-    viewMode
-  );
+  /*
+   * Set the saved view without
+   * losing the current library.
+   */
+
+  $('#viewCollection')
+    ?.classList.toggle(
+      'active',
+      viewMode ===
+        'collection'
+    );
+
+  $('#viewList')
+    ?.classList.toggle(
+      'active',
+      viewMode ===
+        'list'
+    );
 
 
   console.log(
