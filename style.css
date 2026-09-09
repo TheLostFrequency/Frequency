@@ -85,8 +85,7 @@ img{
 
 
 /* =========================================================
-   FREQUENCY LOGO
-   IMPORTANT: LOGO IS ALWAYS CONSTRAINED
+   FREQUENCY LOGOS
    ========================================================= */
 
 .frequency-logo{
@@ -259,7 +258,7 @@ input:focus{
 
 
 /* =========================================================
-   FLOATING NAVIGATION
+   NAVIGATION
    ========================================================= */
 
 .sidebar{
@@ -443,7 +442,7 @@ input:focus{
 
 
 /* =========================================================
-   ARCHITECTURAL GALLERY
+   ARCHITECTURAL ENVIRONMENT
    ========================================================= */
 
 .collection-wrap{
@@ -680,11 +679,6 @@ input:focus{
   opacity:.95;
 }
 
-
-/* =========================================================
-   PEDESTAL LOGO
-   ========================================================= */
-
 .pedestal-logo-wrap{
   position:absolute;
   z-index:3;
@@ -693,8 +687,9 @@ input:focus{
   transform:translateX(-50%);
   width:210px;
   height:52px;
-  display:grid;
-  place-items:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   overflow:hidden;
 }
 
@@ -709,7 +704,7 @@ input:focus{
 
 
 /* =========================================================
-   3D ALBUM OBJECT CAROUSEL
+   3D CAROUSEL
    ========================================================= */
 
 .carousel{
@@ -769,14 +764,23 @@ input:focus{
   z-index:0;
 }
 
+
+/* =========================================================
+   CAROUSEL CARDS
+   ========================================================= */
+
 .carousel-card{
   position:absolute;
   width:min(31vw,350px);
   height:min(44vw,485px);
+  max-width:350px;
   max-height:485px;
+  min-width:220px;
   min-height:310px;
   padding:0;
+  margin:0;
   border:0;
+  outline:none;
   background:transparent;
   display:block;
   transform-style:preserve-3d;
@@ -793,16 +797,30 @@ input:focus{
   outline-offset:12px;
 }
 
+
+/* =========================================================
+   ALBUM OBJECT
+   ========================================================= */
+
 .album-object{
   position:absolute;
   inset:0;
+  width:100%;
+  height:100%;
   display:block;
   transform-style:preserve-3d;
 }
 
+
+/* =========================================================
+   ALBUM FACE
+   ========================================================= */
+
 .album-face{
   position:absolute;
   inset:0;
+  width:100%;
+  height:100%;
   overflow:hidden;
   background:#111;
   border:1px solid #363636;
@@ -816,7 +834,7 @@ input:focus{
 
 
 /* =========================================================
-   ALBUM ART
+   CRITICAL CAROUSEL ART FIX
    ========================================================= */
 
 .album-face .track-art{
@@ -824,8 +842,14 @@ input:focus{
   inset:0;
   width:100%;
   height:100%;
-  display:grid;
-  place-items:center;
+  min-width:100%;
+  min-height:100%;
+  max-width:none;
+  max-height:none;
+  margin:0;
+  padding:0;
+  display:block;
+  overflow:hidden;
   background:
     radial-gradient(
       circle at 38% 28%,
@@ -835,15 +859,33 @@ input:focus{
 }
 
 .album-face .track-art img{
+  position:absolute;
+  inset:0;
+  display:block;
   width:100%;
   height:100%;
+  min-width:100%;
+  min-height:100%;
+  max-width:none;
+  max-height:none;
   object-fit:cover;
-  display:block;
+  object-position:center;
+  margin:0;
+  padding:0;
   user-select:none;
   -webkit-user-drag:none;
 }
 
+
+/* =========================================================
+   ALBUM EFFECTS
+   ========================================================= */
+
 .art-placeholder{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
   font-size:56px;
   font-weight:900;
   color:#666;
@@ -852,6 +894,8 @@ input:focus{
 .album-glass{
   position:absolute;
   inset:0;
+  width:100%;
+  height:100%;
   background:
     linear-gradient(
       135deg,
@@ -966,7 +1010,7 @@ input:focus{
 
 
 /* =========================================================
-   CAROUSEL INFORMATION
+   CAROUSEL META
    ========================================================= */
 
 .carousel-meta{
@@ -1025,11 +1069,32 @@ input:focus{
   background:#0d0d0d;
 }
 
+
+/* IMPORTANT:
+   List artwork is ONLY controlled here.
+*/
+
 .track-row>.track-art{
+  position:relative;
+  inset:auto;
   width:46px;
   height:46px;
-  object-fit:cover;
+  min-width:46px;
+  min-height:46px;
+  max-width:46px;
+  max-height:46px;
+  overflow:hidden;
+  display:block;
   background:#151515;
+  object-fit:cover;
+}
+
+.track-row>.track-art img{
+  width:100%;
+  height:100%;
+  max-width:none;
+  object-fit:cover;
+  display:block;
 }
 
 .track-play{
@@ -1480,9 +1545,11 @@ input:focus{
 
   .carousel-card{
     width:68vw;
-    max-width:310px;
     height:84vw;
+    max-width:310px;
     max-height:440px;
+    min-width:210px;
+    min-height:330px;
   }
 
   .gallery-pedestal{
@@ -1591,11 +1658,16 @@ input:focus{
 
   .carousel{
     height:450px;
+    min-height:430px;
   }
 
   .carousel-card{
     width:72vw;
     height:96vw;
+    max-width:300px;
+    max-height:400px;
+    min-width:200px;
+    min-height:290px;
   }
 
   .empty-art{
@@ -1610,6 +1682,10 @@ input:focus{
   .track-row>.track-art{
     width:42px;
     height:42px;
+    min-width:42px;
+    min-height:42px;
+    max-width:42px;
+    max-height:42px;
   }
 
   .track-meta{
