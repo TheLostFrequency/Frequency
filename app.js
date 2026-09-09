@@ -1,48 +1,45 @@
 const SUPABASE_URL =
-  'https://nmiodppvxqpzfrideduv.supabase.co';
+'https://nmiodppvxqpzfrideduv.supabase.co';
 
 const SUPABASE_PUBLISHABLE_KEY =
-  'sb_publishable_S7SpRNfMTiY7SB4Y19LRDQ_WBzH_TPc';
-
+'sb_publishable_S7SpRNfMTiY7SB4Y19LRDQ_WBzH_TPc';
 
 /* =========================================================
-   SUPABASE
+SUPABASE
 ========================================================= */
 
 const supabaseReady =
-  SUPABASE_URL.startsWith('https://') &&
-  SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
+SUPABASE_URL.startsWith('https://') &&
+SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
 
 const sb = supabaseReady
-  ? supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
-        }
-      }
-    )
-  : null;
-
+? supabase.createClient(
+SUPABASE_URL,
+SUPABASE_PUBLISHABLE_KEY,
+{
+auth: {
+persistSession: true,
+autoRefreshToken: true,
+detectSessionInUrl: true
+}
+}
+)
+: null;
 
 /* =========================================================
-   DOM HELPERS
+DOM HELPERS
 ========================================================= */
 
 const $ = (selector) =>
-  document.querySelector(selector);
+document.querySelector(selector);
 
 const $$ = (selector) =>
-  [...document.querySelectorAll(selector)];
+[...document.querySelectorAll(selector)];
 
 const audio = $('#audio');
 
-
 /* =========================================================
-   STATE
+STATE
 ========================================================= */
 
 let currentUser = null;
@@ -53,8 +50,8 @@ let playlists = [];
 let currentTrackIndex = -1;
 
 let viewMode =
-  localStorage.getItem('frequency-view') ||
-  'collection';
+localStorage.getItem('frequency-view') ||
+'collection';
 
 let shuffled = false;
 
@@ -72,1045 +69,1123 @@ let renderToken = 0;
 
 let editingTrackIndex = -1;
 
+let activePlaylist = null;
 
 /* =========================================================
-   URL CACHE
+URL CACHE
 ========================================================= */
 
 const audioUrlCache = new Map();
 const coverUrlCache = new Map();
 
-
 async function signedUrl(bucket, path, cache) {
 
-  if (!path) return null;
+if (!path) return null;
 
-  const cached = cache.get(path);
+const cached = cache.get(path);
 
-  if (
-    cached &&
-    cached.expiresAt > Date.now() + 30000
-  ) {
-    return cached.url;
-  }
-
-  const { data, error } =
-    await sb.storage
-      .from(bucket)
-      .createSignedUrl(path, 3600);
-
-  if (error) {
-    console.error(
-      `Signed URL error for ${bucket}:`,
-      error
-    );
-
-    return null;
-  }
-
-  const entry = {
-    url: data.signedUrl,
-    expiresAt:
-      Date.now() + 55 * 60 * 1000
-  };
-
-  cache.set(path, entry);
-
-  return entry.url;
+if (
+cached &&
+cached.expiresAt > Date.now() + 30000
+) {
+return cached.url;
 }
 
+const { data, error } =
+await sb.storage
+.from(bucket)
+.createSignedUrl(path, 3600);
+
+if (error) {
+console.error(
+`Signed URL error for ${bucket}:`,
+error
+);
+
+```
+return null;
+```
+
+}
+
+const entry = {
+url: data.signedUrl,
+expiresAt:
+Date.now() + 55 * 60 * 1000
+};
+
+cache.set(path, entry);
+
+return entry.url;
+}
 
 async function audioUrl(track) {
 
-  if (!track?.audio_path) {
-    return null;
-  }
-
-  return signedUrl(
-    'audio',
-    track.audio_path,
-    audioUrlCache
-  );
+if (!track?.audio_path) {
+return null;
 }
 
+return signedUrl(
+'audio',
+track.audio_path,
+audioUrlCache
+);
+}
 
 async function coverUrl(track) {
 
-  if (!track?.cover_path) {
-    return null;
-  }
-
-  return signedUrl(
-    'covers',
-    track.cover_path,
-    coverUrlCache
-  );
+if (!track?.cover_path) {
+return null;
 }
 
+return signedUrl(
+'covers',
+track.cover_path,
+coverUrlCache
+);
+}
 
 function clearTrackUrlCache(track) {
 
-  if (!track) return;
+if (!track) return;
 
-  if (track.audio_path) {
-    audioUrlCache.delete(
-      track.audio_path
-    );
-  }
-
-  if (track.cover_path) {
-    coverUrlCache.delete(
-      track.cover_path
-    );
-  }
+if (track.audio_path) {
+audioUrlCache.delete(
+track.audio_path
+);
 }
 
+if (track.cover_path) {
+coverUrlCache.delete(
+track.cover_path
+);
+}
+}
 
 /* =========================================================
-   TOAST
+TOAST
 ========================================================= */
 
 let toastTimer;
 
 function toast(message) {
 
-  const el = $('#toast');
+const el = $('#toast');
 
-  if (!el) return;
+if (!el) return;
 
-  el.textContent = message;
-  el.classList.add('show');
+el.textContent = message;
+el.classList.add('show');
 
-  clearTimeout(toastTimer);
+clearTimeout(toastTimer);
 
-  toastTimer = setTimeout(() => {
-    el.classList.remove('show');
-  }, 3000);
+toastTimer = setTimeout(() => {
+el.classList.remove('show');
+}, 3000);
 }
 
-
 /* =========================================================
-   AUTH
+AUTH
 ========================================================= */
 
 async function getUser() {
 
-  if (!sb) return null;
+if (!sb) return null;
 
-  const {
-    data,
-    error
-  } = await sb.auth.getUser();
+const {
+data,
+error
+} = await sb.auth.getUser();
 
-  if (error) {
-    console.error(
-      'Get user error:',
-      error
-    );
+if (error) {
+console.error(
+'Get user error:',
+error
+);
 
-    return null;
-  }
+```
+return null;
+```
 
-  return data.user || null;
 }
 
+return data.user || null;
+}
 
 async function signIn(
-  email,
-  password
+email,
+password
 ) {
 
-  if (!sb) return;
+if (!sb) return;
 
-  const status = $('#authStatus');
+const status = $('#authStatus');
 
-  if (status) {
-    status.textContent =
-      'Signing in...';
-  }
-
-  const {
-    data,
-    error
-  } = await sb.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-
-    console.error(
-      'Sign in error:',
-      error
-    );
-
-    if (status) {
-      status.textContent =
-        error.message;
-    }
-
-    return;
-  }
-
-  currentUser =
-    data.user || null;
-
-  if (status) {
-    status.textContent = '';
-  }
-
-  showApp();
+if (status) {
+status.textContent =
+'Signing in...';
 }
 
+const {
+data,
+error
+} = await sb.auth.signInWithPassword({
+email,
+password
+});
+
+if (error) {
+
+```
+console.error(
+  'Sign in error:',
+  error
+);
+
+if (status) {
+  status.textContent =
+    error.message;
+}
+
+return;
+```
+
+}
+
+currentUser =
+data.user || null;
+
+if (status) {
+status.textContent = '';
+}
+
+showApp();
+}
 
 async function signUp(
-  email,
-  password
+email,
+password
 ) {
 
-  if (!sb) return;
+if (!sb) return;
 
-  const status = $('#authStatus');
+const status = $('#authStatus');
 
-  if (status) {
-    status.textContent =
-      'Creating your account...';
-  }
-
-  const {
-    data,
-    error
-  } = await sb.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo:
-        window.location.origin
-    }
-  });
-
-  if (error) {
-
-    console.error(
-      'Sign up error:',
-      error
-    );
-
-    if (status) {
-      status.textContent =
-        error.message;
-    }
-
-    return;
-  }
-
-  if (data.session) {
-
-    currentUser =
-      data.user || null;
-
-    if (status) {
-      status.textContent = '';
-    }
-
-    showApp();
-
-  } else {
-
-    if (status) {
-      status.textContent =
-        'Account created. Check your email to confirm your account.';
-    }
-
-  }
+if (status) {
+status.textContent =
+'Creating your account...';
 }
 
+const {
+data,
+error
+} = await sb.auth.signUp({
+email,
+password,
+options: {
+emailRedirectTo:
+window.location.origin
+}
+});
+
+if (error) {
+
+```
+console.error(
+  'Sign up error:',
+  error
+);
+
+if (status) {
+  status.textContent =
+    error.message;
+}
+
+return;
+```
+
+}
+
+if (data.session) {
+
+```
+currentUser =
+  data.user || null;
+
+if (status) {
+  status.textContent = '';
+}
+
+showApp();
+```
+
+} else {
+
+```
+if (status) {
+  status.textContent =
+    'Account created. Check your email to confirm your account.';
+}
+```
+
+}
+}
 
 async function signOut() {
 
-  if (!sb) return;
+if (!sb) return;
 
-  const {
-    error
-  } = await sb.auth.signOut();
+const {
+error
+} = await sb.auth.signOut();
 
-  if (error) {
+if (error) {
 
-    console.error(
-      'Sign out error:',
-      error
-    );
+```
+console.error(
+  'Sign out error:',
+  error
+);
 
-    toast(
-      error.message ||
-      'Could not sign out.'
-    );
+toast(
+  error.message ||
+  'Could not sign out.'
+);
 
-    return;
-  }
+return;
+```
 
-  currentUser = null;
-  tracks = [];
-  playlists = [];
-  currentTrackIndex = -1;
-
-  audio.pause();
-  audio.removeAttribute('src');
-  audio.load();
-
-  showAuth();
 }
 
+currentUser = null;
+tracks = [];
+playlists = [];
+currentTrackIndex = -1;
+activePlaylist = null;
+
+audio.pause();
+audio.removeAttribute('src');
+audio.load();
+
+closePlaylistViewer();
+showAuth();
+}
 
 /* =========================================================
-   AUTH UI
+AUTH UI
 ========================================================= */
 
 let authMode = 'signin';
 
-
 function setupAuth() {
 
-  const form =
-    $('#authForm');
+const form =
+$('#authForm');
 
-  const toggle =
-    $('#authToggle');
+const toggle =
+$('#authToggle');
 
-  const keepLoggedIn =
-    $('#keepLoggedIn');
+const keepLoggedIn =
+$('#keepLoggedIn');
 
-  if (keepLoggedIn) {
+if (keepLoggedIn) {
 
-    const saved =
-      localStorage.getItem(
-        'frequency-keep-logged-in'
-      );
+```
+const saved =
+  localStorage.getItem(
+    'frequency-keep-logged-in'
+  );
 
-    keepLoggedIn.checked =
-      saved !== 'false';
+keepLoggedIn.checked =
+  saved !== 'false';
 
-    keepLoggedIn.addEventListener(
-      'change',
-      () => {
+keepLoggedIn.addEventListener(
+  'change',
+  () => {
 
-        localStorage.setItem(
-          'frequency-keep-logged-in',
-          String(
-            keepLoggedIn.checked
-          )
-        );
-
-      }
+    localStorage.setItem(
+      'frequency-keep-logged-in',
+      String(
+        keepLoggedIn.checked
+      )
     );
+
   }
+);
+```
 
-
-  if (toggle) {
-
-    toggle.addEventListener(
-      'click',
-      () => {
-
-        authMode =
-          authMode === 'signin'
-            ? 'signup'
-            : 'signin';
-
-        const submit =
-          $('#authSubmit');
-
-        const status =
-          $('#authStatus');
-
-        if (authMode === 'signup') {
-
-          if (submit) {
-            submit.textContent =
-              'Create account';
-          }
-
-          toggle.textContent =
-            'Already have an account? Sign in';
-
-        } else {
-
-          if (submit) {
-            submit.textContent =
-              'Sign in';
-          }
-
-          toggle.textContent =
-            'Need an account? Sign up';
-        }
-
-        if (status) {
-          status.textContent = '';
-        }
-      }
-    );
-  }
-
-
-  if (form) {
-
-    form.addEventListener(
-      'submit',
-      async (event) => {
-
-        event.preventDefault();
-
-        const email =
-          $('#authEmail')
-            ?.value
-            .trim();
-
-        const password =
-          $('#authPassword')
-            ?.value;
-
-        if (!email || !password) {
-          return;
-        }
-
-        if (authMode === 'signup') {
-
-          await signUp(
-            email,
-            password
-          );
-
-        } else {
-
-          await signIn(
-            email,
-            password
-          );
-
-        }
-      }
-    );
-  }
 }
 
+if (toggle) {
+
+```
+toggle.addEventListener(
+  'click',
+  () => {
+
+    authMode =
+      authMode === 'signin'
+        ? 'signup'
+        : 'signin';
+
+    const submit =
+      $('#authSubmit');
+
+    const status =
+      $('#authStatus');
+
+    if (authMode === 'signup') {
+
+      if (submit) {
+        submit.textContent =
+          'Create account';
+      }
+
+      toggle.textContent =
+        'Already have an account? Sign in';
+
+    } else {
+
+      if (submit) {
+        submit.textContent =
+          'Sign in';
+      }
+
+      toggle.textContent =
+        'Need an account? Sign up';
+    }
+
+    if (status) {
+      status.textContent = '';
+    }
+  }
+);
+```
+
+}
+
+if (form) {
+
+```
+form.addEventListener(
+  'submit',
+  async (event) => {
+
+    event.preventDefault();
+
+    const email =
+      $('#authEmail')
+        ?.value
+        .trim();
+
+    const password =
+      $('#authPassword')
+        ?.value;
+
+    if (!email || !password) {
+      return;
+    }
+
+    if (authMode === 'signup') {
+
+      await signUp(
+        email,
+        password
+      );
+
+    } else {
+
+      await signIn(
+        email,
+        password
+      );
+
+    }
+  }
+);
+```
+
+}
+}
 
 function showAuth() {
 
-  $('#authView')
-    ?.classList.remove('hidden');
+$('#authView')
+?.classList.remove('hidden');
 
-  $('#appView')
-    ?.classList.add('hidden');
+$('#appView')
+?.classList.add('hidden');
 }
-
 
 function showApp() {
 
-  $('#authView')
-    ?.classList.add('hidden');
+$('#authView')
+?.classList.add('hidden');
 
-  $('#appView')
-    ?.classList.remove('hidden');
+$('#appView')
+?.classList.remove('hidden');
 
-  loadLibrary()
-    .then(() => {
-      renderCurrentPage();
-    })
-    .catch((error) => {
+loadLibrary()
+.then(() => {
+renderCurrentPage();
+})
+.catch((error) => {
 
-      console.error(
-        'Load library error:',
-        error
-      );
+```
+  console.error(
+    'Load library error:',
+    error
+  );
 
-      toast(
-        'Could not load your library.'
-      );
-    });
+  toast(
+    'Could not load your library.'
+  );
+});
+```
+
 }
-
 
 function setupAuthListener() {
 
-  if (!sb) return;
+if (!sb) return;
 
-  sb.auth.onAuthStateChange(
-    async (_event, session) => {
+sb.auth.onAuthStateChange(
+async (_event, session) => {
 
-      const nextUser =
-        session?.user || null;
+```
+  const nextUser =
+    session?.user || null;
 
-      currentUser =
-        nextUser;
+  currentUser =
+    nextUser;
 
-      if (nextUser) {
+  if (nextUser) {
 
-        $('#authView')
-          ?.classList.add('hidden');
+    $('#authView')
+      ?.classList.add('hidden');
 
-        $('#appView')
-          ?.classList.remove('hidden');
+    $('#appView')
+      ?.classList.remove('hidden');
 
-        await loadLibrary();
+    await loadLibrary();
 
-        renderCurrentPage();
+    renderCurrentPage();
 
-      } else {
+  } else {
 
-        showAuth();
+    showAuth();
 
-      }
-    }
-  );
+  }
+}
+```
+
+);
 }
 
-
 /* =========================================================
-   DATABASE
+DATABASE
 ========================================================= */
 
 async function loadTracks() {
 
-  if (!sb || !currentUser) {
-    tracks = [];
-    return;
-  }
-
-  const {
-    data,
-    error
-  } = await sb
-    .from('tracks')
-    .select('*')
-    .eq(
-      'user_id',
-      currentUser.id
-    )
-    .order(
-      'created_at',
-      {
-        ascending: false
-      }
-    );
-
-  if (error) {
-    throw error;
-  }
-
-  tracks =
-    data || [];
+if (!sb || !currentUser) {
+tracks = [];
+return;
 }
 
+const {
+data,
+error
+} = await sb
+.from('tracks')
+.select('*')
+.eq(
+'user_id',
+currentUser.id
+)
+.order(
+'created_at',
+{
+ascending: false
+}
+);
+
+if (error) {
+throw error;
+}
+
+tracks =
+data || [];
+}
 
 async function loadPlaylists() {
 
-  if (!sb || !currentUser) {
-    playlists = [];
-    return;
-  }
-
-  const {
-    data,
-    error
-  } = await sb
-    .from('playlists')
-    .select('*')
-    .eq(
-      'user_id',
-      currentUser.id
-    )
-    .order(
-      'created_at',
-      {
-        ascending: false
-      }
-    );
-
-  if (error) {
-
-    console.warn(
-      'Playlist loading error:',
-      error
-    );
-
-    playlists = [];
-    return;
-  }
-
-  playlists =
-    data || [];
+if (!sb || !currentUser) {
+playlists = [];
+return;
 }
 
+const {
+data,
+error
+} = await sb
+.from('playlists')
+.select('*')
+.eq(
+'user_id',
+currentUser.id
+)
+.order(
+'created_at',
+{
+ascending: false
+}
+);
+
+if (error) {
+
+```
+console.warn(
+  'Playlist loading error:',
+  error
+);
+
+playlists = [];
+return;
+```
+
+}
+
+playlists =
+data || [];
+}
 
 async function loadLibrary() {
 
-  await Promise.all([
-    loadTracks(),
-    loadPlaylists()
-  ]);
+await Promise.all([
+loadTracks(),
+loadPlaylists()
+]);
 
-  updateTrackCount();
+updateTrackCount();
 
-  if (
-    currentTrackIndex >=
-    tracks.length
-  ) {
-    currentTrackIndex =
-      tracks.length - 1;
-  }
+if (
+currentTrackIndex >=
+tracks.length
+) {
+currentTrackIndex =
+tracks.length - 1;
 }
-
+}
 
 function updateTrackCount() {
 
-  const count =
-    $('#trackCount');
+const count =
+$('#trackCount');
 
-  if (!count) return;
+if (!count) return;
 
-  count.textContent =
-    `${tracks.length} ${
+count.textContent =
+`${tracks.length} ${
       tracks.length === 1
         ? 'track'
         : 'tracks'
     }`;
 }
 
-
 /* =========================================================
-   NAVIGATION
+NAVIGATION
 ========================================================= */
 
 function setupNavigation() {
 
-  $$('.nav-item')
-    .forEach((button) => {
+$$$('.nav-item')
+  .forEach((button) => {
 
-      button.addEventListener(
-        'click',
-        () => {
+    button.addEventListener(
+      'click',
+      () => {
 
-          const page =
-            button.dataset.page;
+        const page =
+          button.dataset.page;
 
-          if (!page) return;
+        if (!page) return;
 
-          setPage(page);
-        }
-      );
+        setPage(page);
+      }
+    );
 
-    });
+  });
 }
 
 
 function setPage(page) {
 
-  currentPage =
-    page;
+currentPage =
+  page;
 
-  $$('.nav-item')
-    .forEach((button) => {
+$$('.nav-item')
+  .forEach((button) => {
 
-      button.classList.toggle(
-        'active',
-        button.dataset.page === page
-      );
+    button.classList.toggle(
+      'active',
+      button.dataset.page === page
+    );
 
-    });
-
-
-  $$('.page')
-    .forEach((section) => {
-
-      section.classList.remove(
-        'active-page'
-      );
-
-    });
+  });
 
 
-  const target =
-    $(`#page-${page}`);
+$$('.page')
+  .forEach((section) => {
 
-  if (target) {
-    target.classList.add(
+    section.classList.remove(
       'active-page'
     );
-  }
+
+  });
 
 
-  const titles = {
-    library: 'Library',
-    search: 'Search',
-    albums: 'Albums',
-    playlists: 'Playlists',
-    transmissions: 'Transmissions'
-  };
+const target =
+  $(`#page-${page}`);
 
-  const title =
-    $('#pageTitle');
-
-  if (title) {
-    title.textContent =
-      titles[page] ||
-      'Library';
-  }
+if (target) {
+  target.classList.add(
+    'active-page'
+  );
+}
 
 
-  const switcherVisible =
-    page === 'library';
+const titles = {
+  library: 'Library',
+  search: 'Search',
+  albums: 'Albums',
+  playlists: 'Playlists',
+  transmissions: 'Transmissions'
+};
 
-  $('#viewCollection')
-    ?.classList.toggle(
-      'hidden',
-      !switcherVisible
-    );
+const title =
+  $('#pageTitle');
 
-  $('#viewList')
-    ?.classList.toggle(
-      'hidden',
-      !switcherVisible
-    );
+if (title) {
+  title.textContent =
+    titles[page] ||
+    'Library';
+}
 
 
-  if (page === 'library') {
+const switcherVisible =
+  page === 'library';
 
-    renderLibrary();
+$('#viewCollection')
+  ?.classList.toggle(
+    'hidden',
+    !switcherVisible
+  );
 
-  } else if (page === 'search') {
+$('#viewList')
+  ?.classList.toggle(
+    'hidden',
+    !switcherVisible
+  );
 
-    renderSearch();
 
-  } else if (page === 'albums') {
+if (page === 'library') {
 
-    renderAlbums();
+  renderLibrary();
 
-  } else if (page === 'playlists') {
+} else if (page === 'search') {
 
-    renderPlaylists();
+  renderSearch();
 
-  }
+} else if (page === 'albums') {
+
+  renderAlbums();
+
+} else if (page === 'playlists') {
+
+  renderPlaylists();
+
+}
 }
 
 
 function renderCurrentPage() {
 
-  setPage(
-    currentPage
-  );
+setPage(
+  currentPage
+);
 
-  setView(
-    viewMode
-  );
+setView(
+  viewMode
+);
 }
 
 
 /* =========================================================
-   VIEW SWITCHER
+ VIEW SWITCHER
 ========================================================= */
 
 function setupViewSwitcher() {
 
-  $('#viewCollection')
-    ?.addEventListener(
-      'click',
-      () => {
-        setView('collection');
-      }
-    );
+$('#viewCollection')
+  ?.addEventListener(
+    'click',
+    () => {
+      setView('collection');
+    }
+  );
 
-  $('#viewList')
-    ?.addEventListener(
-      'click',
-      () => {
-        setView('list');
-      }
-    );
+$('#viewList')
+  ?.addEventListener(
+    'click',
+    () => {
+      setView('list');
+    }
+  );
 }
 
 
 function setView(mode) {
 
-  viewMode =
-    mode;
+viewMode =
+  mode;
 
-  localStorage.setItem(
-    'frequency-view',
-    mode
+localStorage.setItem(
+  'frequency-view',
+  mode
+);
+
+$('#viewCollection')
+  ?.classList.toggle(
+    'active',
+    mode === 'collection'
   );
 
-  $('#viewCollection')
-    ?.classList.toggle(
-      'active',
-      mode === 'collection'
-    );
-
-  $('#viewList')
-    ?.classList.toggle(
-      'active',
-      mode === 'list'
-    );
+$('#viewList')
+  ?.classList.toggle(
+    'active',
+    mode === 'list'
+  );
 
 
-  if (currentPage !== 'library') {
-    return;
-  }
+if (currentPage !== 'library') {
+  return;
+}
 
 
-  $('#collectionView')
-    ?.classList.toggle(
-      'hidden',
-      mode !== 'collection'
-    );
+$('#collectionView')
+  ?.classList.toggle(
+    'hidden',
+    mode !== 'collection'
+  );
 
-  $('#listView')
-    ?.classList.toggle(
-      'hidden',
-      mode !== 'list'
-    );
+$('#listView')
+  ?.classList.toggle(
+    'hidden',
+    mode !== 'list'
+  );
 
 
-  if (mode === 'collection') {
+if (mode === 'collection') {
 
-    renderCarousel();
+  renderCarousel();
 
-  } else {
+} else {
 
-    renderList();
-  }
+  renderList();
+}
 }
 
 
 /* =========================================================
-   LIBRARY
+ LIBRARY
 ========================================================= */
 
 function renderLibrary() {
 
-  updateTrackCount();
+updateTrackCount();
 
-  const empty =
-    $('#emptyLibrary');
+const empty =
+  $('#emptyLibrary');
 
-  const collection =
-    $('#collectionView');
+const collection =
+  $('#collectionView');
 
-  const list =
-    $('#listView');
+const list =
+  $('#listView');
 
 
-  if (!tracks.length) {
-
-    empty
-      ?.classList.remove('hidden');
-
-    collection
-      ?.classList.add('hidden');
-
-    list
-      ?.classList.add('hidden');
-
-    return;
-  }
-
+if (!tracks.length) {
 
   empty
+    ?.classList.remove('hidden');
+
+  collection
     ?.classList.add('hidden');
 
+  list
+    ?.classList.add('hidden');
 
-  if (viewMode === 'collection') {
+  return;
+}
 
-    collection
-      ?.classList.remove('hidden');
 
-    list
-      ?.classList.add('hidden');
+empty
+  ?.classList.add('hidden');
 
-    renderCarousel();
 
-  } else {
+if (viewMode === 'collection') {
 
-    collection
-      ?.classList.add('hidden');
+  collection
+    ?.classList.remove('hidden');
 
-    list
-      ?.classList.remove('hidden');
+  list
+    ?.classList.add('hidden');
 
-    renderList();
-  }
+  renderCarousel();
+
+} else {
+
+  collection
+    ?.classList.add('hidden');
+
+  list
+    ?.classList.remove('hidden');
+
+  renderList();
+}
 }
 
 
 /* =========================================================
-   CAROUSEL — 3D ALBUM OBJECT GALLERY
+ CAROUSEL — 3D ALBUM OBJECT GALLERY
 ========================================================= */
 
 let carouselSignature = '';
 
 function getCarouselSignature() {
 
-  return tracks
-    .map(
-      (track) =>
-        [
-          track.id,
-          track.cover_path,
-          track.title,
-          track.artist
-        ].join(':')
-    )
-    .join('|');
+return tracks
+  .map(
+    (track) =>
+      [
+        track.id,
+        track.cover_path,
+        track.title,
+        track.artist
+      ].join(':')
+  )
+  .join('|');
 }
 
 async function renderCarousel() {
 
-  const carousel =
-    $('#carousel');
+const carousel =
+  $('#carousel');
 
-  if (!carousel) return;
+if (!carousel) return;
 
-  if (!tracks.length) {
-    carousel.innerHTML = '';
-    return;
-  }
+if (!tracks.length) {
+  carousel.innerHTML = '';
+  return;
+}
 
-  const signature =
-    getCarouselSignature();
+const signature =
+  getCarouselSignature();
 
-  if (signature !== carouselSignature) {
+if (signature !== carouselSignature) {
 
-    carouselSignature = signature;
+  carouselSignature = signature;
 
-    carousel.innerHTML = tracks
-      .map(
-        (track, index) => `
-          <button
-            class="carousel-card"
-            data-index="${index}"
-            type="button"
-            aria-label="${escapeHtml(track.title || 'track')}"
-          >
-            <span class="album-object" aria-hidden="true">
-              <span class="album-face">
-                <span class="track-art">
-                  <span class="art-placeholder">F</span>
-                </span>
-                <span class="album-glass"></span>
-                <span class="album-print"></span>
+  carousel.innerHTML = tracks
+    .map(
+      (track, index) => `
+        <button
+          class="carousel-card"
+          data-index="${index}"
+          type="button"
+          aria-label="${escapeHtml(track.title || 'track')}"
+        >
+          <span class="album-object" aria-hidden="true">
+            <span class="album-face">
+              <span class="track-art">
+                <span class="art-placeholder">F</span>
               </span>
-              <span class="album-spine"></span>
-              <span class="album-edge-bottom"></span>
-              <span class="album-edge-right"></span>
-              <span class="album-shadow"></span>
+              <span class="album-glass"></span>
+              <span class="album-print"></span>
             </span>
-          </button>
-        `
-      )
-      .join('');
+            <span class="album-spine"></span>
+            <span class="album-edge-bottom"></span>
+            <span class="album-edge-right"></span>
+            <span class="album-shadow"></span>
+          </span>
+        </button>
+      `
+    )
+    .join('');
 
-    $$('.carousel-card').forEach((card) => {
+  $$('.carousel-card').forEach((card) => {
 
-      card.addEventListener(
-        'click',
-        () => {
+    card.addEventListener(
+      'click',
+      () => {
 
-          const index = Number(card.dataset.index);
+        const index =
+          Number(
+            card.dataset.index
+          );
 
-          if (index === carouselIndex) {
-            playTrack(index);
-          } else {
-            carouselIndex = index;
-            updateCarouselPosition();
-            updateCarouselMeta();
-          }
+        if (index === carouselIndex) {
+          playTrack(index);
+        } else {
+          carouselIndex = index;
+          updateCarouselPosition();
+          updateCarouselMeta();
         }
-      );
-    });
+      }
+    );
+  });
 
-    await hydrateCarouselArtwork();
-  }
+  await hydrateCarouselArtwork();
+}
 
-  carouselIndex = Math.min(
-    Math.max(carouselIndex, 0),
-    tracks.length - 1
-  );
+carouselIndex = Math.min(
+  Math.max(carouselIndex, 0),
+  tracks.length - 1
+);
 
-  updateCarouselPosition();
-  updateCarouselMeta();
+updateCarouselPosition();
+updateCarouselMeta();
 }
 
 async function hydrateCarouselArtwork() {
 
-  const token = renderToken;
-  const cards = $$('.carousel-card');
+const token = renderToken;
+const cards = $$('.carousel-card');
 
-  await Promise.all(
-    cards.map(async (card) => {
+await Promise.all(
+  cards.map(async (card) => {
 
-      const index = Number(card.dataset.index);
-      const track = tracks[index];
+    const index =
+      Number(
+        card.dataset.index
+      );
 
-      if (!track) return;
+    const track =
+      tracks[index];
 
-      const url = await coverUrl(track);
+    if (!track) return;
 
-      if (token !== renderToken) return;
+    const url =
+      await coverUrl(track);
 
-      const art = card.querySelector('.track-art');
+    if (token !== renderToken) return;
 
-      if (!art) return;
+    const art =
+      card.querySelector(
+        '.track-art'
+      );
 
-      if (url) {
-        art.innerHTML = `
-          <img
-            src="${escapeAttribute(url)}"
-            alt=""
-            draggable="false"
-          />
-        `;
-      } else {
-        art.innerHTML = '<span class="art-placeholder">F</span>';
-      }
-    })
-  );
+    if (!art) return;
+
+    if (url) {
+
+      art.innerHTML = `
+        <img
+          src="${escapeAttribute(url)}"
+          alt=""
+          draggable="false"
+        />
+      `;
+
+    } else {
+
+      art.innerHTML =
+        '<span class="art-placeholder">F</span>';
+
+    }
+  })
+);
 }
 
 function updateCarouselPosition() {
 
-  const carousel = $('#carousel');
-  const cards = $$('.carousel-card');
+const carousel =
+  $('#carousel');
 
-  if (!carousel || !cards.length) return;
+const cards =
+  $$('.carousel-card');
 
-  const width = carousel.clientWidth || 1100;
-  const gap = Math.max(
+if (
+  !carousel ||
+  !cards.length
+) {
+  return;
+}
+
+const width =
+  carousel.clientWidth ||
+  1100;
+
+const gap =
+  Math.max(
     205,
-    Math.min(365, width * 0.255)
+    Math.min(
+      365,
+      width * 0.255
+    )
   );
 
-  cards.forEach((card, index) => {
+cards.forEach(
+  (card, index) => {
 
-    const offset = index - carouselIndex;
-    const distance = Math.abs(offset);
+    const offset =
+      index -
+      carouselIndex;
 
-    const x = offset * gap;
-    const y = Math.min(distance * 12, 54);
+    const distance =
+      Math.abs(offset);
+
+    const x =
+      offset * gap;
+
+    const y =
+      Math.min(
+        distance * 12,
+        54
+      );
+
     const z =
       offset === 0
         ? 155
-        : -Math.min(distance * 125, 650);
+        : -Math.min(
+            distance * 125,
+            650
+          );
 
-    const rotateY = offset * -21;
-    const rotateX = distance * 1.8;
+    const rotateY =
+      offset * -21;
+
+    const rotateX =
+      distance * 1.8;
+
     const scale =
       offset === 0
         ? 1
-        : Math.max(0.52, 1 - distance * 0.105);
+        : Math.max(
+            0.52,
+            1 -
+            distance * 0.105
+          );
 
     const opacity =
       distance > 4
         ? 0
-        : Math.max(0.12, 1 - distance * 0.2);
+        : Math.max(
+            0.12,
+            1 -
+            distance * 0.2
+          );
 
     card.style.transform =
       `translate3d(${x}px, ${y}px, ${z}px) ` +
@@ -1118,591 +1193,736 @@ function updateCarouselPosition() {
       `rotateY(${rotateY}deg) ` +
       `scale(${scale})`;
 
-    card.style.opacity = String(opacity);
-    card.style.zIndex = String(
-      1000 - distance * 20 - (offset > 0 ? offset : 0)
-    );
-    card.style.pointerEvents = distance <= 4 ? 'auto' : 'none';
+    card.style.opacity =
+      String(opacity);
+
+    card.style.zIndex =
+      String(
+        1000 -
+        distance * 20 -
+        (
+          offset > 0
+            ? offset
+            : 0
+        )
+      );
+
+    card.style.pointerEvents =
+      distance <= 4
+        ? 'auto'
+        : 'none';
 
     card.classList.toggle(
       'active',
       index === carouselIndex
     );
-  });
+  }
+);
 }
 
 function updateCarouselMeta() {
 
-  const track = tracks[carouselIndex];
+const track =
+  tracks[carouselIndex];
 
-  if (!track) return;
+if (!track) return;
 
-  $('#activeArtist').textContent =
-    track.artist || 'Unknown artist';
+$('#activeArtist').textContent =
+  track.artist ||
+  'Unknown artist';
 
-  $('#activeTitle').textContent =
-    track.title || 'Untitled';
+$('#activeTitle').textContent =
+  track.title ||
+  'Untitled';
 
-  $('#activeAlbum').textContent =
-    track.album || 'Single';
+$('#activeAlbum').textContent =
+  track.album ||
+  'Single';
 }
 
 function carouselNext() {
 
-  if (!tracks.length) return;
+if (!tracks.length) return;
 
-  carouselIndex = Math.min(
+carouselIndex =
+  Math.min(
     carouselIndex + 1,
     tracks.length - 1
   );
 
-  updateCarouselPosition();
-  updateCarouselMeta();
+updateCarouselPosition();
+updateCarouselMeta();
 }
 
 function carouselPrevious() {
 
-  if (!tracks.length) return;
+if (!tracks.length) return;
 
-  carouselIndex = Math.max(
+carouselIndex =
+  Math.max(
     carouselIndex - 1,
     0
   );
 
-  updateCarouselPosition();
-  updateCarouselMeta();
+updateCarouselPosition();
+updateCarouselMeta();
 }
 
+
 /* =========================================================
-   CAROUSEL DRAG / SWIPE
+ CAROUSEL DRAG / SWIPE
 ========================================================= */
 
 function setupCarouselGestures() {
 
-  const carousel = $('#carousel');
+const carousel =
+  $('#carousel');
 
-  if (!carousel) return;
+if (!carousel) return;
 
-  carousel.addEventListener(
-    'pointerdown',
-    (event) => {
+carousel.addEventListener(
+  'pointerdown',
+  (event) => {
 
-      if (
-        event.button !== undefined &&
-        event.button !== 0
-      ) {
-        return;
+    if (
+      event.button !== undefined &&
+      event.button !== 0
+    ) {
+      return;
+    }
+
+    isDragging = true;
+
+    dragStartX =
+      event.clientX;
+
+    dragCurrentX =
+      event.clientX;
+
+    carousel.classList.add(
+      'is-dragging'
+    );
+
+    carousel.setPointerCapture(
+      event.pointerId
+    );
+  }
+);
+
+carousel.addEventListener(
+  'pointermove',
+  (event) => {
+
+    if (!isDragging) return;
+
+    dragCurrentX =
+      event.clientX;
+  }
+);
+
+carousel.addEventListener(
+  'pointerup',
+  (event) => {
+
+    if (!isDragging) return;
+
+    isDragging = false;
+
+    carousel.classList.remove(
+      'is-dragging'
+    );
+
+    const delta =
+      dragCurrentX -
+      dragStartX;
+
+    if (
+      Math.abs(delta) >
+      45
+    ) {
+
+      if (delta < 0) {
+        carouselNext();
+      } else {
+        carouselPrevious();
       }
-
-      isDragging = true;
-      dragStartX = event.clientX;
-      dragCurrentX = event.clientX;
-
-      carousel.classList.add('is-dragging');
-      carousel.setPointerCapture(event.pointerId);
     }
-  );
 
-  carousel.addEventListener(
-    'pointermove',
-    (event) => {
-      if (!isDragging) return;
-      dragCurrentX = event.clientX;
-    }
-  );
+    try {
+      carousel.releasePointerCapture(
+        event.pointerId
+      );
+    } catch {}
+  }
+);
 
-  carousel.addEventListener(
-    'pointerup',
-    (event) => {
+carousel.addEventListener(
+  'pointercancel',
+  () => {
 
-      if (!isDragging) return;
+    isDragging = false;
 
-      isDragging = false;
-      carousel.classList.remove('is-dragging');
+    carousel.classList.remove(
+      'is-dragging'
+    );
+  }
+);
 
-      const delta = dragCurrentX - dragStartX;
+carousel.addEventListener(
+  'wheel',
+  (event) => {
 
-      if (Math.abs(delta) > 45) {
-        if (delta < 0) {
-          carouselNext();
-        } else {
-          carouselPrevious();
-        }
+    if (
+      Math.abs(event.deltaY) >
+      Math.abs(event.deltaX)
+    ) {
+
+      event.preventDefault();
+
+      if (event.deltaY > 0) {
+        carouselNext();
+      } else {
+        carouselPrevious();
       }
-
-      try {
-        carousel.releasePointerCapture(event.pointerId);
-      } catch {}
     }
-  );
-
-  carousel.addEventListener(
-    'pointercancel',
-    () => {
-      isDragging = false;
-      carousel.classList.remove('is-dragging');
-    }
-  );
-
-  carousel.addEventListener(
-    'wheel',
-    (event) => {
-
-      if (
-        Math.abs(event.deltaY) >
-        Math.abs(event.deltaX)
-      ) {
-
-        event.preventDefault();
-
-        if (event.deltaY > 0) {
-          carouselNext();
-        } else {
-          carouselPrevious();
-        }
-      }
-    },
-    { passive: false }
-  );
+  },
+  {
+    passive: false
+  }
+);
 }
 
 
 /* =========================================================
-   LIST VIEW
+ LIST VIEW
 ========================================================= */
 
 async function renderList() {
 
-  const container =
-    $('#listView');
+const container =
+  $('#listView');
 
-  if (!container) return;
-
-
-  if (!tracks.length) {
-
-    container.innerHTML =
-      '<p class="muted">No music yet.</p>';
-
-    return;
-  }
+if (!container) return;
 
 
-  const token =
-    ++renderToken;
-
-
-  const artwork =
-    await Promise.all(
-      tracks.map(
-        (track) =>
-          coverUrl(track)
-      )
-    );
-
-
-  if (token !== renderToken) {
-    return;
-  }
-
+if (!tracks.length) {
 
   container.innerHTML =
-    tracks
-      .map(
-        (track, index) => {
+    '<p class="muted">No music yet.</p>';
 
-          const cover =
-            artwork[index];
+  return;
+}
 
-          return `
-            <div
-              class="track-row"
-              data-index="${index}"
+
+const token =
+  ++renderToken;
+
+
+const artwork =
+  await Promise.all(
+    tracks.map(
+      (track) =>
+        coverUrl(track)
+    )
+  );
+
+
+if (token !== renderToken) {
+  return;
+}
+
+
+container.innerHTML =
+  tracks
+    .map(
+      (track, index) => {
+
+        const cover =
+          artwork[index];
+
+        return `
+          <div
+            class="track-row"
+            data-index="${index}"
+          >
+
+            <button
+              class="track-art track-play"
+              type="button"
+              data-action="play"
+              aria-label="Play"
             >
+              ${
+                cover
+                  ? `
+                    <img
+                      src="${escapeAttribute(
+                        cover
+                      )}"
+                      alt=""
+                    />
+                  `
+                  : `
+                    <div class="art-placeholder">
+                      F
+                    </div>
+                  `
+              }
+            </button>
 
-              <button
-                class="track-art track-play"
-                type="button"
-                data-action="play"
-                aria-label="Play"
-              >
+
+            <button
+              class="track-info track-play"
+              type="button"
+              data-action="play"
+            >
+              <strong>
+                ${escapeHtml(
+                  track.title ||
+                  'Untitled'
+                )}
+              </strong>
+
+              <span>
+                ${escapeHtml(
+                  track.artist ||
+                  'Unknown artist'
+                )}
                 ${
-                  cover
-                    ? `
-                      <img
-                        src="${escapeAttribute(
-                          cover
-                        )}"
-                        alt=""
-                      />
-                    `
-                    : `
-                      <div class="art-placeholder">
-                        F
-                      </div>
-                    `
-                }
-              </button>
-
-
-              <button
-                class="track-info track-play"
-                type="button"
-                data-action="play"
-              >
-                <strong>
-                  ${escapeHtml(
-                    track.title ||
-                    'Untitled'
-                  )}
-                </strong>
-
-                <span>
-                  ${escapeHtml(
-                    track.artist ||
-                    'Unknown artist'
-                  )}
-                  ${
-                    track.album
-                      ? ` · ${escapeHtml(
-                          track.album
-                        )}`
-                      : ''
-                  }
-                </span>
-              </button>
-
-
-              <div class="track-meta">
-
-                ${
-                  track.genre
-                    ? `
-                      <span>
-                        ${escapeHtml(
-                          track.genre
-                        )}
-                      </span>
-                    `
+                  track.album
+                    ? ` · ${escapeHtml(
+                        track.album
+                      )}`
                     : ''
                 }
-
-                ${
-                  track.year
-                    ? `
-                      <span>
-                        ${escapeHtml(
-                          String(
-                            track.year
-                          )
-                        )}
-                      </span>
-                    `
-                    : ''
-                }
-
-              </div>
+              </span>
+            </button>
 
 
-              <div class="row-actions">
+            <div class="track-meta">
 
-                <button
-                  class="small-btn"
-                  type="button"
-                  data-action="edit"
-                >
-                  Edit
-                </button>
+              ${
+                track.genre
+                  ? `
+                    <span>
+                      ${escapeHtml(
+                        track.genre
+                      )}
+                    </span>
+                  `
+                  : ''
+              }
 
-                <button
-                  class="small-btn"
-                  type="button"
-                  data-action="delete"
-                >
-                  Delete
-                </button>
-
-              </div>
+              ${
+                track.year
+                  ? `
+                    <span>
+                      ${escapeHtml(
+                        String(
+                          track.year
+                        )
+                      )}
+                    </span>
+                  `
+                  : ''
+              }
 
             </div>
-          `;
-        }
-      )
-      .join('');
 
 
-  container
-    .querySelectorAll(
-      '[data-action]'
+            <div class="row-actions">
+
+              <button
+                class="small-btn"
+                type="button"
+                data-action="edit"
+              >
+                Edit
+              </button>
+
+              <button
+                class="small-btn"
+                type="button"
+                data-action="delete"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </div>
+        `;
+      }
     )
-    .forEach(
-      (button) => {
-
-        button.addEventListener(
-          'click',
-          (event) => {
-
-            event.stopPropagation();
-
-            const row =
-              button.closest(
-                '.track-row'
-              );
-
-            if (!row) return;
-
-            const index =
-              Number(
-                row.dataset.index
-              );
-
-            const action =
-              button.dataset.action;
+    .join('');
 
 
-            if (
-              action === 'play'
-            ) {
+container
+  .querySelectorAll(
+    '[data-action]'
+  )
+  .forEach(
+    (button) => {
 
-              playTrack(index);
+      button.addEventListener(
+        'click',
+        (event) => {
 
-            } else if (
-              action === 'edit'
-            ) {
+          event.stopPropagation();
 
-              openEditTrack(index);
+          const row =
+            button.closest(
+              '.track-row'
+            );
 
-            } else if (
-              action === 'delete'
-            ) {
+          if (!row) return;
 
-              deleteTrack(index);
+          const index =
+            Number(
+              row.dataset.index
+            );
 
-            }
+          const action =
+            button.dataset.action;
+
+
+          if (
+            action === 'play'
+          ) {
+
+            playTrack(index);
+
+          } else if (
+            action === 'edit'
+          ) {
+
+            openEditTrack(index);
+
+          } else if (
+            action === 'delete'
+          ) {
+
+            deleteTrack(index);
 
           }
-        );
 
-      }
-    );
+        }
+      );
+
+    }
+  );
 }
 
 
 /* =========================================================
-   EDIT TRACK
+ EDIT TRACK
 ========================================================= */
 
 function openEditTrack(index) {
 
-  const track =
-    tracks[index];
+const track =
+  tracks[index];
 
-  if (!track) return;
+if (!track) return;
 
-  editingTrackIndex =
-    index;
-
-
-  $('#editTitle').value =
-    track.title || '';
-
-  $('#editArtist').value =
-    track.artist || '';
-
-  $('#editAlbum').value =
-    track.album || '';
-
-  $('#editGenre').value =
-    track.genre || '';
-
-  $('#editYear').value =
-    track.year || '';
+editingTrackIndex =
+  index;
 
 
-  $('#editCoverFile').value =
-    '';
+$('#editTitle').value =
+  track.title || '';
+
+$('#editArtist').value =
+  track.artist || '';
+
+$('#editAlbum').value =
+  track.album || '';
+
+$('#editGenre').value =
+  track.genre || '';
+
+$('#editYear').value =
+  track.year || '';
 
 
-  const preview =
-    $('#editCoverPreview');
+$('#editCoverFile').value =
+  '';
 
-  if (preview) {
 
-    if (track.cover_path) {
+const preview =
+  $('#editCoverPreview');
 
-      coverUrl(track)
-        .then((url) => {
+if (preview) {
 
-          if (url) {
+  if (track.cover_path) {
 
-            preview.innerHTML = `
-              <img
-                src="${escapeAttribute(
-                  url
-                )}"
-                alt=""
-              />
-            `;
+    coverUrl(track)
+      .then((url) => {
 
-          } else {
+        if (url) {
 
-            preview.innerHTML =
-              '<span>F</span>';
+          preview.innerHTML = `
+            <img
+              src="${escapeAttribute(
+                url
+              )}"
+              alt=""
+            />
+          `;
 
-          }
+        } else {
 
-        });
+          preview.innerHTML =
+            '<span>F</span>';
 
-    } else {
+        }
 
-      preview.innerHTML =
-        '<span>F</span>';
-    }
+      });
+
+  } else {
+
+    preview.innerHTML =
+      '<span>F</span>';
   }
+}
 
 
-  $('#editStatus').textContent =
-    '';
+$('#editStatus').textContent =
+  '';
 
-  openModal('editModal');
+openModal('editModal');
 }
 
 
 async function saveEditedTrack(event) {
 
-  event.preventDefault();
+event.preventDefault();
+
+if (
+  !sb ||
+  !currentUser ||
+  editingTrackIndex < 0
+) {
+  return;
+}
+
+
+const track =
+  tracks[editingTrackIndex];
+
+if (!track) return;
+
+
+const status =
+  $('#editStatus');
+
+const button =
+  $('#editForm button[type="submit"]');
+
+
+const title =
+  $('#editTitle')
+    .value
+    .trim();
+
+const artist =
+  $('#editArtist')
+    .value
+    .trim();
+
+const album =
+  $('#editAlbum')
+    .value
+    .trim();
+
+const genre =
+  $('#editGenre')
+    .value
+    .trim();
+
+const yearInput =
+  $('#editYear')
+    .value
+    .trim();
+
+
+if (!title) {
+
+  if (status) {
+    status.textContent =
+      'Title is required.';
+  }
+
+  return;
+}
+
+
+if (!artist) {
+
+  if (status) {
+    status.textContent =
+      'Artist is required.';
+  }
+
+  return;
+}
+
+
+let year = null;
+
+if (yearInput) {
+
+  year =
+    Number(yearInput);
 
   if (
-    !sb ||
-    !currentUser ||
-    editingTrackIndex < 0
+    !Number.isInteger(year) ||
+    year < 0 ||
+    year > 9999
   ) {
-    return;
-  }
-
-
-  const track =
-    tracks[editingTrackIndex];
-
-  if (!track) return;
-
-
-  const status =
-    $('#editStatus');
-
-  const button =
-    $('#editForm button[type="submit"]');
-
-
-  const title =
-    $('#editTitle')
-      .value
-      .trim();
-
-  const artist =
-    $('#editArtist')
-      .value
-      .trim();
-
-  const album =
-    $('#editAlbum')
-      .value
-      .trim();
-
-  const genre =
-    $('#editGenre')
-      .value
-      .trim();
-
-  const yearInput =
-    $('#editYear')
-      .value
-      .trim();
-
-
-  if (!title) {
 
     if (status) {
       status.textContent =
-        'Title is required.';
+        'Year must be a valid number.';
     }
 
     return;
   }
+}
 
 
-  if (!artist) {
+const coverFile =
+  $('#editCoverFile')
+    ?.files?.[0] || null;
 
-    if (status) {
-      status.textContent =
-        'Artist is required.';
-    }
 
-    return;
+try {
+
+  if (button) {
+    button.disabled = true;
+    button.textContent =
+      'Saving...';
+  }
+
+  if (status) {
+    status.textContent =
+      'Saving changes...';
   }
 
 
-  let year = null;
+  const {
+    data: updatedRows,
+    error
+  } = await sb
+    .from('tracks')
+    .update({
+      title:
+        title || 'Untitled',
 
-  if (yearInput) {
+      artist:
+        artist || 'Unknown artist',
 
-    year =
-      Number(yearInput);
+      album:
+        album || null,
 
-    if (
-      !Number.isInteger(year) ||
-      year < 0 ||
-      year > 9999
-    ) {
+      genre:
+        genre || null,
 
-      if (status) {
-        status.textContent =
-          'Year must be a valid number.';
-      }
+      year
+    })
+    .eq(
+      'id',
+      track.id
+    )
+    .eq(
+      'user_id',
+      currentUser.id
+    )
+    .select(
+      'id,title,artist,album,genre,year,cover_path,audio_path'
+    );
 
-      return;
-    }
+
+  if (error) {
+    throw error;
   }
 
 
-  const coverFile =
-    $('#editCoverFile')
-      ?.files?.[0] || null;
+  if (
+    !updatedRows ||
+    !updatedRows.length
+  ) {
+
+    throw new Error(
+      'Frequency could not update this track. Supabase returned no updated row. Check the UPDATE policy for the tracks table.'
+    );
+  }
 
 
-  try {
+  let updatedTrack =
+    updatedRows[0];
 
-    if (button) {
-      button.disabled = true;
-      button.textContent =
-        'Saving...';
-    }
+
+  if (coverFile) {
+
+    const extension =
+      getFileExtension(
+        coverFile.name
+      );
+
+    const safeName =
+      sanitizeFileName(
+        coverFile.name
+      );
+
+    const newPath =
+      `${currentUser.id}/` +
+      `${crypto.randomUUID()}-` +
+      `${safeName || `cover.${extension}`}`;
+
 
     if (status) {
       status.textContent =
-        'Saving changes...';
+        'Uploading new artwork...';
     }
 
 
     const {
-      data: updatedRows,
-      error
+      error:
+        coverUploadError
+    } = await sb.storage
+      .from('covers')
+      .upload(
+        newPath,
+        coverFile,
+        {
+          upsert: false,
+          contentType:
+            coverFile.type ||
+            undefined
+        }
+      );
+
+
+    if (coverUploadError) {
+      throw coverUploadError;
+    }
+
+
+    const oldCoverPath =
+      track.cover_path;
+
+
+    const {
+      data:
+        coverUpdatedRows,
+      error:
+        coverUpdateError
     } = await sb
       .from('tracks')
       .update({
-        title:
-          title || 'Untitled',
-
-        artist:
-          artist || 'Unknown artist',
-
-        album:
-          album || null,
-
-        genre:
-          genre || null,
-
-        year
+        cover_path:
+          newPath
       })
       .eq(
         'id',
@@ -1717,1333 +1937,1493 @@ async function saveEditedTrack(event) {
       );
 
 
-    if (error) {
-      throw error;
+    if (coverUpdateError) {
+
+      await sb.storage
+        .from('covers')
+        .remove([
+          newPath
+        ]);
+
+      throw coverUpdateError;
     }
 
 
     if (
-      !updatedRows ||
-      !updatedRows.length
+      !coverUpdatedRows ||
+      !coverUpdatedRows.length
     ) {
+
+      await sb.storage
+        .from('covers')
+        .remove([
+          newPath
+        ]);
 
       throw new Error(
-        'Frequency could not update this track. Supabase returned no updated row. Check the UPDATE policy for the tracks table.'
+        'Artwork uploaded, but Frequency could not attach it to the track.'
       );
     }
 
 
-    let updatedTrack =
-      updatedRows[0];
+    updatedTrack =
+      coverUpdatedRows[0];
 
 
-    if (coverFile) {
-
-      const extension =
-        getFileExtension(
-          coverFile.name
-        );
-
-      const safeName =
-        sanitizeFileName(
-          coverFile.name
-        );
-
-      const newPath =
-        `${currentUser.id}/` +
-        `${crypto.randomUUID()}-` +
-        `${safeName || `cover.${extension}`}`;
-
-
-      if (status) {
-        status.textContent =
-          'Uploading new artwork...';
-      }
-
+    if (
+      oldCoverPath &&
+      oldCoverPath !== newPath
+    ) {
 
       const {
         error:
-          coverUploadError
+          oldCoverDeleteError
       } = await sb.storage
         .from('covers')
-        .upload(
-          newPath,
-          coverFile,
-          {
-            upsert: false,
-            contentType:
-              coverFile.type ||
-              undefined
-          }
-        );
+        .remove([
+          oldCoverPath
+        ]);
 
+      if (oldCoverDeleteError) {
 
-      if (coverUploadError) {
-        throw coverUploadError;
-      }
-
-
-      const oldCoverPath =
-        track.cover_path;
-
-
-      const {
-        data:
-          coverUpdatedRows,
-        error:
-          coverUpdateError
-      } = await sb
-        .from('tracks')
-        .update({
-          cover_path:
-            newPath
-        })
-        .eq(
-          'id',
-          track.id
-        )
-        .eq(
-          'user_id',
-          currentUser.id
-        )
-        .select(
-          'id,title,artist,album,genre,year,cover_path,audio_path'
-        );
-
-
-      if (coverUpdateError) {
-
-        await sb.storage
-          .from('covers')
-          .remove([
-            newPath
-          ]);
-
-        throw coverUpdateError;
-      }
-
-
-      if (
-        !coverUpdatedRows ||
-        !coverUpdatedRows.length
-      ) {
-
-        await sb.storage
-          .from('covers')
-          .remove([
-            newPath
-          ]);
-
-        throw new Error(
-          'Artwork uploaded, but Frequency could not attach it to the track.'
+        console.warn(
+          'Old artwork cleanup failed:',
+          oldCoverDeleteError
         );
       }
-
-
-      updatedTrack =
-        coverUpdatedRows[0];
-
-
-      if (
-        oldCoverPath &&
-        oldCoverPath !== newPath
-      ) {
-
-        const {
-          error:
-            oldCoverDeleteError
-        } = await sb.storage
-          .from('covers')
-          .remove([
-            oldCoverPath
-          ]);
-
-        if (oldCoverDeleteError) {
-
-          console.warn(
-            'Old artwork cleanup failed:',
-            oldCoverDeleteError
-          );
-        }
-      }
-
-    }
-
-
-    tracks[
-      editingTrackIndex
-    ] = {
-      ...tracks[
-        editingTrackIndex
-      ],
-      ...updatedTrack
-    };
-
-
-    clearTrackUrlCache(
-      track
-    );
-
-
-    if (
-      track.cover_path !==
-      updatedTrack.cover_path
-    ) {
-
-      coverUrlCache.delete(
-        track.cover_path
-      );
-    }
-
-
-    closeModal(
-      'editModal'
-    );
-
-
-    renderToken++;
-
-    carouselSignature =
-      '';
-
-
-    renderCurrentPage();
-
-
-    await loadLibrary();
-
-    renderCurrentPage();
-
-    toast(
-      'Track updated successfully.'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'EDIT TRACK ERROR:',
-      error
-    );
-
-
-    let message =
-      error?.message ||
-      'Could not update track.';
-
-
-    if (
-      error?.code ===
-      '42501'
-    ) {
-
-      message =
-        'Supabase is blocking the edit. Your tracks UPDATE policy needs to allow users to update their own tracks.';
-    }
-
-
-    if (status) {
-      status.textContent =
-        message;
-    }
-
-
-    toast(message);
-
-
-  } finally {
-
-    if (button) {
-      button.disabled = false;
-      button.textContent =
-        'Save changes';
     }
 
   }
+
+
+  tracks[
+    editingTrackIndex
+  ] = {
+    ...tracks[
+      editingTrackIndex
+    ],
+    ...updatedTrack
+  };
+
+
+  clearTrackUrlCache(
+    track
+  );
+
+
+  if (
+    track.cover_path !==
+    updatedTrack.cover_path
+  ) {
+
+    coverUrlCache.delete(
+      track.cover_path
+    );
+  }
+
+
+  closeModal(
+    'editModal'
+  );
+
+
+  renderToken++;
+
+  carouselSignature =
+    '';
+
+
+  renderCurrentPage();
+
+
+  await loadLibrary();
+
+  renderCurrentPage();
+
+  toast(
+    'Track updated successfully.'
+  );
+
+
+} catch (error) {
+
+  console.error(
+    'EDIT TRACK ERROR:',
+    error
+  );
+
+
+  let message =
+    error?.message ||
+    'Could not update track.';
+
+
+  if (
+    error?.code ===
+    '42501'
+  ) {
+
+    message =
+      'Supabase is blocking the edit. Your tracks UPDATE policy needs to allow users to update their own tracks.';
+  }
+
+
+  if (status) {
+    status.textContent =
+      message;
+  }
+
+
+  toast(message);
+
+
+} finally {
+
+  if (button) {
+    button.disabled = false;
+    button.textContent =
+      'Save changes';
+  }
+
+}
 }
 
 
 /* =========================================================
-   DELETE TRACK
+ DELETE TRACK
 ========================================================= */
 
 async function deleteTrack(index) {
 
+if (
+  !sb ||
+  !currentUser
+) {
+  return;
+}
+
+
+const track =
+  tracks[index];
+
+if (!track) return;
+
+
+const confirmed =
+  window.confirm(
+    `Delete "${track.title || 'this track'}" from Frequency? This will also remove its stored audio and artwork.`
+  );
+
+
+if (!confirmed) {
+  return;
+}
+
+
+try {
+
   if (
-    !sb ||
-    !currentUser
+    currentTrackIndex ===
+    index
   ) {
-    return;
+
+    audio.pause();
+
+    audio.removeAttribute(
+      'src'
+    );
+
+    audio.load();
+
+    currentTrackIndex =
+      -1;
+
+    updatePlayerEmpty();
   }
 
 
-  const track =
-    tracks[index];
-
-  if (!track) return;
-
-
-  const confirmed =
-    window.confirm(
-      `Delete "${track.title || 'this track'}" from Frequency? This will also remove its stored audio and artwork.`
+  const {
+    error
+  } = await sb
+    .from('tracks')
+    .delete()
+    .eq(
+      'id',
+      track.id
+    )
+    .eq(
+      'user_id',
+      currentUser.id
     );
 
 
-  if (!confirmed) {
-    return;
+  if (error) {
+    throw error;
   }
 
 
-  try {
+  const storageWarnings = [];
 
-    if (
-      currentTrackIndex ===
-      index
-    ) {
 
-      audio.pause();
-
-      audio.removeAttribute(
-        'src'
-      );
-
-      audio.load();
-
-      currentTrackIndex =
-        -1;
-
-      updatePlayerEmpty();
-    }
-
+  if (track.audio_path) {
 
     const {
-      error
-    } = await sb
-      .from('tracks')
-      .delete()
-      .eq(
-        'id',
-        track.id
-      )
-      .eq(
-        'user_id',
-        currentUser.id
+      error:
+        audioDeleteError
+    } = await sb.storage
+      .from('audio')
+      .remove([
+        track.audio_path
+      ]);
+
+    if (audioDeleteError) {
+
+      storageWarnings.push(
+        'audio'
       );
 
-
-    if (error) {
-      throw error;
-    }
-
-
-    const storageWarnings = [];
-
-
-    if (track.audio_path) {
-
-      const {
-        error:
-          audioDeleteError
-      } = await sb.storage
-        .from('audio')
-        .remove([
-          track.audio_path
-        ]);
-
-      if (audioDeleteError) {
-
-        storageWarnings.push(
-          'audio'
-        );
-
-        console.warn(
-          audioDeleteError
-        );
-      }
-    }
-
-
-    if (track.cover_path) {
-
-      const {
-        error:
-          coverDeleteError
-      } = await sb.storage
-        .from('covers')
-        .remove([
-          track.cover_path
-        ]);
-
-      if (coverDeleteError) {
-
-        storageWarnings.push(
-          'artwork'
-        );
-
-        console.warn(
-          coverDeleteError
-        );
-      }
-    }
-
-
-    clearTrackUrlCache(
-      track
-    );
-
-
-    if (
-      currentTrackIndex >
-      index
-    ) {
-
-      currentTrackIndex--;
-    }
-
-
-    if (
-      carouselIndex >=
-      tracks.length - 1
-    ) {
-
-      carouselIndex =
-        Math.max(
-          0,
-          tracks.length - 2
-        );
-    }
-
-
-    await loadLibrary();
-
-    renderToken++;
-    carouselSignature = '';
-
-    renderCurrentPage();
-
-
-    if (storageWarnings.length) {
-
-      toast(
-        `Track deleted. Some ${storageWarnings.join(
-          ' and '
-        )} cleanup failed.`
-      );
-
-    } else {
-
-      toast(
-        'Track deleted.'
+      console.warn(
+        audioDeleteError
       );
     }
+  }
 
 
-  } catch (error) {
+  if (track.cover_path) {
 
-    console.error(
-      'Delete track error:',
-      error
-    );
+    const {
+      error:
+        coverDeleteError
+    } = await sb.storage
+      .from('covers')
+      .remove([
+        track.cover_path
+      ]);
+
+    if (coverDeleteError) {
+
+      storageWarnings.push(
+        'artwork'
+      );
+
+      console.warn(
+        coverDeleteError
+      );
+    }
+  }
+
+
+  clearTrackUrlCache(
+    track
+  );
+
+
+  if (
+    currentTrackIndex >
+    index
+  ) {
+
+    currentTrackIndex--;
+  }
+
+
+  if (
+    carouselIndex >=
+    tracks.length - 1
+  ) {
+
+    carouselIndex =
+      Math.max(
+        0,
+        tracks.length - 2
+      );
+  }
+
+
+  await loadLibrary();
+
+  renderToken++;
+  carouselSignature = '';
+
+  renderCurrentPage();
+
+
+  if (storageWarnings.length) {
 
     toast(
-      error.message ||
-      'Could not delete track.'
+      `Track deleted. Some ${storageWarnings.join(
+        ' and '
+      )} cleanup failed.`
+    );
+
+  } else {
+
+    toast(
+      'Track deleted.'
     );
   }
+
+
+} catch (error) {
+
+  console.error(
+    'Delete track error:',
+    error
+  );
+
+  toast(
+    error.message ||
+    'Could not delete track.'
+  );
+}
 }
 
 
 /* =========================================================
-   SEARCH
+ SEARCH
 ========================================================= */
 
 function setupSearch() {
 
-  $('#searchInput')
-    ?.addEventListener(
-      'input',
-      () => {
-        renderSearch();
-      }
-    );
+$('#searchInput')
+  ?.addEventListener(
+    'input',
+    () => {
+      renderSearch();
+    }
+  );
 }
 
 
 async function renderSearch() {
 
-  const container =
-    $('#searchResults');
+const container =
+  $('#searchResults');
 
-  const input =
-    $('#searchInput');
+const input =
+  $('#searchInput');
 
-  if (!container) return;
-
-
-  const query =
-    (
-      input?.value ||
-      ''
-    )
-      .trim()
-      .toLowerCase();
+if (!container) return;
 
 
-  if (!query) {
-
-    container.innerHTML =
-      '<p class="muted">Search your library by song, artist, album, genre or year.</p>';
-
-    return;
-  }
-
-
-  const results =
-    tracks.filter(
-      (track) => {
-
-        const haystack = [
-          track.title,
-          track.artist,
-          track.album,
-          track.genre,
-          track.year
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-
-        return haystack.includes(
-          query
-        );
-      }
-    );
+const query =
+  (
+    input?.value ||
+    ''
+  )
+    .trim()
+    .toLowerCase();
 
 
-  if (!results.length) {
-
-    container.innerHTML =
-      '<p class="muted">Nothing found.</p>';
-
-    return;
-  }
-
-
-  const artwork =
-    await Promise.all(
-      results.map(
-        (track) =>
-          coverUrl(track)
-      )
-    );
-
+if (!query) {
 
   container.innerHTML =
-    results
-      .map(
-        (track, resultIndex) => {
+    '<p class="muted">Search your library by song, artist, album, genre or year.</p>';
 
-          const originalIndex =
-            tracks.findIndex(
-              (item) =>
-                item.id ===
-                track.id
-            );
-
-          const cover =
-            artwork[resultIndex];
-
-
-          return `
-            <div
-              class="track-row"
-              data-index="${originalIndex}"
-            >
-
-              <button
-                class="track-art track-play"
-                data-action="play"
-                type="button"
-              >
-                ${
-                  cover
-                    ? `
-                      <img
-                        src="${escapeAttribute(
-                          cover
-                        )}"
-                        alt=""
-                      />
-                    `
-                    : `
-                      <div class="art-placeholder">
-                        F
-                      </div>
-                    `
-                }
-              </button>
-
-
-              <button
-                class="track-info track-play"
-                data-action="play"
-                type="button"
-              >
-
-                <strong>
-                  ${escapeHtml(
-                    track.title ||
-                    'Untitled'
-                  )}
-                </strong>
-
-                <span>
-                  ${escapeHtml(
-                    track.artist ||
-                    'Unknown artist'
-                  )}
-
-                  ${
-                    track.album
-                      ? ` · ${escapeHtml(
-                          track.album
-                        )}`
-                      : ''
-                  }
-                </span>
-
-              </button>
-
-
-              <div class="row-actions">
-
-                <button
-                  class="small-btn"
-                  data-action="edit"
-                  type="button"
-                >
-                  Edit
-                </button>
-
-                <button
-                  class="small-btn"
-                  data-action="delete"
-                  type="button"
-                >
-                  Delete
-                </button>
-
-              </div>
-
-            </div>
-          `;
-        }
-      )
-      .join('');
-
-
-  container
-    .querySelectorAll(
-      '[data-action]'
-    )
-    .forEach(
-      (button) => {
-
-        button.addEventListener(
-          'click',
-          () => {
-
-            const row =
-              button.closest(
-                '.track-row'
-              );
-
-            const index =
-              Number(
-                row.dataset.index
-              );
-
-            const action =
-              button.dataset.action;
-
-
-            if (
-              action === 'play'
-            ) {
-
-              playTrack(index);
-
-            } else if (
-              action === 'edit'
-            ) {
-
-              openEditTrack(index);
-
-            } else if (
-              action === 'delete'
-            ) {
-
-              deleteTrack(index);
-            }
-
-          }
-        );
-
-      }
-    );
+  return;
 }
 
 
-/* =========================================================
-   ALBUMS
-========================================================= */
-
-async function renderAlbums() {
-
-  const container =
-    $('#albumsGrid');
-
-  if (!container) return;
-
-
-  if (!tracks.length) {
-
-    container.innerHTML =
-      '<p class="muted">No albums yet.</p>';
-
-    return;
-  }
-
-
-  const groups =
-    new Map();
-
-
-  tracks.forEach(
+const results =
+  tracks.filter(
     (track) => {
 
-      const album =
-        track.album?.trim() ||
-        'Singles';
+      const haystack = [
+        track.title,
+        track.artist,
+        track.album,
+        track.genre,
+        track.year
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
 
-      if (!groups.has(album)) {
-        groups.set(
-          album,
-          []
-        );
-      }
-
-      groups
-        .get(album)
-        .push(track);
+      return haystack.includes(
+        query
+      );
     }
   );
 
 
-  const albums =
-    [...groups.entries()];
-
-
-  const artwork =
-    await Promise.all(
-      albums.map(
-        ([, albumTracks]) =>
-          coverUrl(
-            albumTracks[0]
-          )
-      )
-    );
-
+if (!results.length) {
 
   container.innerHTML =
-    albums
-      .map(
-        ([album, albumTracks], index) => {
+    '<p class="muted">Nothing found.</p>';
 
-          const cover =
-            artwork[index];
+  return;
+}
 
 
-          return `
+const artwork =
+  await Promise.all(
+    results.map(
+      (track) =>
+        coverUrl(track)
+    )
+  );
+
+
+container.innerHTML =
+  results
+    .map(
+      (track, resultIndex) => {
+
+        const originalIndex =
+          tracks.findIndex(
+            (item) =>
+              item.id ===
+              track.id
+          );
+
+        const cover =
+          artwork[resultIndex];
+
+
+        return `
+          <div
+            class="track-row"
+            data-index="${originalIndex}"
+          >
+
             <button
-              class="grid-card"
+              class="track-art track-play"
+              data-action="play"
               type="button"
-              data-album="${escapeAttribute(
-                album
-              )}"
+            >
+              ${
+                cover
+                  ? `
+                    <img
+                      src="${escapeAttribute(
+                        cover
+                      )}"
+                      alt=""
+                    />
+                  `
+                  : `
+                    <div class="art-placeholder">
+                      F
+                    </div>
+                  `
+              }
+            </button>
+
+
+            <button
+              class="track-info track-play"
+              data-action="play"
+              type="button"
             >
 
-              <div class="grid-art">
-
-                ${
-                  cover
-                    ? `
-                      <img
-                        src="${escapeAttribute(
-                          cover
-                        )}"
-                        alt=""
-                      />
-                    `
-                    : `
-                      <div class="art-placeholder">
-                        F
-                      </div>
-                    `
-                }
-
-              </div>
-
               <strong>
-                ${escapeHtml(album)}
+                ${escapeHtml(
+                  track.title ||
+                  'Untitled'
+                )}
               </strong>
 
               <span>
                 ${escapeHtml(
-                  albumTracks[0]
-                    ?.artist ||
+                  track.artist ||
                   'Unknown artist'
                 )}
+
+                ${
+                  track.album
+                    ? ` · ${escapeHtml(
+                        track.album
+                      )}`
+                    : ''
+                }
               </span>
 
             </button>
-          `;
-        }
-      )
-      .join('');
 
 
-  container
-    .querySelectorAll(
-      '.grid-card'
-    )
-    .forEach(
-      (card) => {
+            <div class="row-actions">
 
-        card.addEventListener(
-          'click',
-          () => {
+              <button
+                class="small-btn"
+                data-action="edit"
+                type="button"
+              >
+                Edit
+              </button>
 
-            const album =
-              card.dataset.album;
+              <button
+                class="small-btn"
+                data-action="delete"
+                type="button"
+              >
+                Delete
+              </button>
 
-            const albumTracks =
-              groups.get(album);
+            </div>
 
-            if (
-              !albumTracks?.length
-            ) {
-              return;
-            }
-
-            const firstIndex =
-              tracks.findIndex(
-                (track) =>
-                  track.id ===
-                  albumTracks[0].id
-              );
-
-            if (
-              firstIndex >= 0
-            ) {
-              playTrack(
-                firstIndex
-              );
-            }
-
-          }
-        );
-
+          </div>
+        `;
       }
-    );
+    )
+    .join('');
+
+
+container
+  .querySelectorAll(
+    '[data-action]'
+  )
+  .forEach(
+    (button) => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          const row =
+            button.closest(
+              '.track-row'
+            );
+
+          const index =
+            Number(
+              row.dataset.index
+            );
+
+          const action =
+            button.dataset.action;
+
+
+          if (
+            action === 'play'
+          ) {
+
+            playTrack(index);
+
+          } else if (
+            action === 'edit'
+          ) {
+
+            openEditTrack(index);
+
+          } else if (
+            action === 'delete'
+          ) {
+
+            deleteTrack(index);
+          }
+
+        }
+      );
+
+    }
+  );
 }
 
 
 /* =========================================================
-   PLAYLISTS
+ ALBUMS
+========================================================= */
+
+async function renderAlbums() {
+
+const container =
+  $('#albumsGrid');
+
+if (!container) return;
+
+
+if (!tracks.length) {
+
+  container.innerHTML =
+    '<p class="muted">No albums yet.</p>';
+
+  return;
+}
+
+
+const groups =
+  new Map();
+
+
+tracks.forEach(
+  (track) => {
+
+    const album =
+      track.album?.trim() ||
+      'Singles';
+
+    if (!groups.has(album)) {
+      groups.set(
+        album,
+        []
+      );
+    }
+
+    groups
+      .get(album)
+      .push(track);
+  }
+);
+
+
+const albums =
+  [...groups.entries()];
+
+
+const artwork =
+  await Promise.all(
+    albums.map(
+      ([, albumTracks]) =>
+        coverUrl(
+          albumTracks[0]
+        )
+    )
+  );
+
+
+container.innerHTML =
+  albums
+    .map(
+      ([album, albumTracks], index) => {
+
+        const cover =
+          artwork[index];
+
+
+        return `
+          <button
+            class="grid-card"
+            type="button"
+            data-album="${escapeAttribute(
+              album
+            )}"
+          >
+
+            <div class="grid-art">
+
+              ${
+                cover
+                  ? `
+                    <img
+                      src="${escapeAttribute(
+                        cover
+                      )}"
+                      alt=""
+                    />
+                  `
+                  : `
+                    <div class="art-placeholder">
+                      F
+                    </div>
+                  `
+              }
+
+            </div>
+
+            <strong>
+              ${escapeHtml(album)}
+            </strong>
+
+            <span>
+              ${escapeHtml(
+                albumTracks[0]
+                  ?.artist ||
+                'Unknown artist'
+              )}
+            </span>
+
+          </button>
+        `;
+      }
+    )
+    .join('');
+
+
+container
+  .querySelectorAll(
+    '.grid-card'
+  )
+  .forEach(
+    (card) => {
+
+      card.addEventListener(
+        'click',
+        () => {
+
+          const album =
+            card.dataset.album;
+
+          const albumTracks =
+            groups.get(album);
+
+          if (
+            !albumTracks?.length
+          ) {
+            return;
+          }
+
+          const firstIndex =
+            tracks.findIndex(
+              (track) =>
+                track.id ===
+                albumTracks[0].id
+            );
+
+          if (
+            firstIndex >= 0
+          ) {
+            playTrack(
+              firstIndex
+            );
+          }
+
+        }
+      );
+
+    }
+  );
+}
+
+
+/* =========================================================
+ PLAYLISTS
 ========================================================= */
 
 async function renderPlaylists() {
 
-  const container =
-    $('#playlistsGrid');
+const container =
+  $('#playlistsGrid');
 
-  if (!container) return;
+if (!container) return;
 
 
-  if (!playlists.length) {
+if (!playlists.length) {
 
-    container.innerHTML =
-      '<p class="muted">No playlists yet.</p>';
+  container.innerHTML =
+    '<p class="muted">No playlists yet.</p>';
+
+  return;
+}
+
+
+const covers =
+  await Promise.all(
+    playlists.map(
+      (playlist) =>
+        playlist.cover_path
+          ? signedUrl(
+              'covers',
+              playlist.cover_path,
+              coverUrlCache
+            )
+          : null
+    )
+  );
+
+
+container.innerHTML =
+  playlists
+    .map(
+      (playlist, index) => {
+
+        const cover =
+          covers[index];
+
+
+        return `
+          <button
+            class="grid-card"
+            type="button"
+            data-playlist-id="${escapeAttribute(
+              String(
+                playlist.id
+              )
+            )}"
+          >
+
+            <div class="grid-art">
+
+              ${
+                cover
+                  ? `
+                    <img
+                      src="${escapeAttribute(
+                        cover
+                      )}"
+                      alt=""
+                    />
+                  `
+                  : `
+                    <div class="art-placeholder">
+                      F
+                    </div>
+                  `
+              }
+
+            </div>
+
+            <strong>
+              ${escapeHtml(
+                playlist.name ||
+                'Untitled playlist'
+              )}
+            </strong>
+
+            <span>
+              ${escapeHtml(
+                playlist.description ||
+                'Playlist'
+              )}
+            </span>
+
+          </button>
+        `;
+      }
+    )
+    .join('');
+
+
+/*
+   THIS WAS THE MISSING PIECE.
+
+   The playlist cards were being rendered,
+   but nothing was listening for clicks.
+*/
+
+container
+  .querySelectorAll(
+    '[data-playlist-id]'
+  )
+  .forEach(
+    (card) => {
+
+      card.addEventListener(
+        'click',
+        () => {
+
+          const playlistId =
+            card.dataset.playlistId;
+
+          const playlist =
+            playlists.find(
+              (item) =>
+                String(item.id) ===
+                String(playlistId)
+            );
+
+          if (!playlist) {
+            return;
+          }
+
+          openPlaylistViewer(
+            playlist
+          );
+        }
+      );
+
+    }
+  );
+}
+
+
+/* =========================================================
+ PLAYLIST VIEWER
+========================================================= */
+
+function createPlaylistViewer() {
+
+let viewer =
+  $('#playlistViewer');
+
+if (viewer) {
+  return viewer;
+}
+
+
+viewer =
+  document.createElement(
+    'div'
+  );
+
+viewer.id =
+  'playlistViewer';
+
+viewer.className =
+  'modal hidden';
+
+viewer.innerHTML = `
+  <div
+    class="modal-card"
+    style="
+      width:min(720px,100%);
+      max-height:85vh;
+      overflow:auto;
+    "
+  >
+
+    <button
+      class="close"
+      id="playlistViewerClose"
+      aria-label="Close"
+      type="button"
+    >
+      ×
+    </button>
+
+    <div
+      id="playlistViewerCover"
+      style="
+        width:160px;
+        height:160px;
+        margin-bottom:24px;
+        border:1px solid #292929;
+        background:#111;
+        overflow:hidden;
+        display:grid;
+        place-items:center;
+      "
+    >
+      <span
+        style="
+          font-size:48px;
+          font-weight:900;
+          color:#666;
+        "
+      >
+        F
+      </span>
+    </div>
+
+    <p class="eyebrow">
+      FREQUENCY / PLAYLIST
+    </p>
+
+    <h2 id="playlistViewerName">
+      Playlist
+    </h2>
+
+    <p
+      id="playlistViewerDescription"
+      class="muted"
+      style="
+        line-height:1.6;
+        margin-top:10px;
+      "
+    >
+      Playlist
+    </p>
+
+    <div
+      style="
+        margin-top:28px;
+        border-top:1px solid #242424;
+        padding-top:18px;
+      "
+    >
+
+      <p class="eyebrow">
+        CONTENT
+      </p>
+
+      <p
+        id="playlistViewerEmpty"
+        class="muted"
+      >
+        This playlist is ready for music.
+      </p>
+
+    </div>
+
+  </div>
+`;
+
+
+document.body.appendChild(
+  viewer
+);
+
+
+$('#playlistViewerClose')
+  ?.addEventListener(
+    'click',
+    () => {
+      closePlaylistViewer();
+    }
+  );
+
+
+viewer.addEventListener(
+  'click',
+  (event) => {
+
+    if (
+      event.target ===
+      viewer
+    ) {
+
+      closePlaylistViewer();
+
+    }
+
+  }
+);
+
+
+return viewer;
+}
+
+
+async function openPlaylistViewer(
+playlist
+) {
+
+if (!playlist) return;
+
+
+activePlaylist =
+  playlist;
+
+
+const viewer =
+  createPlaylistViewer();
+
+const cover =
+  $('#playlistViewerCover');
+
+const name =
+  $('#playlistViewerName');
+
+const description =
+  $('#playlistViewerDescription');
+
+const empty =
+  $('#playlistViewerEmpty');
+
+
+if (name) {
+
+  name.textContent =
+    playlist.name ||
+    'Untitled playlist';
+}
+
+
+if (description) {
+
+  description.textContent =
+    playlist.description ||
+    'No description.';
+}
+
+
+if (empty) {
+
+  empty.textContent =
+    'This playlist is ready for music. Add songs to it once playlist track management is connected.';
+}
+
+
+if (cover) {
+
+  cover.innerHTML = `
+    <span
+      style="
+        font-size:48px;
+        font-weight:900;
+        color:#666;
+      "
+    >
+      F
+    </span>
+  `;
+
+
+  if (playlist.cover_path) {
+
+    const url =
+      await signedUrl(
+        'covers',
+        playlist.cover_path,
+        coverUrlCache
+      );
+
+    if (url) {
+
+      cover.innerHTML = `
+        <img
+          src="${escapeAttribute(url)}"
+          alt=""
+          style="
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            display:block;
+          "
+        />
+      `;
+    }
+  }
+}
+
+
+viewer.classList.remove(
+  'hidden'
+);
+}
+
+
+function closePlaylistViewer() {
+
+const viewer =
+  $('#playlistViewer');
+
+if (!viewer) return;
+
+viewer.classList.add(
+  'hidden'
+);
+
+activePlaylist =
+  null;
+}
+
+
+/* =========================================================
+ PLAYBACK
+========================================================= */
+
+async function playTrack(index) {
+
+const track =
+  tracks[index];
+
+if (!track) return;
+
+
+try {
+
+  const url =
+    await audioUrl(track);
+
+  if (!url) {
+
+    toast(
+      'Could not load this track.'
+    );
 
     return;
   }
 
 
-  const covers =
-    await Promise.all(
-      playlists.map(
-        (playlist) =>
-          playlist.cover_path
-            ? signedUrl(
-                'covers',
-                playlist.cover_path,
-                coverUrlCache
-              )
-            : null
-      )
+  currentTrackIndex =
+    index;
+
+  carouselIndex =
+    index;
+
+
+  audio.src =
+    url;
+
+  audio.volume =
+    Number(
+      $('#volume')?.value ||
+      0.8
     );
 
 
-  container.innerHTML =
-    playlists
-      .map(
-        (playlist, index) => {
+  updatePlayer(
+    track
+  );
 
-          const cover =
-            covers[index];
+  updateCarouselPosition();
+  updateCarouselMeta();
 
 
-          return `
-            <button
-              class="grid-card"
-              type="button"
-              data-playlist-id="${escapeAttribute(
-                String(
-                  playlist.id
-                )
-              )}"
-            >
+  await audio.play();
 
-              <div class="grid-art">
+  updatePlayButton();
 
-                ${
-                  cover
-                    ? `
-                      <img
-                        src="${escapeAttribute(
-                          cover
-                        )}"
-                        alt=""
-                      />
-                    `
-                    : `
-                      <div class="art-placeholder">
-                        F
-                      </div>
-                    `
-                }
+} catch (error) {
 
-              </div>
+  console.error(
+    'Playback error:',
+    error
+  );
 
-              <strong>
-                ${escapeHtml(
-                  playlist.name ||
-                  'Untitled playlist'
-                )}
-              </strong>
-
-              <span>
-                ${escapeHtml(
-                  playlist.description ||
-                  'Playlist'
-                )}
-              </span>
-
-            </button>
-          `;
-        }
-      )
-      .join('');
+  toast(
+    error.message ||
+    'Could not play this track.'
+  );
 }
-
-
-/* =========================================================
-   PLAYBACK
-========================================================= */
-
-async function playTrack(index) {
-
-  const track =
-    tracks[index];
-
-  if (!track) return;
-
-
-  try {
-
-    const url =
-      await audioUrl(track);
-
-    if (!url) {
-
-      toast(
-        'Could not load this track.'
-      );
-
-      return;
-    }
-
-
-    currentTrackIndex =
-      index;
-
-    carouselIndex =
-      index;
-
-
-    audio.src =
-      url;
-
-    audio.volume =
-      Number(
-        $('#volume')?.value ||
-        0.8
-      );
-
-
-    updatePlayer(
-      track
-    );
-
-    updateCarouselPosition();
-    updateCarouselMeta();
-
-
-    await audio.play();
-
-    updatePlayButton();
-
-  } catch (error) {
-
-    console.error(
-      'Playback error:',
-      error
-    );
-
-    toast(
-      error.message ||
-      'Could not play this track.'
-    );
-  }
 }
 
 
 function updatePlayer(track) {
 
-  $('#playerTitle').textContent =
-    track.title ||
-    'Untitled';
+$('#playerTitle').textContent =
+  track.title ||
+  'Untitled';
 
-  $('#playerArtist').textContent =
-    track.artist ||
-    'Unknown artist';
-
-
-  const cover =
-    $('#playerCover');
-
-  if (!cover) return;
+$('#playerArtist').textContent =
+  track.artist ||
+  'Unknown artist';
 
 
-  if (track.cover_path) {
+const cover =
+  $('#playerCover');
 
-    coverUrl(track)
-      .then((url) => {
+if (!cover) return;
 
-        if (url) {
 
-          cover.innerHTML = `
-            <img
-              src="${escapeAttribute(
-                url
-              )}"
-              alt=""
-            />
-          `;
+if (track.cover_path) {
 
-        } else {
+  coverUrl(track)
+    .then((url) => {
 
-          cover.textContent =
-            'F';
-        }
+      if (url) {
 
-      });
+        cover.innerHTML = `
+          <img
+            src="${escapeAttribute(
+              url
+            )}"
+            alt=""
+          />
+        `;
 
-  } else {
+      } else {
 
-    cover.textContent =
-      'F';
-  }
+        cover.textContent =
+          'F';
+      }
+
+    });
+
+} else {
+
+  cover.textContent =
+    'F';
+}
 }
 
 
 function updatePlayerEmpty() {
 
-  $('#playerTitle').textContent =
-    'Nothing playing';
+$('#playerTitle').textContent =
+  'Nothing playing';
 
-  $('#playerArtist').textContent =
-    'Choose a track';
+$('#playerArtist').textContent =
+  'Choose a track';
 
-  $('#playerCover').textContent =
-    'F';
+$('#playerCover').textContent =
+  'F';
 
-  $('#progress').value =
-    0;
+$('#progress').value =
+  0;
 
-  $('#currentTime').textContent =
-    '0:00';
+$('#currentTime').textContent =
+  '0:00';
 
-  $('#duration').textContent =
-    '0:00';
+$('#duration').textContent =
+  '0:00';
 
-  updatePlayButton();
+updatePlayButton();
 }
 
 
 function updatePlayButton() {
 
-  const button =
-    $('#playBtn');
+const button =
+  $('#playBtn');
 
-  if (!button) return;
+if (!button) return;
 
-  button.textContent =
-    audio.paused
-      ? '▶'
-      : 'Ⅱ';
+button.textContent =
+  audio.paused
+    ? '▶'
+    : 'Ⅱ';
 }
 
 
 function togglePlay() {
 
-  if (
-    currentTrackIndex <
-    0
-  ) {
+if (
+  currentTrackIndex <
+  0
+) {
 
-    if (tracks.length) {
-      playTrack(0);
-    }
-
-    return;
+  if (tracks.length) {
+    playTrack(0);
   }
 
+  return;
+}
 
-  if (audio.paused) {
 
-    audio.play()
-      .catch(
-        console.error
-      );
+if (audio.paused) {
 
-  } else {
+  audio.play()
+    .catch(
+      console.error
+    );
 
-    audio.pause();
+} else {
 
-  }
+  audio.pause();
+
+}
 
 }
 
 
 function nextTrack() {
 
-  if (!tracks.length) return;
+if (!tracks.length) return;
 
 
-  if (shuffled) {
+if (shuffled) {
 
-    let next;
+  let next;
 
-    if (
-      tracks.length === 1
-    ) {
+  if (
+    tracks.length === 1
+  ) {
 
-      next = 0;
+    next = 0;
 
-    } else {
+  } else {
 
-      do {
-        next =
-          Math.floor(
-            Math.random() *
-            tracks.length
-          );
-      } while (
-        next ===
-        currentTrackIndex
-      );
-    }
-
-    playTrack(next);
-
-    return;
+    do {
+      next =
+        Math.floor(
+          Math.random() *
+          tracks.length
+        );
+    } while (
+      next ===
+      currentTrackIndex
+    );
   }
 
-
-  const next =
-    currentTrackIndex < 0
-      ? 0
-      : (
-          currentTrackIndex + 1
-        ) %
-        tracks.length;
-
-
   playTrack(next);
+
+  return;
+}
+
+
+const next =
+  currentTrackIndex < 0
+    ? 0
+    : (
+        currentTrackIndex + 1
+      ) %
+      tracks.length;
+
+
+playTrack(next);
 }
 
 
 function previousTrack() {
 
-  if (!tracks.length) return;
+if (!tracks.length) return;
 
 
-  if (
-    audio.currentTime >
-    3
-  ) {
+if (
+  audio.currentTime >
+  3
+) {
 
-    audio.currentTime =
-      0;
+  audio.currentTime =
+    0;
 
-    return;
-  }
-
-
-  const previous =
-    currentTrackIndex <= 0
-      ? tracks.length - 1
-      : currentTrackIndex - 1;
+  return;
+}
 
 
-  playTrack(
-    previous
-  );
+const previous =
+  currentTrackIndex <= 0
+    ? tracks.length - 1
+    : currentTrackIndex - 1;
+
+
+playTrack(
+  previous
+);
 }
 
 
 function setupPlayback() {
 
-  $('#playBtn')
-    ?.addEventListener(
-      'click',
-      togglePlay
-    );
+$('#playBtn')
+  ?.addEventListener(
+    'click',
+    togglePlay
+  );
 
-  $('#nextBtn')
-    ?.addEventListener(
-      'click',
-      nextTrack
-    );
+$('#nextBtn')
+  ?.addEventListener(
+    'click',
+    nextTrack
+  );
 
-  $('#prevBtn')
-    ?.addEventListener(
-      'click',
-      previousTrack
-    );
-
-
-  $('#shuffleBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        shuffled =
-          !shuffled;
-
-        $('#shuffleBtn')
-          ?.classList.toggle(
-            'active',
-            shuffled
-          );
-
-        toast(
-          shuffled
-            ? 'Shuffle on'
-            : 'Shuffle off'
-        );
-      }
-    );
+$('#prevBtn')
+  ?.addEventListener(
+    'click',
+    previousTrack
+  );
 
 
-  $('#repeatBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        repeatMode =
-          !repeatMode;
-
-        $('#repeatBtn')
-          ?.classList.toggle(
-            'active',
-            repeatMode
-          );
-
-        toast(
-          repeatMode
-            ? 'Repeat on'
-            : 'Repeat off'
-        );
-      }
-    );
-
-
-  $('#progress')
-    ?.addEventListener(
-      'input',
-      () => {
-
-        if (
-          !Number.isFinite(
-            audio.duration
-          )
-        ) {
-          return;
-        }
-
-        const percentage =
-          Number(
-            $('#progress').value
-          );
-
-        audio.currentTime =
-          audio.duration *
-          (percentage / 100);
-      }
-    );
-
-
-  $('#volume')
-    ?.addEventListener(
-      'input',
-      () => {
-
-        audio.volume =
-          Number(
-            $('#volume').value
-          );
-      }
-    );
-
-
-  audio.addEventListener(
-    'loadedmetadata',
+$('#shuffleBtn')
+  ?.addEventListener(
+    'click',
     () => {
 
-      $('#duration').textContent =
-        formatTime(
-          audio.duration
+      shuffled =
+        !shuffled;
+
+      $('#shuffleBtn')
+        ?.classList.toggle(
+          'active',
+          shuffled
         );
 
+      toast(
+        shuffled
+          ? 'Shuffle on'
+          : 'Shuffle off'
+      );
     }
   );
 
 
-  audio.addEventListener(
-    'timeupdate',
+$('#repeatBtn')
+  ?.addEventListener(
+    'click',
+    () => {
+
+      repeatMode =
+        !repeatMode;
+
+      $('#repeatBtn')
+        ?.classList.toggle(
+          'active',
+          repeatMode
+        );
+
+      toast(
+        repeatMode
+          ? 'Repeat on'
+          : 'Repeat off'
+      );
+    }
+  );
+
+
+$('#progress')
+  ?.addEventListener(
+    'input',
     () => {
 
       if (
@@ -3054,788 +3434,830 @@ function setupPlayback() {
         return;
       }
 
-
       const percentage =
-        (
-          audio.currentTime /
-          audio.duration
-        ) * 100;
-
-
-      $('#progress').value =
-        percentage;
-
-
-      $('#currentTime').textContent =
-        formatTime(
-          audio.currentTime
+        Number(
+          $('#progress').value
         );
 
+      audio.currentTime =
+        audio.duration *
+        (percentage / 100);
     }
   );
 
 
-  audio.addEventListener(
-    'play',
-    updatePlayButton
-  );
-
-  audio.addEventListener(
-    'pause',
-    updatePlayButton
-  );
-
-
-  audio.addEventListener(
-    'ended',
+$('#volume')
+  ?.addEventListener(
+    'input',
     () => {
 
-      if (repeatMode) {
-
-        audio.currentTime =
-          0;
-
-        audio.play()
-          .catch(
-            console.error
-          );
-
-      } else {
-
-        nextTrack();
-
-      }
-
+      audio.volume =
+        Number(
+          $('#volume').value
+        );
     }
   );
 
 
-  audio.addEventListener(
-    'error',
-    (event) => {
+audio.addEventListener(
+  'loadedmetadata',
+  () => {
 
-      console.error(
-        'Audio element error:',
-        event
+    $('#duration').textContent =
+      formatTime(
+        audio.duration
       );
 
-      toast(
-        'Frequency could not play this audio file.'
-      );
+  }
+);
 
-      updatePlayButton();
+
+audio.addEventListener(
+  'timeupdate',
+  () => {
+
+    if (
+      !Number.isFinite(
+        audio.duration
+      )
+    ) {
+      return;
     }
-  );
+
+
+    const percentage =
+      (
+        audio.currentTime /
+        audio.duration
+      ) * 100;
+
+
+    $('#progress').value =
+      percentage;
+
+
+    $('#currentTime').textContent =
+      formatTime(
+        audio.currentTime
+      );
+
+  }
+);
+
+
+audio.addEventListener(
+  'play',
+  updatePlayButton
+);
+
+audio.addEventListener(
+  'pause',
+  updatePlayButton
+);
+
+
+audio.addEventListener(
+  'ended',
+  () => {
+
+    if (repeatMode) {
+
+      audio.currentTime =
+        0;
+
+      audio.play()
+        .catch(
+          console.error
+        );
+
+    } else {
+
+      nextTrack();
+
+    }
+
+  }
+);
+
+
+audio.addEventListener(
+  'error',
+  (event) => {
+
+    console.error(
+      'Audio element error:',
+      event
+    );
+
+    toast(
+      'Frequency could not play this audio file.'
+    );
+
+    updatePlayButton();
+  }
+);
 }
 
 
 /* =========================================================
-   UPLOAD
+ UPLOAD
 ========================================================= */
 
 function setupUpload() {
 
-  $('#uploadBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-        openModal(
-          'uploadModal'
-        );
-      }
-    );
+$('#uploadBtn')
+  ?.addEventListener(
+    'click',
+    () => {
+      openModal(
+        'uploadModal'
+      );
+    }
+  );
 
 
-  $('#emptyUploadBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-        openModal(
-          'uploadModal'
-        );
-      }
-    );
+$('#emptyUploadBtn')
+  ?.addEventListener(
+    'click',
+    () => {
+      openModal(
+        'uploadModal'
+      );
+    }
+  );
 
 
-  $('#uploadForm')
-    ?.addEventListener(
-      'submit',
-      uploadTrack
-    );
+$('#uploadForm')
+  ?.addEventListener(
+    'submit',
+    uploadTrack
+  );
 }
 
 
 async function uploadTrack(event) {
 
-  event.preventDefault();
+event.preventDefault();
+
+if (
+  !sb ||
+  !currentUser
+) {
+  return;
+}
+
+
+const status =
+  $('#uploadStatus');
+
+const submit =
+  $('#uploadForm button[type="submit"]');
+
+
+const audioFile =
+  $('#trackFile')
+    ?.files?.[0];
+
+const coverFile =
+  $('#coverFile')
+    ?.files?.[0] ||
+  null;
+
+
+const title =
+  $('#trackTitle')
+    .value
+    .trim();
+
+const artist =
+  $('#trackArtist')
+    .value
+    .trim();
+
+const album =
+  $('#trackAlbum')
+    .value
+    .trim();
+
+const genre =
+  $('#trackGenre')
+    .value
+    .trim();
+
+const yearInput =
+  $('#trackYear')
+    .value
+    .trim();
+
+
+if (!audioFile) {
+  return;
+}
+
+
+let year = null;
+
+if (yearInput) {
+
+  year =
+    Number(yearInput);
 
   if (
-    !sb ||
-    !currentUser
+    !Number.isInteger(year)
   ) {
-    return;
-  }
-
-
-  const status =
-    $('#uploadStatus');
-
-  const submit =
-    $('#uploadForm button[type="submit"]');
-
-
-  const audioFile =
-    $('#trackFile')
-      ?.files?.[0];
-
-  const coverFile =
-    $('#coverFile')
-      ?.files?.[0] ||
-    null;
-
-
-  const title =
-    $('#trackTitle')
-      .value
-      .trim();
-
-  const artist =
-    $('#trackArtist')
-      .value
-      .trim();
-
-  const album =
-    $('#trackAlbum')
-      .value
-      .trim();
-
-  const genre =
-    $('#trackGenre')
-      .value
-      .trim();
-
-  const yearInput =
-    $('#trackYear')
-      .value
-      .trim();
-
-
-  if (!audioFile) {
-    return;
-  }
-
-
-  let year = null;
-
-  if (yearInput) {
-
-    year =
-      Number(yearInput);
-
-    if (
-      !Number.isInteger(year)
-    ) {
-
-      if (status) {
-        status.textContent =
-          'Year must be a number.';
-      }
-
-      return;
-    }
-  }
-
-
-  let audioPath = null;
-  let coverPath = null;
-
-
-  try {
-
-    if (submit) {
-      submit.disabled = true;
-      submit.textContent =
-        'Uploading...';
-    }
-
 
     if (status) {
       status.textContent =
-        'Preparing track...';
+        'Year must be a number.';
     }
 
-
-    const extension =
-      getFileExtension(
-        audioFile.name
-      );
+    return;
+  }
+}
 
 
-    const safeName =
+let audioPath = null;
+let coverPath = null;
+
+
+try {
+
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent =
+      'Uploading...';
+  }
+
+
+  if (status) {
+    status.textContent =
+      'Preparing track...';
+  }
+
+
+  const extension =
+    getFileExtension(
+      audioFile.name
+    );
+
+
+  const safeName =
+    sanitizeFileName(
+      audioFile.name
+    );
+
+
+  audioPath =
+    `${currentUser.id}/` +
+    `${crypto.randomUUID()}-` +
+    `${safeName || `track.${extension}`}`;
+
+
+  const {
+    error:
+      audioUploadError
+  } = await sb.storage
+    .from('audio')
+    .upload(
+      audioPath,
+      audioFile,
+      {
+        upsert: false,
+        contentType:
+          audioFile.type ||
+          undefined
+      }
+    );
+
+
+  if (audioUploadError) {
+    throw audioUploadError;
+  }
+
+
+  if (status) {
+    status.textContent =
+      'Uploading artwork...';
+  }
+
+
+  if (coverFile) {
+
+    const coverSafeName =
       sanitizeFileName(
-        audioFile.name
+        coverFile.name
+      );
+
+    const coverExtension =
+      getFileExtension(
+        coverFile.name
       );
 
 
-    audioPath =
+    coverPath =
       `${currentUser.id}/` +
       `${crypto.randomUUID()}-` +
-      `${safeName || `track.${extension}`}`;
+      `${
+        coverSafeName ||
+        `cover.${coverExtension}`
+      }`;
 
 
     const {
       error:
-        audioUploadError
+        coverUploadError
     } = await sb.storage
-      .from('audio')
+      .from('covers')
       .upload(
-        audioPath,
-        audioFile,
+        coverPath,
+        coverFile,
         {
           upsert: false,
           contentType:
-            audioFile.type ||
+            coverFile.type ||
             undefined
         }
       );
 
 
-    if (audioUploadError) {
-      throw audioUploadError;
+    if (coverUploadError) {
+      throw coverUploadError;
     }
-
-
-    if (status) {
-      status.textContent =
-        'Uploading artwork...';
-    }
-
-
-    if (coverFile) {
-
-      const coverSafeName =
-        sanitizeFileName(
-          coverFile.name
-        );
-
-      const coverExtension =
-        getFileExtension(
-          coverFile.name
-        );
-
-
-      coverPath =
-        `${currentUser.id}/` +
-        `${crypto.randomUUID()}-` +
-        `${
-          coverSafeName ||
-          `cover.${coverExtension}`
-        }`;
-
-
-      const {
-        error:
-          coverUploadError
-      } = await sb.storage
-        .from('covers')
-        .upload(
-          coverPath,
-          coverFile,
-          {
-            upsert: false,
-            contentType:
-              coverFile.type ||
-              undefined
-          }
-        );
-
-
-      if (coverUploadError) {
-        throw coverUploadError;
-      }
-    }
-
-
-    if (status) {
-      status.textContent =
-        'Adding track to your library...';
-    }
-
-
-    const {
-      error:
-        insertError
-    } = await sb
-      .from('tracks')
-      .insert({
-        user_id:
-          currentUser.id,
-
-        title:
-          title || 'Untitled',
-
-        artist:
-          artist || 'Unknown artist',
-
-        album:
-          album || null,
-
-        genre:
-          genre || null,
-
-        year,
-
-        audio_path:
-          audioPath,
-
-        cover_path:
-          coverPath
-      });
-
-
-    if (insertError) {
-      throw insertError;
-    }
-
-
-    $('#uploadForm')
-      .reset();
-
-
-    closeModal(
-      'uploadModal'
-    );
-
-
-    await loadLibrary();
-
-    renderToken++;
-    carouselSignature = '';
-
-    renderCurrentPage();
-
-
-    toast(
-      'Track added to Frequency.'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'Upload error:',
-      error
-    );
-
-
-    if (audioPath) {
-
-      await sb.storage
-        .from('audio')
-        .remove([
-          audioPath
-        ])
-        .catch(
-          console.error
-        );
-    }
-
-
-    if (coverPath) {
-
-      await sb.storage
-        .from('covers')
-        .remove([
-          coverPath
-        ])
-        .catch(
-          console.error
-        );
-    }
-
-
-    if (status) {
-      status.textContent =
-        error.message ||
-        'Could not upload track.';
-    }
-
-
-    toast(
-      error.message ||
-      'Could not upload track.'
-    );
-
-
-  } finally {
-
-    if (submit) {
-      submit.disabled = false;
-      submit.textContent =
-        'Upload track';
-    }
-
   }
+
+
+  if (status) {
+    status.textContent =
+      'Adding track to your library...';
+  }
+
+
+  const {
+    error:
+      insertError
+  } = await sb
+    .from('tracks')
+    .insert({
+      user_id:
+        currentUser.id,
+
+      title:
+        title || 'Untitled',
+
+      artist:
+        artist || 'Unknown artist',
+
+      album:
+        album || null,
+
+      genre:
+        genre || null,
+
+      year,
+
+      audio_path:
+        audioPath,
+
+      cover_path:
+        coverPath
+    });
+
+
+  if (insertError) {
+    throw insertError;
+  }
+
+
+  $('#uploadForm')
+    .reset();
+
+
+  closeModal(
+    'uploadModal'
+  );
+
+
+  await loadLibrary();
+
+  renderToken++;
+  carouselSignature = '';
+
+  renderCurrentPage();
+
+
+  toast(
+    'Track added to Frequency.'
+  );
+
+
+} catch (error) {
+
+  console.error(
+    'Upload error:',
+    error
+  );
+
+
+  if (audioPath) {
+
+    await sb.storage
+      .from('audio')
+      .remove([
+        audioPath
+      ])
+      .catch(
+        console.error
+      );
+  }
+
+
+  if (coverPath) {
+
+    await sb.storage
+      .from('covers')
+      .remove([
+        coverPath
+      ])
+      .catch(
+        console.error
+      );
+  }
+
+
+  if (status) {
+    status.textContent =
+      error.message ||
+      'Could not upload track.';
+  }
+
+
+  toast(
+    error.message ||
+    'Could not upload track.'
+  );
+
+
+} finally {
+
+  if (submit) {
+    submit.disabled = false;
+    submit.textContent =
+      'Upload track';
+  }
+
+}
 }
 
 
 /* =========================================================
-   PLAYLIST CREATION
+ PLAYLIST CREATION
 ========================================================= */
 
 function setupPlaylists() {
 
-  $('#newPlaylistBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-        openModal(
-          'playlistModal'
-        );
-      }
-    );
+$('#newPlaylistBtn')
+  ?.addEventListener(
+    'click',
+    () => {
+      openModal(
+        'playlistModal'
+      );
+    }
+  );
 
 
-  $('#playlistForm')
-    ?.addEventListener(
-      'submit',
-      createPlaylist
-    );
+$('#playlistForm')
+  ?.addEventListener(
+    'submit',
+    createPlaylist
+  );
 }
 
 
 async function createPlaylist(event) {
 
-  event.preventDefault();
+event.preventDefault();
 
-  if (
-    !sb ||
-    !currentUser
-  ) {
+if (
+  !sb ||
+  !currentUser
+) {
+  return;
+}
+
+
+const status =
+  $('#playlistStatus');
+
+const button =
+  $('#playlistForm button[type="submit"]');
+
+
+const name =
+  $('#playlistName')
+    .value
+    .trim();
+
+const description =
+  $('#playlistDescription')
+    .value
+    .trim();
+
+const coverFile =
+  $('#playlistCover')
+    ?.files?.[0] ||
+  null;
+
+
+let coverPath = null;
+
+
+try {
+
+  if (button) {
+    button.disabled = true;
+    button.textContent =
+      'Creating...';
+  }
+
+
+  if (!name) {
+
+    if (status) {
+      status.textContent =
+        'Playlist name is required.';
+    }
+
     return;
   }
 
 
-  const status =
-    $('#playlistStatus');
+  if (coverFile) {
 
-  const button =
-    $('#playlistForm button[type="submit"]');
-
-
-  const name =
-    $('#playlistName')
-      .value
-      .trim();
-
-  const description =
-    $('#playlistDescription')
-      .value
-      .trim();
-
-  const coverFile =
-    $('#playlistCover')
-      ?.files?.[0] ||
-    null;
+    const safeName =
+      sanitizeFileName(
+        coverFile.name
+      );
 
 
-  let coverPath = null;
-
-
-  try {
-
-    if (button) {
-      button.disabled = true;
-      button.textContent =
-        'Creating...';
-    }
-
-
-    if (coverFile) {
-
-      const safeName =
-        sanitizeFileName(
-          coverFile.name
-        );
-
-
-      coverPath =
-        `${currentUser.id}/playlists/` +
-        `${crypto.randomUUID()}-` +
-        `${safeName}`;
-
-
-      const {
-        error
-      } = await sb.storage
-        .from('covers')
-        .upload(
-          coverPath,
-          coverFile,
-          {
-            upsert: false,
-            contentType:
-              coverFile.type ||
-              undefined
-          }
-        );
-
-
-      if (error) {
-        throw error;
-      }
-    }
+    coverPath =
+      `${currentUser.id}/playlists/` +
+      `${crypto.randomUUID()}-` +
+      `${safeName}`;
 
 
     const {
       error
-    } = await sb
-      .from('playlists')
-      .insert({
-        user_id:
-          currentUser.id,
-
-        name,
-
-        description:
-          description || null,
-
-        cover_path:
-          coverPath
-      });
+    } = await sb.storage
+      .from('covers')
+      .upload(
+        coverPath,
+        coverFile,
+        {
+          upsert: false,
+          contentType:
+            coverFile.type ||
+            undefined
+        }
+      );
 
 
     if (error) {
       throw error;
     }
-
-
-    $('#playlistForm')
-      .reset();
-
-
-    closeModal(
-      'playlistModal'
-    );
-
-
-    await loadPlaylists();
-
-    renderPlaylists();
-
-
-    toast(
-      'Playlist created.'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'Playlist error:',
-      error
-    );
-
-
-    if (coverPath) {
-
-      await sb.storage
-        .from('covers')
-        .remove([
-          coverPath
-        ])
-        .catch(
-          console.error
-        );
-    }
-
-
-    if (status) {
-      status.textContent =
-        error.message ||
-        'Could not create playlist.';
-    }
-
-
-    toast(
-      error.message ||
-      'Could not create playlist.'
-    );
-
-
-  } finally {
-
-    if (button) {
-      button.disabled = false;
-      button.textContent =
-        'Create playlist';
-    }
-
   }
+
+
+  const {
+    error
+  } = await sb
+    .from('playlists')
+    .insert({
+      user_id:
+        currentUser.id,
+
+      name,
+
+      description:
+        description || null,
+
+      cover_path:
+        coverPath
+    });
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  $('#playlistForm')
+    .reset();
+
+
+  closeModal(
+    'playlistModal'
+  );
+
+
+  await loadPlaylists();
+
+  renderPlaylists();
+
+
+  toast(
+    'Playlist created.'
+  );
+
+
+} catch (error) {
+
+  console.error(
+    'Playlist error:',
+    error
+  );
+
+
+  if (coverPath) {
+
+    await sb.storage
+      .from('covers')
+      .remove([
+        coverPath
+      ])
+      .catch(
+        console.error
+      );
+  }
+
+
+  if (status) {
+    status.textContent =
+      error.message ||
+      'Could not create playlist.';
+  }
+
+
+  toast(
+    error.message ||
+    'Could not create playlist.'
+  );
+
+
+} finally {
+
+  if (button) {
+    button.disabled = false;
+    button.textContent =
+      'Create playlist';
+  }
+
+}
 }
 
 
 /* =========================================================
-   MODALS
+ MODALS
 ========================================================= */
 
 function openModal(id) {
 
-  const modal =
-    $(`#${id}`);
+const modal =
+  $(`#${id}`);
 
-  if (!modal) return;
+if (!modal) return;
 
-  modal.classList.remove(
-    'hidden'
-  );
+modal.classList.remove(
+  'hidden'
+);
 }
 
 
 function closeModal(id) {
 
-  const modal =
-    $(`#${id}`);
+const modal =
+  $(`#${id}`);
 
-  if (!modal) return;
+if (!modal) return;
 
-  modal.classList.add(
-    'hidden'
-  );
+modal.classList.add(
+  'hidden'
+);
 }
 
 
 function setupModals() {
 
-  $$('[data-close]')
-    .forEach(
-      (button) => {
+$$('[data-close]')
+  .forEach(
+    (button) => {
 
-        button.addEventListener(
-          'click',
-          () => {
+      button.addEventListener(
+        'click',
+        () => {
+
+          closeModal(
+            button.dataset.close
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+$$('.modal')
+  .forEach(
+    (modal) => {
+
+      modal.addEventListener(
+        'click',
+        (event) => {
+
+          if (
+            event.target ===
+            modal
+          ) {
 
             closeModal(
-              button.dataset.close
+              modal.id
             );
 
           }
-        );
 
-      }
-    );
+        }
+      );
 
-
-  $$('.modal')
-    .forEach(
-      (modal) => {
-
-        modal.addEventListener(
-          'click',
-          (event) => {
-
-            if (
-              event.target ===
-              modal
-            ) {
-
-              closeModal(
-                modal.id
-              );
-
-            }
-
-          }
-        );
-
-      }
-    );
+    }
+  );
 }
 
 
 /* =========================================================
-   KEYBOARD
+ KEYBOARD
 ========================================================= */
 
 function setupKeyboard() {
 
-  document.addEventListener(
-    'keydown',
-    (event) => {
+document.addEventListener(
+  'keydown',
+  (event) => {
 
-      const target =
-        event.target;
+    const target =
+      event.target;
 
-      const isTyping =
-        target instanceof
-          HTMLInputElement ||
-        target instanceof
-          HTMLTextAreaElement;
-
-
-      if (
-        event.key ===
-        'Escape'
-      ) {
-
-        $$('.modal:not(.hidden)')
-          .forEach(
-            (modal) => {
-              closeModal(
-                modal.id
-              );
-            }
-          );
-
-        return;
-      }
+    const isTyping =
+      target instanceof
+        HTMLInputElement ||
+      target instanceof
+        HTMLTextAreaElement;
 
 
-      if (isTyping) {
-        return;
-      }
+    if (
+      event.key ===
+      'Escape'
+    ) {
+
+      $$('.modal:not(.hidden)')
+        .forEach(
+          (modal) => {
+            closeModal(
+              modal.id
+            );
+          }
+        );
+
+      closePlaylistViewer();
+
+      return;
+    }
 
 
-      if (
-        event.code ===
-        'Space'
-      ) {
-
-        event.preventDefault();
-
-        togglePlay();
-
-        return;
-      }
+    if (isTyping) {
+      return;
+    }
 
 
-      if (
-        currentPage ===
-        'library' &&
-        viewMode ===
-        'collection'
-      ) {
+    if (
+      event.code ===
+      'Space'
+    ) {
 
-        if (
-          event.key ===
-          'ArrowLeft'
-        ) {
+      event.preventDefault();
 
-          event.preventDefault();
-          carouselPrevious();
+      togglePlay();
 
-        } else if (
-          event.key ===
-          'ArrowRight'
-        ) {
+      return;
+    }
 
-          event.preventDefault();
-          carouselNext();
-        }
 
-        return;
-      }
-
+    if (
+      currentPage ===
+      'library' &&
+      viewMode ===
+      'collection'
+    ) {
 
       if (
         event.key ===
@@ -3843,7 +4265,7 @@ function setupKeyboard() {
       ) {
 
         event.preventDefault();
-        previousTrack();
+        carouselPrevious();
 
       } else if (
         event.key ===
@@ -3851,228 +4273,250 @@ function setupKeyboard() {
       ) {
 
         event.preventDefault();
-        nextTrack();
+        carouselNext();
       }
 
+      return;
     }
-  );
+
+
+    if (
+      event.key ===
+      'ArrowLeft'
+    ) {
+
+      event.preventDefault();
+      previousTrack();
+
+    } else if (
+      event.key ===
+      'ArrowRight'
+    ) {
+
+      event.preventDefault();
+      nextTrack();
+    }
+
+  }
+);
 }
 
 
 /* =========================================================
-   HELPERS
+ HELPERS
 ========================================================= */
 
 function formatTime(seconds) {
 
-  if (
-    !Number.isFinite(seconds) ||
-    seconds < 0
-  ) {
-    return '0:00';
-  }
+if (
+  !Number.isFinite(seconds) ||
+  seconds < 0
+) {
+  return '0:00';
+}
 
 
-  const minutes =
-    Math.floor(
-      seconds / 60
-    );
-
-  const remaining =
-    Math.floor(
-      seconds % 60
-    );
-
-
-  return (
-    `${minutes}:` +
-    `${String(
-      remaining
-    ).padStart(2, '0')}`
+const minutes =
+  Math.floor(
+    seconds / 60
   );
+
+const remaining =
+  Math.floor(
+    seconds % 60
+  );
+
+
+return (
+  `${minutes}:` +
+  `${String(
+    remaining
+  ).padStart(2, '0')}`
+);
 }
 
 
 function getFileExtension(
-  filename
+filename
 ) {
 
-  if (!filename) {
-    return 'bin';
-  }
+if (!filename) {
+  return 'bin';
+}
 
-  const parts =
-    filename
-      .split('.');
+const parts =
+  filename
+    .split('.');
 
-  return (
-    parts.length > 1
-      ? parts.pop()
-          .toLowerCase()
-      : 'bin'
-  );
+return (
+  parts.length > 1
+    ? parts.pop()
+        .toLowerCase()
+    : 'bin'
+);
 }
 
 
 function sanitizeFileName(
-  filename
+filename
 ) {
 
-  return String(
-    filename || ''
+return String(
+  filename || ''
+)
+  .replace(
+    /[^a-zA-Z0-9._-]/g,
+    '_'
   )
-    .replace(
-      /[^a-zA-Z0-9._-]/g,
-      '_'
-    )
-    .slice(
-      0,
-      150
-    );
+  .slice(
+    0,
+    150
+  );
 }
 
 
 function escapeHtml(value) {
 
-  return String(
-    value ?? ''
+return String(
+  value ?? ''
+)
+  .replace(
+    /&/g,
+    '&amp;'
   )
-    .replace(
-      /&/g,
-      '&amp;'
-    )
-    .replace(
-      /</g,
-      '&lt;'
-    )
-    .replace(
-      />/g,
-      '&gt;'
-    )
-    .replace(
-      /"/g,
-      '&quot;'
-    )
-    .replace(
-      /'/g,
-      '&#039;'
-    );
+  .replace(
+    /</g,
+    '&lt;'
+  )
+  .replace(
+    />/g,
+    '&gt;'
+  )
+  .replace(
+    /"/g,
+    '&quot;'
+  )
+  .replace(
+    /'/g,
+    '&#039;'
+  );
 }
 
 
 function escapeAttribute(value) {
 
-  return escapeHtml(
-    value
+return escapeHtml(
+  value
+);
+}
+
+
+/* =========================================================
+ GENERAL EVENTS
+========================================================= */
+
+function setupGeneralEvents() {
+
+$('#playActive')
+  ?.addEventListener(
+    'click',
+    () => {
+
+      if (
+        carouselIndex >= 0 &&
+        tracks[carouselIndex]
+      ) {
+
+        playTrack(
+          carouselIndex
+        );
+      }
+
+    }
+  );
+
+
+$('#signOutBtn')
+  ?.addEventListener(
+    'click',
+    signOut
   );
 }
 
 
 /* =========================================================
-   GENERAL EVENTS
-========================================================= */
-
-function setupGeneralEvents() {
-
-  $('#playActive')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        if (
-          carouselIndex >= 0 &&
-          tracks[carouselIndex]
-        ) {
-
-          playTrack(
-            carouselIndex
-          );
-        }
-
-      }
-    );
-
-
-  $('#signOutBtn')
-    ?.addEventListener(
-      'click',
-      signOut
-    );
-}
-
-
-/* =========================================================
-   INIT
+ INIT
 ========================================================= */
 
 async function init() {
 
-  setupAuth();
-  setupAuthListener();
+setupAuth();
+setupAuthListener();
 
-  setupNavigation();
-  setupViewSwitcher();
+setupNavigation();
+setupViewSwitcher();
 
-  setupCarouselGestures();
+setupCarouselGestures();
 
-  setupSearch();
+setupSearch();
 
-  setupUpload();
+setupUpload();
 
-  setupPlaylists();
+setupPlaylists();
 
-  setupPlayback();
+setupPlayback();
 
-  setupModals();
+setupModals();
 
-  setupKeyboard();
+setupKeyboard();
 
-  setupGeneralEvents();
+setupGeneralEvents();
 
 
-  if (!sb) {
+if (!sb) {
 
-    showAuth();
+  showAuth();
 
-    const status =
-      $('#authStatus');
+  const status =
+    $('#authStatus');
 
-    if (status) {
-      status.textContent =
-        'Supabase configuration is missing.';
-    }
-
-    return;
+  if (status) {
+    status.textContent =
+      'Supabase configuration is missing.';
   }
 
-
-  try {
-
-    currentUser =
-      await getUser();
+  return;
+}
 
 
-    if (currentUser) {
+try {
 
-      showApp();
+  currentUser =
+    await getUser();
 
-    } else {
 
-      showAuth();
+  if (currentUser) {
 
-    }
+    showApp();
 
-  } catch (error) {
-
-    console.error(
-      'Initialization error:',
-      error
-    );
+  } else {
 
     showAuth();
 
   }
+
+} catch (error) {
+
+  console.error(
+    'Initialization error:',
+    error
+  );
+
+  showAuth();
+
+}
 }
 
 
 init();
+$$$
