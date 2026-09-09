@@ -942,7 +942,7 @@ function renderLibrary() {
 
 
 /* =========================================================
-   CAROUSEL
+   CAROUSEL — SPHERES
 ========================================================= */
 
 let carouselSignature = '';
@@ -1001,27 +1001,25 @@ async function renderCarousel() {
                 track.title || 'track'
               )}"
             >
-              <div class="track-art">
-                <div class="art-placeholder">
-                  F
+
+              <div class="sphere">
+
+                <div class="sphere-art">
+                  <div class="track-art">
+                    <div class="art-placeholder">
+                      F
+                    </div>
+                  </div>
                 </div>
+
+                <div class="sphere-shadow"></div>
+
+                <div class="sphere-highlight"></div>
+
+                <div class="sphere-edge"></div>
+
               </div>
 
-              <div class="track-info">
-                <strong>
-                  ${escapeHtml(
-                    track.title ||
-                    'Untitled'
-                  )}
-                </strong>
-
-                <span>
-                  ${escapeHtml(
-                    track.artist ||
-                    'Unknown artist'
-                  )}
-                </span>
-              </div>
             </button>
           `
         )
@@ -1158,29 +1156,46 @@ function updateCarouselPosition() {
       const distance =
         Math.abs(offset);
 
+      /*
+        Keep the active sphere large.
+        The surrounding spheres sit farther
+        away and become smaller/darker.
+      */
+
       const scale =
         Math.max(
-          0.72,
+          0.62,
           1 -
-          distance * 0.12
+          distance * 0.13
         );
 
       const opacity =
         Math.max(
-          0.3,
+          0.22,
           1 -
-          distance * 0.2
+          distance * 0.18
         );
 
       const rotate =
-        offset * -5;
+        offset * -8;
+
+      /*
+        This creates a much more pronounced
+        curved carousel instead of a flat row.
+      */
 
       const translate =
-        offset * 235;
+        offset * 255;
+
+      const depth =
+        -Math.abs(offset) * 85;
+
+      const vertical =
+        Math.abs(offset) * 14;
 
 
       card.style.transform =
-        `translateX(${translate}px) ` +
+        `translate3d(${translate}px, ${vertical}px, ${depth}px) ` +
         `scale(${scale}) ` +
         `rotateY(${rotate}deg)`;
 
@@ -1266,8 +1281,10 @@ function setupCarouselGestures() {
     (event) => {
 
       isDragging = true;
+
       dragStartX =
         event.clientX;
+
       dragCurrentX =
         event.clientX;
 
@@ -1774,15 +1791,6 @@ async function saveEditedTrack(event) {
     }
 
 
-    /*
-      Update the database first.
-
-      The .select() here is intentional.
-      It lets us verify that Supabase actually
-      updated the row instead of silently
-      returning zero matching rows.
-    */
-
     const {
       data: updatedRows,
       error
@@ -1835,10 +1843,6 @@ async function saveEditedTrack(event) {
     let updatedTrack =
       updatedRows[0];
 
-
-    /*
-      OPTIONAL NEW COVER ARTWORK
-    */
 
     if (coverFile) {
 
@@ -1947,11 +1951,6 @@ async function saveEditedTrack(event) {
         coverUpdatedRows[0];
 
 
-      /*
-        Delete the old artwork only AFTER
-        the database points to the new artwork.
-      */
-
       if (
         oldCoverPath &&
         oldCoverPath !== newPath
@@ -1977,10 +1976,6 @@ async function saveEditedTrack(event) {
 
     }
 
-
-    /*
-      Update local state immediately.
-    */
 
     tracks[
       editingTrackIndex
@@ -2022,11 +2017,6 @@ async function saveEditedTrack(event) {
     renderCurrentPage();
 
 
-    /*
-      Reload from Supabase so the UI is
-      guaranteed to match the database.
-    */
-
     await loadLibrary();
 
     renderCurrentPage();
@@ -2056,7 +2046,6 @@ async function saveEditedTrack(event) {
 
       message =
         'Supabase is blocking the edit. Your tracks UPDATE policy needs to allow users to update their own tracks.';
-
     }
 
 
