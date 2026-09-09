@@ -935,3 +935,68 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: #3b3b3b;
 }
+/* =========================
+   PLAYER OVERLAP FIX
+   ========================= */
+
+.player {
+  position: fixed !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+  min-height: 96px !important;
+  height: 96px !important;
+  padding: 10px 20px !important;
+}
+
+/* Keep the artwork in its own space */
+.player img,
+.player-art,
+.player-track img {
+  position: static !important;
+  flex-shrink: 0 !important;
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  min-height: 64px !important;
+  max-width: 64px !important;
+  max-height: 64px !important;
+  object-fit: cover !important;
+}
+
+/* Song information */
+.player-track {
+  position: static !important;
+  flex: 0 1 260px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  overflow: hidden !important;
+}
+
+/* Playback controls stay in their own area */
+.player-center {
+  position: static !important;
+  flex: 1 1 auto !important;
+  min-width: 280px !important;
+  width: auto !important;
+  z-index: 2 !important;
+}
+
+/* Volume / right controls */
+.player-right {
+  position: static !important;
+  flex: 0 0 auto !important;
+  z-index: 2 !important;
+}
+
+/* Prevent anything from floating over the player */
+.player > * {
+  position: static !important;
+}
+
+/* Make sure the controls are always above artwork */
+.player-controls,
+.player-progress {
+  position: relative !important;
+  z-index: 5 !important;
+}
