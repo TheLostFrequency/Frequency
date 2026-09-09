@@ -261,6 +261,7 @@ input:focus{border-color:#777}
 }
 
 .page{display:none}
+
 .active-page{display:block}
 
 .library-heading{
@@ -289,17 +290,11 @@ input:focus{border-color:#777}
 }
 
 
-/* THE FREQUENCY SIGNATURE */
+/* THE FREQUENCY SIGNATURE — TIGHT SPHERE */
 
 .collection-wrap{
   padding-top:0
 }
-
-/*
-  TIGHTER SPHERE
-  The carousel has been pulled inward so the artwork
-  feels like a compact orbit instead of a wide spread.
-*/
 
 .carousel{
   height:min(61vh,610px);
@@ -350,32 +345,21 @@ input:focus{border-color:#777}
 
 .carousel-card{
   position:absolute;
-
-  /* smaller cards = tighter overall sphere */
   width:min(31vw,330px);
-
   aspect-ratio:1;
   border-radius:50%;
   background:#101010;
   border:1px solid #282828;
-
   display:grid;
   place-items:center;
-
   overflow:hidden;
-
-  /*
-    Reduced shadow spread keeps the cards visually grouped.
-  */
   box-shadow:
     0 35px 65px #000,
     0 0 0 1px #050505;
-
   transition:
     transform .55s cubic-bezier(.16,.8,.2,1),
     opacity .4s,
     filter .4s;
-
   will-change:transform;
   backface-visibility:hidden
 }
@@ -617,7 +601,7 @@ input:focus{border-color:#777}
 }
 
 
-/* PLAYER — smaller artwork / cleaner floating control */
+/* PLAYER — small cover art */
 
 .player{
   position:fixed;
@@ -632,14 +616,11 @@ input:focus{border-color:#777}
   border:1px solid #222;
   border-radius:999px;
   backdrop-filter:blur(24px);
-
   display:grid;
   grid-template-columns:1fr auto 1fr;
   align-items:center;
   gap:18px;
-
   padding:8px 14px;
-
   box-shadow:0 20px 70px #000b
 }
 
@@ -650,13 +631,9 @@ input:focus{border-color:#777}
   min-width:0
 }
 
-/*
-  Smaller than before so the player doesn't feel
-  like it's carrying another album card.
-*/
 .mini-art{
-  width:38px;
-  height:38px;
+  width:30px;
+  height:30px;
   border-radius:50%;
   flex:none
 }
@@ -818,9 +795,6 @@ input:focus{border-color:#777}
     gap:10px
   }
 
-  /*
-    Tighter mobile sphere
-  */
   .carousel{
     height:480px;
     min-height:430px;
@@ -866,9 +840,6 @@ input:focus{border-color:#777}
     max-width:46vw
   }
 
-  /*
-    Keep mobile player art small too.
-  */
   .mini-art{
     width:28px;
     height:28px
@@ -919,9 +890,6 @@ input:focus{border-color:#777}
     display:none
   }
 
-  /*
-    Compact mobile carousel
-  */
   .carousel{
     height:440px
   }
