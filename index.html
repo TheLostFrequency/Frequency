@@ -32,44 +32,54 @@
     <!-- MAIN APP WRAPPER -->
     <div id="app" class="app-container hidden">
 
-        <!-- NAVIGATION TOP BAR -->
+        <!-- TOP NAVIGATION BAR -->
         <header class="top-bar">
-            <div class="brand-logo">FREQUENCY</div>
-            <nav class="nav-links">
-                <button class="nav-btn active" data-view="collection">VAULT</button>
-                <button class="nav-btn" data-view="list">LIST</button>
-                <button class="nav-btn" data-view="albums">ALBUMS</button>
-                <button class="nav-btn" data-view="playlists">PLAYLISTS</button>
-            </nav>
-            <div class="user-actions">
-                <button id="btnOpenAddSong" class="btn-action">+ ADD TRACK</button>
-                <button id="btnLogout" class="btn-text">EXIT</button>
+            <div class="nav-pill-group">
+                <div class="brand-emblem"><img src="assets/logo.png" alt="Frequency"></div>
+                <button class="nav-btn active" data-view="collection">Library</button>
+                <button class="nav-btn" data-view="search">Search</button>
+                <button class="nav-btn" data-view="albums">Albums</button>
+                <button class="nav-btn" data-view="playlists">Playlists</button>
+                <button class="nav-btn" data-view="transmissions">Transmissions</button>
+            </div>
+
+            <div class="view-toggle-pill">
+                <button class="toggle-btn active" id="btnModeCollection">COLLECTION</button>
+                <span class="divider">/</span>
+                <button class="toggle-btn" id="btnModeList">LIST</button>
             </div>
         </header>
 
         <!-- SEARCH BAR OVERLAY -->
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="SEARCH VAULT BY TITLE, ARTIST, OR ALBUM..." />
+        <div id="viewSearch" class="view-panel hidden">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="SEARCH VAULT BY TITLE, ARTIST, OR ALBUM..." />
+            </div>
         </div>
 
         <!-- VIEW CONTAINER: SPATIAL COLLECTION VIEW -->
         <main id="viewCollection" class="view-panel active">
             <div class="architectural-stage">
-                <!-- Lighting Effects -->
-                <div class="spotlight"></div>
-                <div class="ambient-shadow"></div>
+                <!-- Environmental Downlight -->
+                <div class="top-spotlight"></div>
                 
-                <!-- Physical Pedestal Monolith -->
-                <div class="pedestal">
-                    <div class="pedestal-top"></div>
-                    <div class="pedestal-front">
-                        <div class="pedestal-logo">FREQUENCY</div>
-                    </div>
-                </div>
+                <!-- Architectural Pillars -->
+                <div class="pillar pillar-left"></div>
+                <div class="pillar pillar-right"></div>
 
-                <!-- Physical Interactive Record/CD Collection -->
-                <div id="physicalVault" class="physical-vault-container">
-                    <!-- Dynamic Vinyl / CD Jewel Cases rendered here -->
+                <!-- Dynamic 3D Fanning Album Vault -->
+                <div id="physicalVault" class="physical-vault-container"></div>
+
+                <!-- Center Pedestal Monolith with Metallic Logo -->
+                <div class="center-monolith">
+                    <div class="monolith-top">
+                        <img src="assets/logo.png" class="physical-emblem-3d" alt="FREQUENCY Emblem">
+                    </div>
+                    <div class="monolith-front">
+                        <div id="activeArtist" class="active-artist-text">ARTIST NAME</div>
+                        <div id="activeTitle" class="active-title-text">Album Title</div>
+                        <div id="activeMeta" class="active-meta-text">2026 • 12 tracks</div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -112,7 +122,15 @@
             </div>
         </main>
 
-        <!-- MINIMALIST FLOATING PLAYER -->
+        <!-- VIEW CONTAINER: TRANSMISSIONS VIEW -->
+        <main id="viewTransmissions" class="view-panel hidden">
+            <div class="transmissions-container">
+                <h2>TRANSMISSIONS</h2>
+                <p>Private stream channels and broadcast settings.</p>
+            </div>
+        </main>
+
+        <!-- FLOATING CAPSULE PLAYER -->
         <footer id="musicPlayer" class="floating-player">
             <div class="player-left">
                 <div id="playerCover" class="player-cover-art"></div>
@@ -123,11 +141,9 @@
             </div>
             <div class="player-center">
                 <div class="player-controls">
-                    <button id="btnShuffle" class="ctrl-btn" title="Shuffle">🔀</button>
                     <button id="btnPrev" class="ctrl-btn">⏮</button>
                     <button id="btnPlayPause" class="ctrl-btn main-play">▶</button>
                     <button id="btnNext" class="ctrl-btn">⏭</button>
-                    <button id="btnRepeat" class="ctrl-btn" title="Repeat">🔁</button>
                 </div>
                 <div class="progress-bar-container">
                     <span id="currentTime">0:00</span>
@@ -136,6 +152,8 @@
                 </div>
             </div>
             <div class="player-right">
+                <button id="btnOpenAddSong" class="btn-action">+ ADD TRACK</button>
+                <button id="btnLogout" class="btn-text">EXIT</button>
                 <span class="vol-icon">🔊</span>
                 <input type="range" id="volumeSlider" value="80" min="0" max="100">
             </div>
