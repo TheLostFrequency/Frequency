@@ -27,7 +27,7 @@ function initAuth() {
     const authError = document.getElementById('authError');
 
     // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (session) {
             currentUser = session.user;
             authModal.classList.add('hidden');
@@ -42,7 +42,7 @@ function initAuth() {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
             authError.textContent = error.message;
         } else {
@@ -56,20 +56,23 @@ function initAuth() {
     document.getElementById('btnSignUp').addEventListener('click', async () => {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) authError.textContent = error.message;
-        else authError.textContent = 'ACCOUNT CREATED. YOU MAY NOW LOGIN.';
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) {
+            authError.textContent = error.message;
+        } else {
+            authError.textContent = 'ACCOUNT CREATED. YOU MAY NOW LOGIN.';
+        }
     });
 
     document.getElementById('btnLogout').addEventListener('click', async () => {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         window.location.reload();
     });
 }
 
 /* 2. DATA MANAGEMENT (SUPABASE API) */
 async function loadUserLibrary() {
-    const { data: songs, error } = await supabase
+    const { data: songs, error } = await supabaseClient
         .from('songs')
         .select('*')
         .order('created_at', { ascending: false });
@@ -168,24 +171,24 @@ function initSongManagement() {
         try {
             // Upload Audio File
             const audioPath = `${currentUser.id}/${Date.now()}_${audioFile.name}`;
-            const { data: audioData, error: audioErr } = await supabase.storage
+            const { data: audioData, error: audioErr } = await supabaseClient.storage
                 .from('audio-files')
                 .upload(audioPath, audioFile);
 
             if (audioErr) throw audioErr;
 
-            const audioUrl = supabase.storage.from('audio-files').getPublicUrl(audioPath).data.publicUrl;
+            const audioUrl = supabaseClient.storage.from('audio-files').getPublicUrl(audioPath).data.publicUrl;
 
             // Upload Cover File (if exists)
             let coverUrl = '';
             if (coverFile) {
                 const coverPath = `${currentUser.id}/${Date.now()}_${coverFile.name}`;
-                await supabase.storage.from('cover-art').upload(coverPath, coverFile);
-                coverUrl = supabase.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
+                await supabaseClient.storage.from('cover-art').upload(coverPath, coverFile);
+                coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
             }
 
             // Insert Database Record
-            const { error: dbErr } = await supabase.from('songs').insert({
+            const { error: dbErr } = await supabaseClient.from('songs').insert({
                 user_id: currentUser.id,
                 title,
                 artist,
@@ -264,7 +267,7 @@ function renderAlbumsView(songs) {
 /* GLOBAL DELETE TRACK HELPER */
 window.deleteTrack = async function(songId) {
     if (confirm('Permanently remove this track from your vault?')) {
-        await supabase.from('songs').delete().eq('id', songId);
+        await supabaseClient.from('songs').delete().eq('id', songId);
         loadUserLibrary();
     }
 };
