@@ -127,11 +127,12 @@
             </div>
         </main>
 
-        <!-- VIEW CONTAINER: TRANSMISSIONS VIEW (CUSTOM ASSET DISPLAY) -->
+        <!-- VIEW CONTAINER: TRANSMISSIONS VIEW -->
         <main id="viewTransmissions" class="view-panel hidden">
             <div class="transmissions-stage">
                 <div class="transmission-asset-wrapper">
-                    <img src="assets/transmission.png" class="transmission-graphic" alt="Transmissions Visual" onerror="this.src='assets/transmission.jpg'">
+                    <img id="transGraphic" src="assets/transmission.jpg" class="transmission-graphic" alt="Transmissions Visual" 
+                         onerror="if(this.src.endsWith('.jpg')) this.src='assets/transmission.png'; else if(this.src.endsWith('.png')) this.src='assets/transmission.jpeg';">
                 </div>
             </div>
         </main>
