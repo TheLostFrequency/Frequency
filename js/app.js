@@ -1,6 +1,6 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Integrated Supabase Sync & Complete Audio Engine
+ * Integrated Supabase Sync, Robust Audio Control Engine & Fixed Selectors
  */
 
 let spatialVault = null;
@@ -9,33 +9,28 @@ let songsLibrary = [];
 let userPlaylists = [];
 let currentUser = null;
 
-// Audio Engine State Variables
+// Audio Engine State
 let currentTrackIndex = 0;
 let isShuffle = false;
 let isPlaying = false;
 const audio = new Audio();
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Initialize Audio Engine Handlers
     initAudioEngineControls();
 
-    // 2. Initialize 3D Spatial Vault
     if (typeof SpatialVault !== 'undefined') {
         spatialVault = new SpatialVault('physicalVault', (selectedSong) => {
             playSelectedTrack(selectedSong);
         });
     }
 
-    // 3. Initialize App Subsystems
     initAuth();
     initNavigation();
     initSongManagement();
     initPlaylistManagement();
 });
 
-/* ==========================================
-   1. AUTHENTICATION CONTROLLER
-   ========================================== */
+/* 1. AUTHENTICATION CONTROLLER */
 function initAuth() {
     const authModal = document.getElementById('authModal');
     const appContainer = document.getElementById('app');
@@ -89,9 +84,7 @@ function initAuth() {
     });
 }
 
-/* ==========================================
-   2. DATA MANAGEMENT (SUPABASE API)
-   ========================================== */
+/* 2. DATA MANAGEMENT (SUPABASE API) */
 async function loadUserLibrary() {
     const { data: songs, error } = await supabaseClient
         .from('songs')
@@ -104,7 +97,6 @@ async function loadUserLibrary() {
         renderListView(songsLibrary);
         renderAlbumsView(songsLibrary);
 
-        // Auto-load first track into player buffer without auto-playing
         if (songsLibrary.length > 0 && !audio.src) {
             loadTrackIntoPlayer(0, false);
         }
@@ -123,9 +115,7 @@ async function loadUserPlaylists() {
     }
 }
 
-/* ==========================================
-   3. NAVIGATION CONTROLLER
-   ========================================== */
+/* 3. NAVIGATION CONTROLLER */
 function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewPanels = document.querySelectorAll('.view-panel');
@@ -183,14 +173,12 @@ function initNavigation() {
     }
 }
 
-/* ==========================================
-   4. AUDIO PLAYBACK & ENGINE CONTROLLER
-   ========================================== */
+/* 4. AUDIO PLAYBACK ENGINE & BUTTON FIXED CONTROLLER */
 function initAudioEngineControls() {
-    const mainPlayBtn = document.querySelector('.main-play');
-    const prevBtn = document.querySelector('.ctrl-prev');
-    const nextBtn = document.querySelector('.ctrl-next');
-    const shuffleBtn = document.querySelector('.ctrl-shuffle');
+    const mainPlayBtn = document.querySelector('.main-play') || document.querySelector('.player-controls .ctrl-btn:nth-child(2)');
+    const prevBtn = document.querySelector('.ctrl-prev') || document.getElementById('btnPrev') || document.querySelectorAll('.player-controls .ctrl-btn')[0];
+    const nextBtn = document.querySelector('.ctrl-next') || document.getElementById('btnNext') || document.querySelectorAll('.player-controls .ctrl-btn')[2];
+    const shuffleBtn = document.querySelector('.ctrl-shuffle') || document.getElementById('btnShuffle');
     const progressBar = document.querySelector('input[type="range"]');
 
     if (mainPlayBtn) mainPlayBtn.addEventListener('click', togglePlay);
@@ -198,12 +186,10 @@ function initAudioEngineControls() {
     if (prevBtn) prevBtn.addEventListener('click', playPrevTrack);
     if (shuffleBtn) shuffleBtn.addEventListener('click', toggleShuffle);
 
-    // Auto Continuous Play when Track Ends
     audio.addEventListener('ended', () => {
         playNextTrack();
     });
 
-    // Scrubber Position & Time Code Updates
     audio.addEventListener('timeupdate', () => {
         if (audio.duration && progressBar) {
             progressBar.value = (audio.currentTime / audio.duration) * 100;
@@ -230,11 +216,9 @@ function loadTrackIntoPlayer(index, shouldPlay = true) {
 
     audio.src = track.audio_url;
 
-    // Synchronize UI Text Across Floating Bar & Monolith Stage
     document.querySelectorAll('.track-title, .active-title-text').forEach(el => el.textContent = track.title);
     document.querySelectorAll('.track-artist, .active-artist-text').forEach(el => el.textContent = track.artist);
 
-    // Synchronize Artwork
     const coverArtEl = document.querySelector('.player-cover-art');
     if (coverArtEl) coverArtEl.style.backgroundImage = `url('${track.cover_url || ''}')`;
 
@@ -293,7 +277,7 @@ function playPrevTrack() {
 
 function toggleShuffle() {
     isShuffle = !isShuffle;
-    const shuffleBtn = document.querySelector('.ctrl-shuffle');
+    const shuffleBtn = document.querySelector('.ctrl-shuffle') || document.getElementById('btnShuffle');
     if (shuffleBtn) {
         shuffleBtn.classList.toggle('active-mode', isShuffle);
         shuffleBtn.style.color = isShuffle ? '#ffffff' : '#888888';
@@ -301,7 +285,7 @@ function toggleShuffle() {
 }
 
 function updatePlayButtonIcon() {
-    const mainPlayBtn = document.querySelector('.main-play');
+    const mainPlayBtn = document.querySelector('.main-play') || document.querySelector('.player-controls .ctrl-btn:nth-child(2)');
     if (mainPlayBtn) {
         mainPlayBtn.textContent = isPlaying ? '❚❚' : '▶';
     }
@@ -313,9 +297,7 @@ function formatTime(seconds) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
-/* ==========================================
-   5. SONG UPLOAD & EDIT MANAGEMENT
-   ========================================== */
+/* 5. SONG UPLOAD & EDIT MANAGEMENT */
 function initSongManagement() {
     const songModal = document.getElementById('songModal');
     const btnOpenAdd = document.getElementById('btnOpenAddSong');
@@ -388,13 +370,12 @@ function initSongManagement() {
     }
 }
 
-/* EDIT TRACK METADATA DIRECTLY IN SUPABASE */
 window.editTrackMetadata = async function(songId) {
     const targetSong = songsLibrary.find(s => s.id === songId) || songsLibrary[currentTrackIndex];
     if (!targetSong) return;
 
     const newTitle = prompt("Edit Track Title:", targetSong.title);
-    if (newTitle === null) return; // User cancelled
+    if (newTitle === null) return;
 
     const newArtist = prompt("Edit Artist Name:", targetSong.artist);
     if (newArtist === null) return;
@@ -418,9 +399,7 @@ window.editTrackMetadata = async function(songId) {
     }
 };
 
-/* ==========================================
-   6. PLAYLIST CREATION & MANAGEMENT
-   ========================================== */
+/* 6. PLAYLIST CREATION & MANAGEMENT */
 function initPlaylistManagement() {
     const playlistModal = document.getElementById('playlistModal');
     const btnOpen = document.getElementById('btnOpenCreatePlaylist');
@@ -453,9 +432,7 @@ function initPlaylistManagement() {
     }
 }
 
-/* ==========================================
-   7. RENDER VIEWS & CONTROLS
-   ========================================== */
+/* 7. RENDER VIEWS & CONTROLS */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
     if (!tbody) return;
@@ -531,7 +508,6 @@ function renderPlaylistsView(playlists) {
     });
 }
 
-/* GLOBAL DELETE TRACK HELPER */
 window.deleteTrack = async function(songId) {
     if (confirm('Permanently remove this track from your vault?')) {
         await supabaseClient.from('songs').delete().eq('id', songId);
