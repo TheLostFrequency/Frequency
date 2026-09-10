@@ -23,7 +23,9 @@ body, html {
     overflow: hidden;
 }
 
-/* AUTH & MODALS */
+/* ==========================================
+   AUTHENTICATION & MODALS
+   ========================================== */
 .overlay-modal {
     position: fixed;
     inset: 0;
@@ -116,7 +118,9 @@ input:focus { border-color: #555; }
 
 .btn-primary:hover { background: #fff; transform: translateY(-1px); }
 
-/* MAIN APP CONTAINER WITH BACKGROUND IMAGE */
+/* ==========================================
+   MAIN APP CONTAINER (ENHANCED CRISP BACKGROUND)
+   ========================================== */
 .app-container {
     display: flex;
     flex-direction: column;
@@ -124,16 +128,21 @@ input:focus { border-color: #555; }
     width: 100vw;
     position: relative;
     background-color: var(--bg-black);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.35)), url('../assets/background.png'), url('../assets/background.jpg');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.25)), url('../assets/background.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     overflow: hidden;
+
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .app-container.hidden { display: none; }
 
-/* TOP BAR */
+/* ==========================================
+   TOP BAR & NAVIGATION
+   ========================================== */
 .top-bar {
     position: absolute;
     top: 25px;
@@ -237,7 +246,9 @@ input:focus { border-color: #555; }
 .toggle-btn.active { color: #fff; }
 .divider { color: #444; }
 
-/* VIEWS PANEL */
+/* ==========================================
+   VIEWS PANEL
+   ========================================== */
 .view-panel { flex: 1; position: relative; overflow: hidden; display: none; }
 .view-panel.active { display: block !important; }
 
@@ -363,7 +374,9 @@ input:focus { border-color: #555; }
     margin-top: 4px;
 }
 
-/* FULL-SCREEN TRANSMISSIONS VIEW */
+/* ==========================================
+   FULL-SCREEN TRANSMISSIONS VIEW
+   ========================================== */
 .transmissions-stage {
     position: fixed;
     inset: 0;
@@ -397,7 +410,9 @@ input:focus { border-color: #555; }
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8));
 }
 
-/* FLOATING CAPSULE PLAYER WITH STRICT VOLUME POSITIONING */
+/* ==========================================
+   FLOATING CAPSULE PLAYER & INTEGRATED VOLUME
+   ========================================== */
 .floating-player {
     position: fixed;
     bottom: 30px;
@@ -458,7 +473,7 @@ input:focus { border-color: #555; }
 .progress-bar-container { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 8px; color: #555; }
 input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px; }
 
-/* IN-PLAYER VOLUME CONTROLS FIXED INSIDE FLOATING CONTAINER */
+/* IN-PLAYER VOLUME CONTROL */
 .player-right { 
     width: 24%; 
     display: flex; 
@@ -488,9 +503,11 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
     cursor: pointer;
 }
 
-/* LIST, ALBUMS, AND PLAYLIST VIEWS - OFFSET TOP PADDING TO CLEAR HEADER TABS */
+/* ==========================================
+   LIST, ALBUMS & PLAYLIST GRID CONTAINERS
+   ========================================== */
 .list-wrapper, .playlists-wrapper, #viewAlbums, #viewPlaylists, #viewList {
-    padding-top: 100px !important; /* Pushes cards below top navigation pill */
+    padding-top: 110px !important;
     padding-left: 60px;
     padding-right: 60px;
     padding-bottom: 120px;
@@ -570,7 +587,9 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 .card-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
 .search-container { padding: 120px 60px 20px 60px; }
 
-/* MOBILE RESPONSIVE OVERRIDES */
+/* ==========================================
+   MOBILE RESPONSIVE OVERRIDES (UNDER 768px)
+   ========================================== */
 @media (max-width: 768px) {
     .top-bar {
         position: fixed;
