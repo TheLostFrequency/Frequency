@@ -20,7 +20,7 @@ body, html {
     background-color: var(--bg-black);
     color: var(--text-primary);
     font-family: var(--font-mono);
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 /* AUTH & MODALS */
@@ -33,6 +33,7 @@ body, html {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 16px;
 }
 
 .overlay-modal.hidden { display: none; }
@@ -126,6 +127,7 @@ input:focus { border-color: #555; }
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    overflow-x: hidden;
 }
 
 .app-container.hidden { display: none; }
@@ -553,3 +555,110 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 .card-title { font-size: 12px; font-weight: 700; color: #fff; }
 .card-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
 .search-container { padding: 120px 60px 20px 60px; }
+
+
+/* ==========================================
+   MOBILE RESPONSIVE OVERRIDES (under 768px)
+   ========================================== */
+@media (max-width: 768px) {
+
+    /* 1. Header & Navigation Fixes */
+    .top-bar {
+        position: fixed;
+        top: 10px;
+        padding: 0 12px;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .nav-pill-group {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px 12px;
+        scrollbar-width: none;
+    }
+
+    .nav-pill-group::-webkit-scrollbar {
+        display: none;
+    }
+
+    .top-right-group {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* 2. Architectural Stage Adjustments */
+    .pillar {
+        display: none; /* Hide side pillars on narrow screens */
+    }
+
+    .record-object {
+        width: 200px;
+        height: 200px;
+    }
+
+    .vinyl-disc {
+        width: 190px;
+        height: 190px;
+    }
+
+    .record-object.active .vinyl-disc {
+        right: -45px;
+    }
+
+    .center-monolith {
+        bottom: 180px; /* Shift up to clear floating player */
+    }
+
+    .monolith-top {
+        width: 240px;
+        height: 45px;
+    }
+
+    .active-title-text {
+        font-size: 18px;
+    }
+
+    /* 3. Floating Player Mobile Layout */
+    .floating-player {
+        width: calc(100% - 24px);
+        height: auto;
+        bottom: 12px;
+        flex-direction: column;
+        padding: 12px;
+        gap: 8px;
+        border-radius: 20px;
+    }
+
+    .player-left {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .player-center {
+        width: 100%;
+    }
+
+    .player-right {
+        display: none; /* Hide auxiliary volume controls on small screens */
+    }
+
+    /* 4. Lists & Content Views */
+    .list-wrapper, .playlists-wrapper {
+        padding: 140px 16px 140px 16px;
+    }
+
+    .albums-grid, .playlists-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 16px;
+    }
+
+    .search-container {
+        padding: 140px 16px 20px 16px;
+    }
+}
