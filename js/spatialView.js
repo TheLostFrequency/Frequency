@@ -1,6 +1,6 @@
 /**
  * FREQUENCY SPATIAL COLLECTION ENGINE
- * Handles physical movement, drag/swipe, inertia, 3D perspective, and record selection.
+ * Scoped listeners prevent accidental clicks outside of active cards from triggering playback.
  */
 class SpatialVault {
     constructor(containerId, onSelectCallback) {
@@ -36,7 +36,12 @@ class SpatialVault {
                 <div class="vinyl-disc"></div>
             `;
 
-            el.addEventListener('click', () => this.selectRecord(index));
+            // Explicit click listener on the card itself
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectRecord(index);
+            });
+            
             this.container.appendChild(el);
         });
 
@@ -81,7 +86,6 @@ class SpatialVault {
     }
 
     selectRecord(index) {
-        if (this.currentIndex === index) return;
         this.currentIndex = index;
         this.updatePositions();
         if (this.onSelectCallback && this.songs[index]) {
@@ -90,8 +94,8 @@ class SpatialVault {
     }
 
     initEventListeners() {
-        // Drag / Swipe Controls
-        window.addEventListener('mousedown', (e) => {
+        // Scope drag gesture strictly to the 3D vault container (not entire window)
+        this.container.addEventListener('mousedown', (e) => {
             this.isDragging = true;
             this.startX = e.clientX;
         });
@@ -106,16 +110,16 @@ class SpatialVault {
         window.addEventListener('mouseup', () => {
             if (!this.isDragging) return;
             this.isDragging = false;
-            if (this.dragOffset < -60 && this.currentIndex < this.songs.length - 1) {
+            
+            // Only cycle if dragged far enough
+            if (this.dragOffset < -80 && this.currentIndex < this.songs.length - 1) {
                 this.currentIndex++;
-            } else if (this.dragOffset > 60 && this.currentIndex > 0) {
+            } else if (this.dragOffset > 80 && this.currentIndex > 0) {
                 this.currentIndex--;
             }
+            
             this.dragOffset = 0;
             this.updatePositions();
-            if (this.songs[this.currentIndex]) {
-                this.onSelectCallback(this.songs[this.currentIndex]);
-            }
         });
     }
 }
