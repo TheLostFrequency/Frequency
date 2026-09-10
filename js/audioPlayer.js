@@ -22,14 +22,16 @@ class AudioEngine {
         // Update Player UI
         document.getElementById('playerTitle').textContent = song.title;
         document.getElementById('playerArtist').textContent = song.artist;
-        document.getElementById('playerCover').style.backgroundImage = `url('${song.cover_url || ''}')`;
+        if (song.cover_url) {
+            document.getElementById('playerCover').style.backgroundImage = `url('${song.cover_url}')`;
+        }
 
         this.play();
     }
 
     play() {
         if (!this.audio.src) return;
-        this.audio.play();
+        this.audio.play().catch(() => {});
         this.playPauseBtn.textContent = '⏸';
     }
 
