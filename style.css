@@ -1,11 +1,9 @@
-/* FREQUENCY ARCHITECTURAL STYLESHEET */
 :root {
     --bg-black: #050505;
     --pedestal-dark: #0d0d0e;
     --pedestal-edge: #1a1a1c;
     --text-primary: #f0f0f0;
     --text-muted: #666666;
-    --accent-gold: #c5a059;
     --font-mono: 'Helvetica Neue', Arial, sans-serif;
     --shadow-deep: 0 30px 60px rgba(0,0,0,0.9);
 }
@@ -87,7 +85,7 @@ input:focus { border-color: #444; }
 
 .btn-primary, .btn-secondary, .btn-action {
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     background: #eee;
     color: #000;
     border: none;
@@ -119,47 +117,81 @@ input:focus { border-color: #444; }
 
 .app-container.hidden { display: none; }
 
-/* TOP BAR */
+/* TOP PILL NAVIGATION */
 .top-bar {
+    position: absolute;
+    top: 25px;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 40px;
-    z-index: 100;
-    background: linear-gradient(180deg, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0) 100%);
+    padding: 0 40px;
+    z-index: 300;
 }
 
-.brand-logo {
-    font-size: 16px;
-    letter-spacing: 6px;
-    font-weight: 900;
+.nav-pill-group {
+    display: flex;
+    align-items: center;
+    background: rgba(30, 30, 32, 0.65);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 40px;
+    padding: 6px 16px;
+    gap: 8px;
 }
 
-.nav-links { display: flex; gap: 20px; }
+.brand-emblem img {
+    height: 22px;
+    width: auto;
+    margin-right: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
 
 .nav-btn {
-    background: none;
+    background: transparent;
     border: none;
-    color: var(--text-muted);
-    font-size: 11px;
-    letter-spacing: 2px;
+    color: #8e8e93;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 20px;
     cursor: pointer;
-    padding-bottom: 4px;
+    transition: all 0.25s ease;
 }
 
 .nav-btn.active, .nav-btn:hover {
-    color: #fff;
-    border-bottom: 2px solid #fff;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
 }
 
-.user-actions { display: flex; gap: 15px; align-items: center; }
-.btn-action { width: auto; padding: 10px 18px; }
-.btn-text { background: none; border: none; color: #666; cursor: pointer; font-size: 11px; }
+.view-toggle-pill {
+    display: flex;
+    align-items: center;
+    background: rgba(30, 30, 32, 0.65);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 40px;
+    padding: 6px 20px;
+    gap: 10px;
+    font-size: 12px;
+    letter-spacing: 2px;
+}
 
-/* SEARCH */
+.toggle-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.toggle-btn.active { color: #fff; }
+.divider { color: #444; }
+
+/* SEARCH CONTAINER */
 .search-container {
-    padding: 0 40px;
-    margin-bottom: 10px;
+    padding: 100px 40px 20px 40px;
     z-index: 90;
 }
 
@@ -175,58 +207,40 @@ input:focus { border-color: #444; }
 .view-panel { flex: 1; position: relative; overflow: hidden; display: none; }
 .view-panel.active { display: block; }
 
-/* ARCHITECTURAL STAGE (PHYSICAL VAULT) */
+/* ARCHITECTURAL ROOM & PEDESTAL */
 .architectural-stage {
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
+    background: #08080a;
     position: relative;
-    perspective: 1200px;
+    overflow: hidden;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    perspective: 1200px;
 }
 
-.spotlight {
+.top-spotlight {
     position: absolute;
-    top: -20%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%);
+    top: -15%;
+    width: 800px;
+    height: 500px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 75%);
     pointer-events: none;
 }
 
-/* PEDESTAL MONOLITH */
-.pedestal {
+.pillar {
     position: absolute;
-    bottom: 12%;
-    width: 680px;
-    height: 180px;
-    transform-style: preserve-3d;
-    transform: rotateX(60deg) rotateZ(0deg);
-    background: var(--pedestal-dark);
-    border: 1px solid var(--pedestal-edge);
-    box-shadow: 0 50px 100px rgba(0,0,0,0.95);
+    top: 0;
+    bottom: 0;
+    width: 180px;
+    background: linear-gradient(90deg, #0e0e11 0%, #050507 100%);
+    border-right: 1px solid rgba(255,255,255,0.03);
+    z-index: 10;
 }
-
-.pedestal-front {
-    position: absolute;
-    bottom: -40px;
-    width: 100%;
-    height: 40px;
-    background: #08080a;
-    border: 1px solid #151518;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.pedestal-logo {
-    font-size: 12px;
-    letter-spacing: 8px;
-    color: #333;
-    font-weight: 800;
-}
+.pillar-left { left: 0; }
+.pillar-right { right: 0; transform: scaleX(-1); }
 
 /* PHYSICAL CD / RECORD OBJECTS */
 .physical-vault-container {
@@ -259,7 +273,6 @@ input:focus { border-color: #444; }
     border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Vinyl Disc sticking out slightly */
 .vinyl-disc {
     position: absolute;
     top: 5px;
@@ -280,60 +293,119 @@ input:focus { border-color: #444; }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* FLOATING PLAYER */
-.floating-player {
+/* BRUTALIST MONOLITH / PEDESTAL */
+.center-monolith {
     position: absolute;
-    bottom: 25px;
+    bottom: 15%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 80;
+}
+
+.monolith-top {
+    width: 280px;
+    height: 70px;
+    background: #141416;
+    border: 1px solid #28282c;
+    transform: rotateX(55deg);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.physical-emblem-3d {
+    width: 110px;
+    height: auto;
+    transform: rotateX(-55deg) translateZ(10px);
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.9));
+}
+
+.monolith-front {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.active-artist-text {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #77777d;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.active-title-text {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+.active-meta-text {
+    font-size: 12px;
+    color: #55555a;
+    margin-top: 6px;
+}
+
+/* FLOATING CAPSULE PLAYER */
+.floating-player {
+    position: fixed;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 80px);
-    max-width: 1100px;
-    height: 75px;
-    background: rgba(10, 10, 12, 0.75);
-    backdrop-filter: blur(30px);
+    width: 680px;
+    height: 64px;
+    background: rgba(22, 22, 25, 0.75);
+    backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 35px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 25px;
-    z-index: 200;
+    padding: 0 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    z-index: 400;
 }
 
-.player-left { display: flex; align-items: center; gap: 15px; width: 25%; }
+.player-left { display: flex; align-items: center; gap: 12px; width: 30%; }
 
 .player-cover-art {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     background: #1a1a1e;
     background-size: cover;
+    border-radius: 4px;
     border: 1px solid #333;
 }
 
-.track-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #fff; }
-.track-artist { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+.track-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #fff; }
+.track-artist { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
 
-.player-center { width: 50%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.player-controls { display: flex; gap: 18px; align-items: center; }
+.player-center { width: 40%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.player-controls { display: flex; gap: 14px; align-items: center; }
 
 .ctrl-btn {
     background: none;
     border: none;
     color: #888;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     transition: color 0.2s;
 }
 
-.ctrl-btn:hover, .ctrl-btn.active { color: #fff; }
-.main-play { font-size: 18px; color: #fff; }
+.ctrl-btn:hover { color: #fff; }
+.main-play { font-size: 16px; color: #fff; }
 
-.progress-bar-container { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 9px; color: #555; }
+.progress-bar-container { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 8px; color: #555; }
 input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px; }
 
-.player-right { width: 25%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.player-right { width: 30%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.btn-action { width: auto; padding: 6px 12px; font-size: 9px; border-radius: 12px; }
+.btn-text { background: none; border: none; color: #666; cursor: pointer; font-size: 9px; }
 
 /* LIST & GRID VIEWS */
-.list-wrapper { padding: 40px; height: 100%; overflow-y: auto; }
+.list-wrapper { padding: 100px 40px 40px 40px; height: 100%; overflow-y: auto; }
 .frequency-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
 .frequency-table th { padding: 12px; border-bottom: 1px solid #222; color: var(--text-muted); letter-spacing: 2px; }
 .frequency-table td { padding: 14px 12px; border-bottom: 1px solid #111; color: #ccc; }
@@ -345,7 +417,7 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 30px;
-    padding: 40px;
+    padding: 100px 40px 40px 40px;
     overflow-y: auto;
     height: 100%;
 }
@@ -362,3 +434,4 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 .card-art { width: 100%; aspect-ratio: 1; background-size: cover; margin-bottom: 12px; }
 .card-title { font-size: 12px; font-weight: 700; color: #fff; }
 .card-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.transmissions-container { padding: 100px 40px; }
