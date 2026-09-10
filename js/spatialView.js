@@ -22,7 +22,7 @@ class SpatialVault {
 
     render() {
         this.container.innerHTML = '';
-        if (this.songs.length === 0) return;
+        if (!this.songs || this.songs.length === 0) return;
 
         this.songs.forEach((song, index) => {
             const el = document.createElement('div');
@@ -45,6 +45,7 @@ class SpatialVault {
 
     updatePositions() {
         const elements = this.container.querySelectorAll('.record-object');
+        if (elements.length === 0) return;
 
         elements.forEach((el, index) => {
             const offset = index - this.currentIndex;
@@ -53,7 +54,7 @@ class SpatialVault {
             if (offset === 0) {
                 // Active Center Card
                 el.classList.add('active');
-                el.style.transform = `translate3d(0px, -40px, 220px) rotateY(0deg) scale(1.15)`;
+                el.style.transform = `translate3d(0px, -20px, 220px) rotateY(0deg) scale(1.15)`;
                 el.style.zIndex = 200;
                 el.style.opacity = '1';
             } else {
@@ -62,7 +63,7 @@ class SpatialVault {
                 const direction = offset < 0 ? -1 : 1;
                 const translateX = offset * 180 + (direction * 40);
                 const translateZ = -absOffset * 100;
-                const rotateY = -offset * 8; // Gentle curve facing inward
+                const rotateY = -offset * 8;
 
                 el.style.transform = `translate3d(${translateX}px, 0px, ${translateZ}px) rotateY(${rotateY}deg) scale(${1 - absOffset * 0.08})`;
                 el.style.zIndex = 100 - absOffset;
