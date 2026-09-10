@@ -45,31 +45,38 @@ class SpatialVault {
 
     updatePositions() {
         const elements = this.container.querySelectorAll('.record-object');
-        const spacing = 140; // Physical offset along depth
 
         elements.forEach((el, index) => {
             const offset = index - this.currentIndex;
-            const absoluteOffset = Math.abs(offset);
+            const absOffset = Math.abs(offset);
 
             if (offset === 0) {
-                // Active Record: Pulled forward out of vault
+                // Active Center Card
                 el.classList.add('active');
-                el.style.transform = `translate3d(0px, -60px, 150px) rotateY(0deg) scale(1.1)`;
-                el.style.zIndex = 100;
+                el.style.transform = `translate3d(0px, -40px, 220px) rotateY(0deg) scale(1.15)`;
+                el.style.zIndex = 200;
                 el.style.opacity = '1';
             } else {
-                // Receding physical records
+                // Fanned Cards to Left and Right
                 el.classList.remove('active');
-                const translateX = offset * spacing + (this.dragOffset);
-                const translateZ = -absoluteOffset * 120;
-                const rotateY = offset < 0 ? 25 : -25;
-                const opacity = Math.max(0.2, 1 - absoluteOffset * 0.25);
+                const direction = offset < 0 ? -1 : 1;
+                const translateX = offset * 180 + (direction * 40);
+                const translateZ = -absOffset * 100;
+                const rotateY = -offset * 8; // Gentle curve facing inward
 
-                el.style.transform = `translate3d(${translateX}px, 0px, ${translateZ}px) rotateY(${rotateY}deg)`;
-                el.style.zIndex = 50 - absoluteOffset;
-                el.style.opacity = opacity.toString();
+                el.style.transform = `translate3d(${translateX}px, 0px, ${translateZ}px) rotateY(${rotateY}deg) scale(${1 - absOffset * 0.08})`;
+                el.style.zIndex = 100 - absOffset;
+                el.style.opacity = Math.max(0.3, 1 - absOffset * 0.22).toString();
             }
         });
+
+        // Update active metadata on pedestal
+        const activeSong = this.songs[this.currentIndex];
+        if (activeSong) {
+            document.getElementById('activeArtist').textContent = activeSong.artist || 'ARTIST NAME';
+            document.getElementById('activeTitle').textContent = activeSong.title || 'Track Title';
+            document.getElementById('activeMeta').textContent = `${activeSong.year || '2026'} • ${activeSong.album || 'Single'}`;
+        }
     }
 
     selectRecord(index) {
