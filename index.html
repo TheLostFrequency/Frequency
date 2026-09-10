@@ -64,9 +64,7 @@
         <!-- VIEW CONTAINER: SPATIAL COLLECTION VIEW -->
         <main id="viewCollection" class="view-panel active">
             <div class="architectural-stage">
-                <!-- Architectural Room Environment -->
                 <div class="room-wall-back"></div>
-                <div class="room-floor-grid"></div>
                 <div class="ambient-spotlight"></div>
                 
                 <div class="pillar pillar-left"></div>
@@ -119,11 +117,14 @@
 
         <!-- VIEW CONTAINER: PLAYLISTS VIEW -->
         <main id="viewPlaylists" class="view-panel hidden">
-            <div class="playlist-header-actions">
-                <button id="btnCreatePlaylist" class="btn-action">+ CREATE PLAYLIST</button>
-            </div>
-            <div id="playlistsGrid" class="playlists-grid">
-                <!-- Dynamic Playlists rendered here -->
+            <div class="playlists-wrapper">
+                <div class="playlist-bar-header">
+                    <h2 class="view-section-title">YOUR PLAYLISTS</h2>
+                    <button id="btnOpenCreatePlaylist" class="btn-action">+ CREATE PLAYLIST</button>
+                </div>
+                <div id="playlistsGrid" class="playlists-grid">
+                    <!-- Dynamic Playlists -->
+                </div>
             </div>
         </main>
 
@@ -131,8 +132,8 @@
         <main id="viewTransmissions" class="view-panel hidden">
             <div class="transmissions-stage">
                 <div class="transmission-asset-wrapper">
-                    <img id="transGraphic" src="assets/transmission.jpg" class="transmission-graphic" alt="Transmissions Visual" 
-                         onerror="if(this.src.endsWith('.jpg')) this.src='assets/transmission.png'; else if(this.src.endsWith('.png')) this.src='assets/transmission.jpeg';">
+                    <img id="transGraphic" src="assets/transmission.JPG" class="transmission-graphic" alt="Transmissions Visual" 
+                         onerror="if(this.src.endsWith('.JPG')) this.src='assets/transmission.jpg'; else if(this.src.endsWith('.jpg')) this.src='assets/transmission.PNG'; else if(this.src.endsWith('.PNG')) this.src='assets/transmission.png'; else if(this.src.endsWith('.png')) this.src='assets/transmission.jpeg';">
                 </div>
             </div>
         </main>
@@ -201,6 +202,27 @@
                 <div class="modal-actions">
                     <button type="button" id="btnCloseSongModal" class="btn-secondary">CANCEL</button>
                     <button type="submit" id="btnSubmitSong" class="btn-primary">SAVE TO VAULT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE PLAYLIST -->
+    <div id="playlistModal" class="overlay-modal hidden">
+        <div class="modal-card">
+            <h2>CREATE NEW PLAYLIST</h2>
+            <form id="playlistForm">
+                <div class="form-group">
+                    <label>PLAYLIST NAME</label>
+                    <input type="text" id="inputPlaylistTitle" required placeholder="e.g. UNRELEASED VAULT" />
+                </div>
+                <div class="form-group">
+                    <label>DESCRIPTION</label>
+                    <input type="text" id="inputPlaylistDesc" placeholder="e.g. Rare studio sessions and remixes" />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btnClosePlaylistModal" class="btn-secondary">CANCEL</button>
+                    <button type="submit" id="btnSubmitPlaylist" class="btn-primary">CREATE PLAYLIST</button>
                 </div>
             </form>
         </div>
