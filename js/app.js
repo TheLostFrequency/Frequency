@@ -26,7 +26,6 @@ function initAuth() {
     const authForm = document.getElementById('authForm');
     const authError = document.getElementById('authError');
 
-    // Check existing session
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (session) {
             currentUser = session.user;
@@ -90,26 +89,28 @@ function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewPanels = document.querySelectorAll('.view-panel');
 
+    function switchView(targetView) {
+        viewPanels.forEach(panel => {
+            if (panel.id === `view${targetView.charAt(0).toUpperCase() + targetView.slice(1)}`) {
+                panel.classList.add('active');
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.remove('active');
+                panel.classList.add('hidden');
+            }
+        });
+    }
+
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetView = btn.dataset.view;
-            
             navButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            viewPanels.forEach(panel => {
-                if (panel.id === `view${targetView.charAt(0).toUpperCase() + targetView.slice(1)}`) {
-                    panel.classList.add('active');
-                    panel.classList.remove('hidden');
-                } else {
-                    panel.classList.remove('active');
-                    panel.classList.add('hidden');
-                }
-            });
+            switchView(targetView);
         });
     });
 
-    // View Switcher (COLLECTION vs LIST)
+    // Toggle Switcher (COLLECTION vs LIST)
     const btnCollection = document.getElementById('btnModeCollection');
     const btnList = document.getElementById('btnModeList');
 
@@ -117,13 +118,13 @@ function initNavigation() {
         btnCollection.addEventListener('click', () => {
             btnCollection.classList.add('active');
             btnList.classList.remove('active');
-            document.querySelector('[data-view="collection"]').click();
+            switchView('collection');
         });
 
         btnList.addEventListener('click', () => {
             btnList.classList.add('active');
             btnCollection.classList.remove('active');
-            document.querySelector('[data-view="list"]').click();
+            switchView('list');
         });
     }
 
@@ -149,6 +150,7 @@ function initSongManagement() {
     const btnOpenAdd = document.getElementById('btnOpenAddSong');
     const btnClose = document.getElementById('btnCloseSongModal');
     const songForm = document.getElementById('songForm');
+    const btnSubmit = document.getElementById('btnSubmitSong');
 
     btnOpenAdd.addEventListener('click', () => songModal.classList.remove('hidden'));
     btnClose.addEventListener('click', () => songModal.classList.add('hidden'));
@@ -167,6 +169,9 @@ function initSongManagement() {
             alert('Audio file is required.');
             return;
         }
+
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'UPLOADING TO VAULT...';
 
         try {
             // Upload Audio File
@@ -202,15 +207,18 @@ function initSongManagement() {
 
             songForm.reset();
             songModal.classList.add('hidden');
-            loadUserLibrary();
+            await loadUserLibrary();
 
         } catch (err) {
             alert('Upload failed: ' + err.message);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = 'SAVE TO VAULT';
         }
     });
 }
 
-/* 5. RENDER LIST VIEW */
+/* 5. RENDER LIST VIEW WITH DELETE CONTROLS */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
     if (!tbody) return;
@@ -225,7 +233,7 @@ function renderListView(songs) {
             <td>${song.artist}</td>
             <td>${song.album}</td>
             <td>
-                <button onclick="deleteTrack('${song.id}')" style="background:none; border:none; color:#888; cursor:pointer;">DELETE</button>
+                <button onclick="deleteTrack('${song.id}')" style="background:none; border:1px solid #333; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px;">DELETE</button>
             </td>
         `;
         tr.addEventListener('dblclick', () => audioEngine.loadSong(song));
@@ -258,7 +266,7 @@ function renderAlbumsView(songs) {
         `;
         card.addEventListener('click', () => {
             spatialVault.setSongs(albumSongs);
-            document.querySelector('[data-view="collection"]').click();
+            document.getElementById('btnModeCollection').click();
         });
         grid.appendChild(card);
     });
@@ -268,6 +276,6 @@ function renderAlbumsView(songs) {
 window.deleteTrack = async function(songId) {
     if (confirm('Permanently remove this track from your vault?')) {
         await supabaseClient.from('songs').delete().eq('id', songId);
-        loadUserLibrary();
+        await loadUserLibrary();
     }
 };
