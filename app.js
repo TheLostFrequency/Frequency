@@ -106,17 +106,38 @@ function initNavigation() {
         });
     });
 
-    // Vault Search Filtering
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const filtered = songsLibrary.filter(s => 
-            s.title.toLowerCase().includes(query) || 
-            s.artist.toLowerCase().includes(query) ||
-            s.album.toLowerCase().includes(query)
-        );
-        spatialVault.setSongs(filtered);
-        renderListView(filtered);
-    });
+    // View Switcher (COLLECTION vs LIST)
+    const btnCollection = document.getElementById('btnModeCollection');
+    const btnList = document.getElementById('btnModeList');
+
+    if (btnCollection && btnList) {
+        btnCollection.addEventListener('click', () => {
+            btnCollection.classList.add('active');
+            btnList.classList.remove('active');
+            document.querySelector('[data-view="collection"]').click();
+        });
+
+        btnList.addEventListener('click', () => {
+            btnList.classList.add('active');
+            btnCollection.classList.remove('active');
+            document.querySelector('[data-view="list"]').click();
+        });
+    }
+
+    // Search Filtering
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = songsLibrary.filter(s => 
+                s.title.toLowerCase().includes(query) || 
+                s.artist.toLowerCase().includes(query) ||
+                s.album.toLowerCase().includes(query)
+            );
+            spatialVault.setSongs(filtered);
+            renderListView(filtered);
+        });
+    }
 }
 
 /* 4. SONG UPLOAD & MANAGEMENT */
@@ -189,6 +210,7 @@ function initSongManagement() {
 /* 5. RENDER LIST VIEW */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     songs.forEach((song, idx) => {
@@ -211,6 +233,7 @@ function renderListView(songs) {
 /* 6. RENDER ALBUMS VIEW */
 function renderAlbumsView(songs) {
     const grid = document.getElementById('albumsGrid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     const albumsMap = {};
@@ -228,7 +251,7 @@ function renderAlbumsView(songs) {
         card.innerHTML = `
             <div class="card-art" style="background-image: url('${cover || ''}')"></div>
             <div class="card-title">${albumName}</div>
-            <div class="card-sub">${albumSongs.length} TRACKS —${albumSongs[0].artist}</div>
+            <div class="card-sub">${albumSongs.length} TRACKS — ${albumSongs[0].artist}</div>
         `;
         card.addEventListener('click', () => {
             spatialVault.setSongs(albumSongs);
