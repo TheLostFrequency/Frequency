@@ -3,4 +3,5 @@
 const SUPABASE_URL = "https://nmiodppvxqpzfrideduv.supabase.co/rest/v1/";
 const SUPABASE_ANON_KEY = "sb_publishable_S7SpRNfMTiY7SB4Y19LRDQ_WBzH_TPc";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Use window._supabase or supabaseClient to prevent variable collision with CDN library
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
