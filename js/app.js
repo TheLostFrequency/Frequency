@@ -1,6 +1,6 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Integrated Supabase Sync, Robust Audio Control Engine & Fixed Selectors
+ * Integrated Supabase Sync & Audio Playback Controls
  */
 
 let spatialVault = null;
@@ -9,7 +9,6 @@ let songsLibrary = [];
 let userPlaylists = [];
 let currentUser = null;
 
-// Audio Engine State
 let currentTrackIndex = 0;
 let isShuffle = false;
 let isPlaying = false;
@@ -84,7 +83,7 @@ function initAuth() {
     });
 }
 
-/* 2. DATA MANAGEMENT (SUPABASE API) */
+/* 2. DATA MANAGEMENT */
 async function loadUserLibrary() {
     const { data: songs, error } = await supabaseClient
         .from('songs')
@@ -173,18 +172,26 @@ function initNavigation() {
     }
 }
 
-/* 4. AUDIO PLAYBACK ENGINE & BUTTON FIXED CONTROLLER */
+/* 4. AUDIO PLAYBACK & VOLUME CONTROLLER */
 function initAudioEngineControls() {
-    const mainPlayBtn = document.querySelector('.main-play') || document.querySelector('.player-controls .ctrl-btn:nth-child(2)');
-    const prevBtn = document.querySelector('.ctrl-prev') || document.getElementById('btnPrev') || document.querySelectorAll('.player-controls .ctrl-btn')[0];
-    const nextBtn = document.querySelector('.ctrl-next') || document.getElementById('btnNext') || document.querySelectorAll('.player-controls .ctrl-btn')[2];
+    const mainPlayBtn = document.querySelector('.main-play') || document.getElementById('btnPlay');
+    const prevBtn = document.querySelector('.ctrl-prev') || document.getElementById('btnPrev');
+    const nextBtn = document.querySelector('.ctrl-next') || document.getElementById('btnNext');
     const shuffleBtn = document.querySelector('.ctrl-shuffle') || document.getElementById('btnShuffle');
-    const progressBar = document.querySelector('input[type="range"]');
+    const progressBar = document.querySelector('.progress-bar-container input[type="range"]');
+    const volumeSlider = document.querySelector('.volume-slider');
 
     if (mainPlayBtn) mainPlayBtn.addEventListener('click', togglePlay);
     if (nextBtn) nextBtn.addEventListener('click', playNextTrack);
     if (prevBtn) prevBtn.addEventListener('click', playPrevTrack);
     if (shuffleBtn) shuffleBtn.addEventListener('click', toggleShuffle);
+
+    if (volumeSlider) {
+        audio.volume = volumeSlider.value / 100;
+        volumeSlider.addEventListener('input', (e) => {
+            audio.volume = e.target.value / 100;
+        });
+    }
 
     audio.addEventListener('ended', () => {
         playNextTrack();
@@ -285,7 +292,7 @@ function toggleShuffle() {
 }
 
 function updatePlayButtonIcon() {
-    const mainPlayBtn = document.querySelector('.main-play') || document.querySelector('.player-controls .ctrl-btn:nth-child(2)');
+    const mainPlayBtn = document.querySelector('.main-play') || document.getElementById('btnPlay');
     if (mainPlayBtn) {
         mainPlayBtn.textContent = isPlaying ? '❚❚' : '▶';
     }
@@ -297,7 +304,7 @@ function formatTime(seconds) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
-/* 5. SONG UPLOAD & EDIT MANAGEMENT */
+/* 5. SONG UPLOAD & MANAGEMENT */
 function initSongManagement() {
     const songModal = document.getElementById('songModal');
     const btnOpenAdd = document.getElementById('btnOpenAddSong');
@@ -370,36 +377,7 @@ function initSongManagement() {
     }
 }
 
-window.editTrackMetadata = async function(songId) {
-    const targetSong = songsLibrary.find(s => s.id === songId) || songsLibrary[currentTrackIndex];
-    if (!targetSong) return;
-
-    const newTitle = prompt("Edit Track Title:", targetSong.title);
-    if (newTitle === null) return;
-
-    const newArtist = prompt("Edit Artist Name:", targetSong.artist);
-    if (newArtist === null) return;
-
-    const newAlbum = prompt("Edit Album Name:", targetSong.album);
-    if (newAlbum === null) return;
-
-    const { error } = await supabaseClient
-        .from('songs')
-        .update({
-            title: newTitle.trim() || targetSong.title,
-            artist: newArtist.trim() || targetSong.artist,
-            album: newAlbum.trim() || targetSong.album
-        })
-        .eq('id', targetSong.id);
-
-    if (error) {
-        alert('Could not update metadata: ' + error.message);
-    } else {
-        await loadUserLibrary();
-    }
-};
-
-/* 6. PLAYLIST CREATION & MANAGEMENT */
+/* 6. PLAYLIST MANAGEMENT */
 function initPlaylistManagement() {
     const playlistModal = document.getElementById('playlistModal');
     const btnOpen = document.getElementById('btnOpenCreatePlaylist');
@@ -432,7 +410,7 @@ function initPlaylistManagement() {
     }
 }
 
-/* 7. RENDER VIEWS & CONTROLS */
+/* 7. RENDERING VIEWS */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
     if (!tbody) return;
@@ -447,7 +425,6 @@ function renderListView(songs) {
             <td>${song.artist}</td>
             <td>${song.album}</td>
             <td>
-                <button onclick="event.stopPropagation(); editTrackMetadata('${song.id}')" style="background:none; border:1px solid #444; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px; margin-right:4px;">EDIT</button>
                 <button onclick="event.stopPropagation(); deleteTrack('${song.id}')" style="background:none; border:1px solid #333; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px;">DELETE</button>
             </td>
         `;
