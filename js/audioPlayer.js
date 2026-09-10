@@ -1,6 +1,6 @@
 /**
  * FREQUENCY AUDIO ENGINE
- * Audio persistence, playback state, seeking, and queue management.
+ * Handles playback, timeline updates, volume, and player state.
  */
 class AudioEngine {
     constructor() {
@@ -16,6 +16,7 @@ class AudioEngine {
     }
 
     loadSong(song) {
+        if (!song) return;
         this.currentSong = song;
         this.audio.src = song.audio_url;
         
