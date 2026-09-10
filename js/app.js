@@ -1,6 +1,6 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Connects Supabase Backend, Spatial UI, Navigation, and Playlists.
+ * Integrated Supabase Sync & Complete Audio Engine
  */
 
 let spatialVault = null;
@@ -9,19 +9,33 @@ let songsLibrary = [];
 let userPlaylists = [];
 let currentUser = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    audioEngine = new AudioEngine();
-    spatialVault = new SpatialVault('physicalVault', (selectedSong) => {
-        audioEngine.loadSong(selectedSong);
-    });
+// Audio Engine State Variables
+let currentTrackIndex = 0;
+let isShuffle = false;
+let isPlaying = false;
+const audio = new Audio();
 
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Initialize Audio Engine Handlers
+    initAudioEngineControls();
+
+    // 2. Initialize 3D Spatial Vault
+    if (typeof SpatialVault !== 'undefined') {
+        spatialVault = new SpatialVault('physicalVault', (selectedSong) => {
+            playSelectedTrack(selectedSong);
+        });
+    }
+
+    // 3. Initialize App Subsystems
     initAuth();
     initNavigation();
     initSongManagement();
     initPlaylistManagement();
 });
 
-/* 1. AUTHENTICATION CONTROLLER */
+/* ==========================================
+   1. AUTHENTICATION CONTROLLER
+   ========================================== */
 function initAuth() {
     const authModal = document.getElementById('authModal');
     const appContainer = document.getElementById('app');
@@ -31,49 +45,53 @@ function initAuth() {
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (session) {
             currentUser = session.user;
-            authModal.classList.add('hidden');
-            appContainer.classList.remove('hidden');
+            authModal?.classList.add('hidden');
+            appContainer?.classList.remove('hidden');
             loadUserLibrary();
             loadUserPlaylists();
         }
     });
 
-    authForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        authError.textContent = '';
-        const email = document.getElementById('authEmail').value;
-        const password = document.getElementById('authPassword').value;
+    if (authForm) {
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (authError) authError.textContent = '';
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
 
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
-            authError.textContent = error.message;
-        } else {
-            currentUser = data.user;
-            authModal.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            loadUserLibrary();
-            loadUserPlaylists();
-        }
-    });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                if (authError) authError.textContent = error.message;
+            } else {
+                currentUser = data.user;
+                authModal?.classList.add('hidden');
+                appContainer?.classList.remove('hidden');
+                loadUserLibrary();
+                loadUserPlaylists();
+            }
+        });
+    }
 
-    document.getElementById('btnSignUp').addEventListener('click', async () => {
+    document.getElementById('btnSignUp')?.addEventListener('click', async () => {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) {
-            authError.textContent = error.message;
+            if (authError) authError.textContent = error.message;
         } else {
-            authError.textContent = 'ACCOUNT CREATED. YOU MAY NOW LOGIN.';
+            if (authError) authError.textContent = 'ACCOUNT CREATED. YOU MAY NOW LOGIN.';
         }
     });
 
-    document.getElementById('btnLogout').addEventListener('click', async () => {
+    document.getElementById('btnLogout')?.addEventListener('click', async () => {
         await supabaseClient.auth.signOut();
         window.location.reload();
     });
 }
 
-/* 2. DATA MANAGEMENT (SUPABASE API) */
+/* ==========================================
+   2. DATA MANAGEMENT (SUPABASE API)
+   ========================================== */
 async function loadUserLibrary() {
     const { data: songs, error } = await supabaseClient
         .from('songs')
@@ -82,9 +100,14 @@ async function loadUserLibrary() {
 
     if (!error && songs) {
         songsLibrary = songs;
-        spatialVault.setSongs(songsLibrary);
+        if (spatialVault) spatialVault.setSongs(songsLibrary);
         renderListView(songsLibrary);
         renderAlbumsView(songsLibrary);
+
+        // Auto-load first track into player buffer without auto-playing
+        if (songsLibrary.length > 0 && !audio.src) {
+            loadTrackIntoPlayer(0, false);
+        }
     }
 }
 
@@ -100,7 +123,9 @@ async function loadUserPlaylists() {
     }
 }
 
-/* 3. NAVIGATION CONTROLLER */
+/* ==========================================
+   3. NAVIGATION CONTROLLER
+   ========================================== */
 function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewPanels = document.querySelectorAll('.view-panel');
@@ -152,13 +177,145 @@ function initNavigation() {
                 s.artist.toLowerCase().includes(query) ||
                 s.album.toLowerCase().includes(query)
             );
-            spatialVault.setSongs(filtered);
+            if (spatialVault) spatialVault.setSongs(filtered);
             renderListView(filtered);
         });
     }
 }
 
-/* 4. SONG UPLOAD & MANAGEMENT */
+/* ==========================================
+   4. AUDIO PLAYBACK & ENGINE CONTROLLER
+   ========================================== */
+function initAudioEngineControls() {
+    const mainPlayBtn = document.querySelector('.main-play');
+    const prevBtn = document.querySelector('.ctrl-prev');
+    const nextBtn = document.querySelector('.ctrl-next');
+    const shuffleBtn = document.querySelector('.ctrl-shuffle');
+    const progressBar = document.querySelector('input[type="range"]');
+
+    if (mainPlayBtn) mainPlayBtn.addEventListener('click', togglePlay);
+    if (nextBtn) nextBtn.addEventListener('click', playNextTrack);
+    if (prevBtn) prevBtn.addEventListener('click', playPrevTrack);
+    if (shuffleBtn) shuffleBtn.addEventListener('click', toggleShuffle);
+
+    // Auto Continuous Play when Track Ends
+    audio.addEventListener('ended', () => {
+        playNextTrack();
+    });
+
+    // Scrubber Position & Time Code Updates
+    audio.addEventListener('timeupdate', () => {
+        if (audio.duration && progressBar) {
+            progressBar.value = (audio.currentTime / audio.duration) * 100;
+            const currentEl = document.querySelector('.time-current');
+            const totalEl = document.querySelector('.time-total');
+            if (currentEl) currentEl.textContent = formatTime(audio.currentTime);
+            if (totalEl) totalEl.textContent = formatTime(audio.duration);
+        }
+    });
+
+    if (progressBar) {
+        progressBar.addEventListener('input', (e) => {
+            if (audio.duration) {
+                audio.currentTime = (e.target.value / 100) * audio.duration;
+            }
+        });
+    }
+}
+
+function loadTrackIntoPlayer(index, shouldPlay = true) {
+    if (!songsLibrary[index]) return;
+    currentTrackIndex = index;
+    const track = songsLibrary[currentTrackIndex];
+
+    audio.src = track.audio_url;
+
+    // Synchronize UI Text Across Floating Bar & Monolith Stage
+    document.querySelectorAll('.track-title, .active-title-text').forEach(el => el.textContent = track.title);
+    document.querySelectorAll('.track-artist, .active-artist-text').forEach(el => el.textContent = track.artist);
+
+    // Synchronize Artwork
+    const coverArtEl = document.querySelector('.player-cover-art');
+    if (coverArtEl) coverArtEl.style.backgroundImage = `url('${track.cover_url || ''}')`;
+
+    if (shouldPlay) {
+        audio.play().then(() => {
+            isPlaying = true;
+            updatePlayButtonIcon();
+        }).catch(err => console.error("Playback interrupted:", err));
+    } else {
+        isPlaying = false;
+        updatePlayButtonIcon();
+    }
+}
+
+function playSelectedTrack(song) {
+    const foundIndex = songsLibrary.findIndex(s => s.id === song.id);
+    if (foundIndex !== -1) {
+        loadTrackIntoPlayer(foundIndex, true);
+    }
+}
+
+function togglePlay() {
+    if (songsLibrary.length === 0) return;
+
+    if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+    } else {
+        if (!audio.src) loadTrackIntoPlayer(currentTrackIndex, false);
+        audio.play();
+        isPlaying = true;
+    }
+    updatePlayButtonIcon();
+}
+
+function playNextTrack() {
+    if (songsLibrary.length === 0) return;
+
+    if (isShuffle && songsLibrary.length > 1) {
+        let randomIndex = currentTrackIndex;
+        while (randomIndex === currentTrackIndex) {
+            randomIndex = Math.floor(Math.random() * songsLibrary.length);
+        }
+        currentTrackIndex = randomIndex;
+    } else {
+        currentTrackIndex = (currentTrackIndex + 1) % songsLibrary.length;
+    }
+    loadTrackIntoPlayer(currentTrackIndex, true);
+}
+
+function playPrevTrack() {
+    if (songsLibrary.length === 0) return;
+    currentTrackIndex = (currentTrackIndex - 1 + songsLibrary.length) % songsLibrary.length;
+    loadTrackIntoPlayer(currentTrackIndex, true);
+}
+
+function toggleShuffle() {
+    isShuffle = !isShuffle;
+    const shuffleBtn = document.querySelector('.ctrl-shuffle');
+    if (shuffleBtn) {
+        shuffleBtn.classList.toggle('active-mode', isShuffle);
+        shuffleBtn.style.color = isShuffle ? '#ffffff' : '#888888';
+    }
+}
+
+function updatePlayButtonIcon() {
+    const mainPlayBtn = document.querySelector('.main-play');
+    if (mainPlayBtn) {
+        mainPlayBtn.textContent = isPlaying ? '❚❚' : '▶';
+    }
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+/* ==========================================
+   5. SONG UPLOAD & EDIT MANAGEMENT
+   ========================================== */
 function initSongManagement() {
     const songModal = document.getElementById('songModal');
     const btnOpenAdd = document.getElementById('btnOpenAddSong');
@@ -166,70 +323,104 @@ function initSongManagement() {
     const songForm = document.getElementById('songForm');
     const btnSubmit = document.getElementById('btnSubmitSong');
 
-    btnOpenAdd.addEventListener('click', () => songModal.classList.remove('hidden'));
-    btnClose.addEventListener('click', () => songModal.classList.add('hidden'));
+    if (btnOpenAdd) btnOpenAdd.addEventListener('click', () => songModal?.classList.remove('hidden'));
+    if (btnClose) btnClose.addEventListener('click', () => songModal?.classList.add('hidden'));
 
-    songForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    if (songForm) {
+        songForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        const title = document.getElementById('inputTitle').value;
-        const artist = document.getElementById('inputArtist').value;
-        const album = document.getElementById('inputAlbum').value;
-        const genre = document.getElementById('inputGenre').value;
-        const audioFile = document.getElementById('inputAudioFile').files[0];
-        const coverFile = document.getElementById('inputCoverFile').files[0];
+            const title = document.getElementById('inputTitle').value;
+            const artist = document.getElementById('inputArtist').value;
+            const album = document.getElementById('inputAlbum').value;
+            const genre = document.getElementById('inputGenre').value;
+            const audioFile = document.getElementById('inputAudioFile').files[0];
+            const coverFile = document.getElementById('inputCoverFile').files[0];
 
-        if (!audioFile) {
-            alert('Audio file is required.');
-            return;
-        }
-
-        btnSubmit.disabled = true;
-        btnSubmit.textContent = 'UPLOADING TO VAULT...';
-
-        try {
-            const audioPath = `${currentUser.id}/${Date.now()}_${audioFile.name}`;
-            const { data: audioData, error: audioErr } = await supabaseClient.storage
-                .from('audio-files')
-                .upload(audioPath, audioFile);
-
-            if (audioErr) throw audioErr;
-
-            const audioUrl = supabaseClient.storage.from('audio-files').getPublicUrl(audioPath).data.publicUrl;
-
-            let coverUrl = '';
-            if (coverFile) {
-                const coverPath = `${currentUser.id}/${Date.now()}_${coverFile.name}`;
-                await supabaseClient.storage.from('cover-art').upload(coverPath, coverFile);
-                coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
+            if (!audioFile) {
+                alert('Audio file is required.');
+                return;
             }
 
-            const { error: dbErr } = await supabaseClient.from('songs').insert({
-                user_id: currentUser.id,
-                title,
-                artist,
-                album: album || 'Single',
-                genre: genre || 'Vault Track',
-                audio_url: audioUrl,
-                cover_url: coverUrl
-            });
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'UPLOADING TO VAULT...';
 
-            if (dbErr) throw dbErr;
+            try {
+                const audioPath = `${currentUser.id}/${Date.now()}_${audioFile.name}`;
+                const { data: audioData, error: audioErr } = await supabaseClient.storage
+                    .from('audio-files')
+                    .upload(audioPath, audioFile);
 
-            songForm.reset();
-            songModal.classList.add('hidden');
-            await loadUserLibrary();
+                if (audioErr) throw audioErr;
 
-        } catch (err) {
-            alert('Upload failed: ' + err.message);
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = 'SAVE TO VAULT';
-        }
-    });
+                const audioUrl = supabaseClient.storage.from('audio-files').getPublicUrl(audioPath).data.publicUrl;
+
+                let coverUrl = '';
+                if (coverFile) {
+                    const coverPath = `${currentUser.id}/${Date.now()}_${coverFile.name}`;
+                    await supabaseClient.storage.from('cover-art').upload(coverPath, coverFile);
+                    coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
+                }
+
+                const { error: dbErr } = await supabaseClient.from('songs').insert({
+                    user_id: currentUser.id,
+                    title,
+                    artist,
+                    album: album || 'Single',
+                    genre: genre || 'Vault Track',
+                    audio_url: audioUrl,
+                    cover_url: coverUrl
+                });
+
+                if (dbErr) throw dbErr;
+
+                songForm.reset();
+                songModal.classList.add('hidden');
+                await loadUserLibrary();
+
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'SAVE TO VAULT';
+            }
+        });
+    }
 }
 
-/* 5. PLAYLIST CREATION & MANAGEMENT */
+/* EDIT TRACK METADATA DIRECTLY IN SUPABASE */
+window.editTrackMetadata = async function(songId) {
+    const targetSong = songsLibrary.find(s => s.id === songId) || songsLibrary[currentTrackIndex];
+    if (!targetSong) return;
+
+    const newTitle = prompt("Edit Track Title:", targetSong.title);
+    if (newTitle === null) return; // User cancelled
+
+    const newArtist = prompt("Edit Artist Name:", targetSong.artist);
+    if (newArtist === null) return;
+
+    const newAlbum = prompt("Edit Album Name:", targetSong.album);
+    if (newAlbum === null) return;
+
+    const { error } = await supabaseClient
+        .from('songs')
+        .update({
+            title: newTitle.trim() || targetSong.title,
+            artist: newArtist.trim() || targetSong.artist,
+            album: newAlbum.trim() || targetSong.album
+        })
+        .eq('id', targetSong.id);
+
+    if (error) {
+        alert('Could not update metadata: ' + error.message);
+    } else {
+        await loadUserLibrary();
+    }
+};
+
+/* ==========================================
+   6. PLAYLIST CREATION & MANAGEMENT
+   ========================================== */
 function initPlaylistManagement() {
     const playlistModal = document.getElementById('playlistModal');
     const btnOpen = document.getElementById('btnOpenCreatePlaylist');
@@ -262,7 +453,9 @@ function initPlaylistManagement() {
     }
 }
 
-/* 6. RENDER LIST VIEW WITH DELETE CONTROLS */
+/* ==========================================
+   7. RENDER VIEWS & CONTROLS
+   ========================================== */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
     if (!tbody) return;
@@ -277,15 +470,15 @@ function renderListView(songs) {
             <td>${song.artist}</td>
             <td>${song.album}</td>
             <td>
-                <button onclick="deleteTrack('${song.id}')" style="background:none; border:1px solid #333; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px;">DELETE</button>
+                <button onclick="event.stopPropagation(); editTrackMetadata('${song.id}')" style="background:none; border:1px solid #444; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px; margin-right:4px;">EDIT</button>
+                <button onclick="event.stopPropagation(); deleteTrack('${song.id}')" style="background:none; border:1px solid #333; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px;">DELETE</button>
             </td>
         `;
-        tr.addEventListener('click', () => audioEngine.loadSong(song));
+        tr.addEventListener('click', () => playSelectedTrack(song));
         tbody.appendChild(tr);
     });
 }
 
-/* 7. RENDER ALBUMS VIEW */
 function renderAlbumsView(songs) {
     const grid = document.getElementById('albumsGrid');
     if (!grid) return;
@@ -309,14 +502,13 @@ function renderAlbumsView(songs) {
             <div class="card-sub">${albumSongs.length} TRACKS — ${albumSongs[0].artist}</div>
         `;
         card.addEventListener('click', () => {
-            spatialVault.setSongs(albumSongs);
-            document.getElementById('btnModeCollection').click();
+            if (spatialVault) spatialVault.setSongs(albumSongs);
+            document.getElementById('btnModeCollection')?.click();
         });
         grid.appendChild(card);
     });
 }
 
-/* 8. RENDER PLAYLISTS VIEW */
 function renderPlaylistsView(playlists) {
     const grid = document.getElementById('playlistsGrid');
     if (!grid) return;
