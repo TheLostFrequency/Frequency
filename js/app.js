@@ -1,6 +1,6 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Integrated Supabase Sync & Audio Playback Controls
+ * Integrated Supabase Sync, Audio Controls & Mobile Vault Touch-Swipe
  */
 
 let spatialVault = null;
@@ -16,6 +16,7 @@ const audio = new Audio();
 
 document.addEventListener('DOMContentLoaded', async () => {
     initAudioEngineControls();
+    initMobileVaultSwipe();
 
     if (typeof SpatialVault !== 'undefined') {
         spatialVault = new SpatialVault('physicalVault', (selectedSong) => {
@@ -29,7 +30,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     initPlaylistManagement();
 });
 
-/* 1. AUTHENTICATION CONTROLLER */
+/* ==========================================
+   1. AUTHENTICATION CONTROLLER
+   ========================================== */
 function initAuth() {
     const authModal = document.getElementById('authModal');
     const appContainer = document.getElementById('app');
@@ -83,7 +86,9 @@ function initAuth() {
     });
 }
 
-/* 2. DATA MANAGEMENT */
+/* ==========================================
+   2. DATA MANAGEMENT (SUPABASE API)
+   ========================================== */
 async function loadUserLibrary() {
     const { data: songs, error } = await supabaseClient
         .from('songs')
@@ -114,7 +119,9 @@ async function loadUserPlaylists() {
     }
 }
 
-/* 3. NAVIGATION CONTROLLER */
+/* ==========================================
+   3. NAVIGATION CONTROLLER
+   ========================================== */
 function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewPanels = document.querySelectorAll('.view-panel');
@@ -172,7 +179,9 @@ function initNavigation() {
     }
 }
 
-/* 4. AUDIO PLAYBACK & VOLUME CONTROLLER */
+/* ==========================================
+   4. AUDIO PLAYBACK & VOLUME CONTROLLER
+   ========================================== */
 function initAudioEngineControls() {
     const mainPlayBtn = document.querySelector('.main-play') || document.getElementById('btnPlay');
     const prevBtn = document.querySelector('.ctrl-prev') || document.getElementById('btnPrev');
@@ -213,6 +222,37 @@ function initAudioEngineControls() {
                 audio.currentTime = (e.target.value / 100) * audio.duration;
             }
         });
+    }
+}
+
+/* ==========================================
+   5. MOBILE TOUCH-SWIPE VAULT CONTROLLER
+   ========================================== */
+function initMobileVaultSwipe() {
+    const vaultContainer = document.getElementById('physicalVault') || document.querySelector('.physical-vault-container');
+    if (!vaultContainer) return;
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const minSwipeDistance = 40;
+
+    vaultContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    vaultContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipeGesture();
+    }, { passive: true });
+
+    function handleSwipeGesture() {
+        const swipeDistance = touchEndX - touchStartX;
+
+        if (swipeDistance < -minSwipeDistance) {
+            playNextTrack();
+        } else if (swipeDistance > minSwipeDistance) {
+            playPrevTrack();
+        }
     }
 }
 
@@ -304,7 +344,9 @@ function formatTime(seconds) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
-/* 5. SONG UPLOAD & MANAGEMENT */
+/* ==========================================
+   6. SONG UPLOAD & MANAGEMENT
+   ========================================== */
 function initSongManagement() {
     const songModal = document.getElementById('songModal');
     const btnOpenAdd = document.getElementById('btnOpenAddSong');
@@ -377,7 +419,9 @@ function initSongManagement() {
     }
 }
 
-/* 6. PLAYLIST MANAGEMENT */
+/* ==========================================
+   7. PLAYLIST MANAGEMENT
+   ========================================== */
 function initPlaylistManagement() {
     const playlistModal = document.getElementById('playlistModal');
     const btnOpen = document.getElementById('btnOpenCreatePlaylist');
@@ -410,7 +454,9 @@ function initPlaylistManagement() {
     }
 }
 
-/* 7. RENDERING VIEWS */
+/* ==========================================
+   8. RENDERING VIEWS
+   ========================================== */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
     if (!tbody) return;
