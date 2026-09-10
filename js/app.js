@@ -1,11 +1,12 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Connects Supabase Backend, Spatial UI, Navigation, and Library Management.
+ * Connects Supabase Backend, Spatial UI, Navigation, and Playlists.
  */
 
 let spatialVault = null;
 let audioEngine = null;
 let songsLibrary = [];
+let userPlaylists = [];
 let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initAuth();
     initNavigation();
     initSongManagement();
+    initPlaylistManagement();
 });
 
 /* 1. AUTHENTICATION CONTROLLER */
@@ -32,6 +34,7 @@ function initAuth() {
             authModal.classList.add('hidden');
             appContainer.classList.remove('hidden');
             loadUserLibrary();
+            loadUserPlaylists();
         }
     });
 
@@ -49,6 +52,7 @@ function initAuth() {
             authModal.classList.add('hidden');
             appContainer.classList.remove('hidden');
             loadUserLibrary();
+            loadUserPlaylists();
         }
     });
 
@@ -84,6 +88,18 @@ async function loadUserLibrary() {
     }
 }
 
+async function loadUserPlaylists() {
+    const { data: playlists, error } = await supabaseClient
+        .from('playlists')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (!error && playlists) {
+        userPlaylists = playlists;
+        renderPlaylistsView(userPlaylists);
+    }
+}
+
 /* 3. NAVIGATION CONTROLLER */
 function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
@@ -110,7 +126,6 @@ function initNavigation() {
         });
     });
 
-    // Toggle Switcher (COLLECTION vs LIST)
     const btnCollection = document.getElementById('btnModeCollection');
     const btnList = document.getElementById('btnModeList');
 
@@ -128,7 +143,6 @@ function initNavigation() {
         });
     }
 
-    // Search Filtering
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -174,7 +188,6 @@ function initSongManagement() {
         btnSubmit.textContent = 'UPLOADING TO VAULT...';
 
         try {
-            // Upload Audio File
             const audioPath = `${currentUser.id}/${Date.now()}_${audioFile.name}`;
             const { data: audioData, error: audioErr } = await supabaseClient.storage
                 .from('audio-files')
@@ -184,7 +197,6 @@ function initSongManagement() {
 
             const audioUrl = supabaseClient.storage.from('audio-files').getPublicUrl(audioPath).data.publicUrl;
 
-            // Upload Cover File (if exists)
             let coverUrl = '';
             if (coverFile) {
                 const coverPath = `${currentUser.id}/${Date.now()}_${coverFile.name}`;
@@ -192,7 +204,6 @@ function initSongManagement() {
                 coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
             }
 
-            // Insert Database Record
             const { error: dbErr } = await supabaseClient.from('songs').insert({
                 user_id: currentUser.id,
                 title,
@@ -218,7 +229,40 @@ function initSongManagement() {
     });
 }
 
-/* 5. RENDER LIST VIEW WITH DELETE CONTROLS */
+/* 5. PLAYLIST CREATION & MANAGEMENT */
+function initPlaylistManagement() {
+    const playlistModal = document.getElementById('playlistModal');
+    const btnOpen = document.getElementById('btnOpenCreatePlaylist');
+    const btnClose = document.getElementById('btnClosePlaylistModal');
+    const playlistForm = document.getElementById('playlistForm');
+
+    if (btnOpen) btnOpen.addEventListener('click', () => playlistModal.classList.remove('hidden'));
+    if (btnClose) btnClose.addEventListener('click', () => playlistModal.classList.add('hidden'));
+
+    if (playlistForm) {
+        playlistForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('inputPlaylistTitle').value;
+            const description = document.getElementById('inputPlaylistDesc').value;
+
+            const { error } = await supabaseClient.from('playlists').insert({
+                user_id: currentUser.id,
+                title,
+                description
+            });
+
+            if (error) {
+                alert('Could not create playlist: ' + error.message);
+            } else {
+                playlistForm.reset();
+                playlistModal.classList.add('hidden');
+                await loadUserPlaylists();
+            }
+        });
+    }
+}
+
+/* 6. RENDER LIST VIEW WITH DELETE CONTROLS */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
     if (!tbody) return;
@@ -241,7 +285,7 @@ function renderListView(songs) {
     });
 }
 
-/* 6. RENDER ALBUMS VIEW */
+/* 7. RENDER ALBUMS VIEW */
 function renderAlbumsView(songs) {
     const grid = document.getElementById('albumsGrid');
     if (!grid) return;
@@ -268,6 +312,29 @@ function renderAlbumsView(songs) {
             spatialVault.setSongs(albumSongs);
             document.getElementById('btnModeCollection').click();
         });
+        grid.appendChild(card);
+    });
+}
+
+/* 8. RENDER PLAYLISTS VIEW */
+function renderPlaylistsView(playlists) {
+    const grid = document.getElementById('playlistsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    if (playlists.length === 0) {
+        grid.innerHTML = `<p style="color:#666; font-size:12px;">No playlists created yet. Click "+ CREATE PLAYLIST" above.</p>`;
+        return;
+    }
+
+    playlists.forEach(pl => {
+        const card = document.createElement('div');
+        card.className = 'playlist-card';
+        card.innerHTML = `
+            <div class="card-art" style="background: #18181f; display:flex; justify-content:center; align-items:center; font-size:24px; color:#444;">🎵</div>
+            <div class="card-title">${pl.title}</div>
+            <div class="card-sub">${pl.description || 'Custom Vault Playlist'}</div>
+        `;
         grid.appendChild(card);
     });
 }
