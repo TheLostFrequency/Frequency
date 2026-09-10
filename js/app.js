@@ -236,7 +236,7 @@ function renderListView(songs) {
                 <button onclick="deleteTrack('${song.id}')" style="background:none; border:1px solid #333; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px;">DELETE</button>
             </td>
         `;
-        tr.addEventListener('dblclick', () => audioEngine.loadSong(song));
+        tr.addEventListener('click', () => audioEngine.loadSong(song));
         tbody.appendChild(tr);
     });
 }
