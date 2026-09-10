@@ -116,16 +116,17 @@ input:focus { border-color: #555; }
 
 .btn-primary:hover { background: #fff; transform: translateY(-1px); }
 
-/* MAIN APP CONTAINER — FULL WIDTH BACKGROUND PNG FIX */
+/* MAIN APP CONTAINER WITH RECOVERED BACKGROUND IMAGE */
 .app-container {
     display: flex;
     flex-direction: column;
     height: 100vh;
     width: 100vw;
     position: relative;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.25)), url('../assets/background.png');
-    background-size: 100% 100%; /* Force background png to stretch wide across full 16:9 view */
-    background-position: center center;
+    background-color: var(--bg-black);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.35)), url('../assets/background.png'), url('../assets/background.jpg');
+    background-size: cover;
+    background-position: center;
     background-repeat: no-repeat;
     overflow-x: hidden;
 }
@@ -183,7 +184,6 @@ input:focus { border-color: #555; }
     color: #ffffff;
 }
 
-/* TOP RIGHT ADD TRACK & EXIT BUTTONS */
 .btn-add-pill {
     background: rgba(255, 255, 255, 0.95);
     color: #000;
@@ -241,7 +241,7 @@ input:focus { border-color: #555; }
 .view-panel { flex: 1; position: relative; overflow: hidden; display: none; }
 .view-panel.active { display: block !important; }
 
-/* ARCHITECTURAL ROOM ENVIRONMENT */
+/* ARCHITECTURAL STAGE */
 .architectural-stage {
     width: 100vw;
     height: 100vh;
@@ -255,29 +255,8 @@ input:focus { border-color: #555; }
     perspective: 1200px;
 }
 
-.room-wall-back {
-    position: absolute;
-    inset: 0;
-    background: transparent;
-    z-index: 1;
-}
+.pillar { display: none; }
 
-.ambient-spotlight {
-    position: absolute;
-    top: -20%;
-    width: 900px;
-    height: 600px;
-    background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 75%);
-    pointer-events: none;
-    z-index: 3;
-}
-
-/* Side Pillar Overlays - Hidden to expose the full widescreen background graphic */
-.pillar {
-    display: none;
-}
-
-/* PHYSICAL VAULT CONTAINER & CARDS */
 .physical-vault-container {
     position: absolute;
     width: 100%;
@@ -329,7 +308,7 @@ input:focus { border-color: #555; }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* BRUTALIST PEDESTAL MONOLITH */
+/* CENTER MONOLITH */
 .center-monolith {
     position: absolute;
     bottom: 16%;
@@ -384,40 +363,47 @@ input:focus { border-color: #555; }
     margin-top: 4px;
 }
 
-/* TRANSMISSIONS STAGE */
+/* FULL-SCREEN TRANSMISSIONS VIEW FIX */
 .transmissions-stage {
+    position: fixed;
+    inset: 0;
     width: 100vw;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     background: #050507 !important;
-    z-index: 100;
+    z-index: 250;
+    padding: 0;
+    margin: 0;
 }
 
 .transmission-asset-wrapper {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    max-width: 85vw;
-    max-height: 75vh;
 }
 
 .transmission-graphic {
-    max-width: 100%;
-    max-height: 70vh;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: cover; /* Spans full screen without black bars */
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8));
-    border-radius: 4px;
 }
 
-/* FLOATING CAPSULE PLAYER */
+/* FLOATING CAPSULE PLAYER WITH INTEGRATED VOLUME CONTROL */
 .floating-player {
     position: fixed;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    width: 580px;
+    width: 680px; /* Expanded slightly to house volume slider */
     height: 64px;
     background: rgba(20, 20, 24, 0.85);
     backdrop-filter: blur(25px);
@@ -426,12 +412,18 @@ input:focus { border-color: #555; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 24px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     z-index: 400;
 }
 
-.player-left { display: flex; align-items: center; gap: 12px; width: 35%; }
+.player-left { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    width: 30%; 
+    min-width: 140px;
+}
 
 .player-cover-art {
     width: 40px;
@@ -440,10 +432,11 @@ input:focus { border-color: #555; }
     background-size: cover;
     border-radius: 4px;
     border: 1px solid #333;
+    flex-shrink: 0;
 }
 
-.track-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #fff; }
-.track-artist { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+.track-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-artist { font-size: 9px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .player-center { width: 45%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .player-controls { display: flex; gap: 14px; align-items: center; }
@@ -464,7 +457,35 @@ input:focus { border-color: #555; }
 .progress-bar-container { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 8px; color: #555; }
 input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px; }
 
-.player-right { width: 20%; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+/* INTEGRATED IN-PLAYER VOLUME CONTROLS */
+.player-right { 
+    width: 25%; 
+    display: flex; 
+    justify-content: flex-end; 
+    align-items: center; 
+    gap: 8px; 
+}
+
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100px;
+}
+
+.volume-icon {
+    font-size: 11px;
+    color: #888;
+}
+
+.volume-slider {
+    width: 100%;
+    height: 3px;
+    appearance: none;
+    background: #333;
+    accent-color: #ffffff;
+    cursor: pointer;
+}
 
 /* LIST, ALBUMS, AND PLAYLIST VIEWS */
 .list-wrapper, .playlists-wrapper {
@@ -488,12 +509,6 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
     font-size: 14px;
     letter-spacing: 3px;
     color: #fff;
-}
-
-.playlist-bar-header .btn-action {
-    width: auto;
-    padding: 10px 20px;
-    border-radius: 20px;
 }
 
 .frequency-table {
@@ -550,9 +565,7 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 .card-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
 .search-container { padding: 120px 60px 20px 60px; }
 
-/* ==========================================
-   MOBILE RESPONSIVE OVERRIDES (under 768px)
-   ========================================== */
+/* MOBILE RESPONSIVE OVERRIDES */
 @media (max-width: 768px) {
     .top-bar {
         position: fixed;
@@ -568,46 +581,11 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
         overflow-x: auto;
         white-space: nowrap;
         justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
         padding: 6px 12px;
         scrollbar-width: none;
     }
 
-    .nav-pill-group::-webkit-scrollbar {
-        display: none;
-    }
-
-    .top-right-group {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .record-object {
-        width: 200px;
-        height: 200px;
-    }
-
-    .vinyl-disc {
-        width: 190px;
-        height: 190px;
-    }
-
-    .record-object.active .vinyl-disc {
-        right: -45px;
-    }
-
-    .center-monolith {
-        bottom: 180px;
-    }
-
-    .monolith-top {
-        width: 240px;
-        height: 45px;
-    }
-
-    .active-title-text {
-        font-size: 18px;
-    }
+    .nav-pill-group::-webkit-scrollbar { display: none; }
 
     .floating-player {
         width: calc(100% - 24px);
@@ -619,30 +597,10 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
         border-radius: 20px;
     }
 
-    .player-left {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
-    }
+    .player-left { width: 100%; justify-content: center; text-align: center; }
+    .player-center { width: 100%; }
+    .player-right { display: none; }
 
-    .player-center {
-        width: 100%;
-    }
-
-    .player-right {
-        display: none;
-    }
-
-    .list-wrapper, .playlists-wrapper {
-        padding: 140px 16px 140px 16px;
-    }
-
-    .albums-grid, .playlists-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 16px;
-    }
-
-    .search-container {
-        padding: 140px 16px 20px 16px;
-    }
+    .list-wrapper, .playlists-wrapper { padding: 140px 16px 140px 16px; }
+    .albums-grid, .playlists-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
 }
