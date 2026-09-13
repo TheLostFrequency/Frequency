@@ -1,6 +1,6 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Mass Multi-File Upload, Precise Shuffle Engine, Mobile Optimization & Sanitized Storage Keys
+ * Mass Multi-File Upload, Precise Shuffle Engine, Mobile Optimization, Song Editing & Sanitized Storage Keys
  */
 
 let spatialVault = null;
@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNavigation();
     initSongManagement();
     initPlaylistManagement();
+    initEditSongManagement(); // Added Edit Song Modal Handler
 });
 
 /* ==========================================
@@ -331,8 +332,15 @@ function formatTime(seconds) {
 }
 
 /* ==========================================
-   5. MASS / BATCH MULTI-TRACK UPLOADER (SANATIZED KEYS)
+   5. MASS / BATCH MULTI-TRACK UPLOADER (SANITIZED KEYS)
    ========================================== */
+function sanitizeFileName(filename) {
+    return filename
+        .toLowerCase()
+        .replace(/[^a-z0-9.]/g, '_')
+        .replace(/_+/g, '_');
+}
+
 function initSongManagement() {
     const songModal = document.getElementById('songModal');
     const btnOpenAdd = document.getElementById('btnOpenAddSong');
@@ -350,13 +358,6 @@ function initSongManagement() {
             batchSelectedFiles = Array.from(e.target.files);
             renderBatchInputFields(batchSelectedFiles);
         });
-    }
-
-    function sanitizeFileName(filename) {
-        return filename
-            .toLowerCase()
-            .replace(/[^a-z0-9.]/g, '_')
-            .replace(/_+/g, '_');
     }
 
     function renderBatchInputFields(files) {
@@ -478,7 +479,92 @@ function initSongManagement() {
 }
 
 /* ==========================================
-   6. PLAYLIST MANAGEMENT
+   6. EDIT SONG MANAGEMENT (SINGLE TRACK EDIT)
+   ========================================== */
+function initEditSongManagement() {
+    const editModal = document.getElementById('editSongModal');
+    const btnCloseEdit = document.getElementById('btnCloseEditSongModal');
+    const editForm = document.getElementById('editSongForm');
+
+    if (btnCloseEdit) {
+        btnCloseEdit.addEventListener('click', () => {
+            editModal?.classList.add('hidden');
+        });
+    }
+
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const songId = document.getElementById('editSongId').value;
+            const title = document.getElementById('editInputTitle').value;
+            const artist = document.getElementById('editInputArtist').value;
+            const album = document.getElementById('editInputAlbum').value;
+            const genre = document.getElementById('editInputGenre').value;
+            const coverFile = document.getElementById('editInputCoverFile').files[0];
+
+            const btnSubmit = document.getElementById('btnSubmitEditSong');
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'SAVING...';
+
+            try {
+                let coverUrl = null;
+
+                // Optional: Upload new artwork if selected
+                if (coverFile) {
+                    const safeCoverName = sanitizeFileName(coverFile.name);
+                    const coverPath = `${currentUser.id}/${Date.now()}_edit_${safeCoverName}`;
+
+                    const { error: coverErr } = await supabaseClient.storage
+                        .from('cover-art')
+                        .upload(coverPath, coverFile);
+
+                    if (coverErr) throw coverErr;
+
+                    coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
+                }
+
+                // Build update object
+                const updatePayload = { title, artist, album, genre };
+                if (coverUrl) updatePayload.cover_url = coverUrl;
+
+                const { error: dbErr } = await supabaseClient
+                    .from('songs')
+                    .update(updatePayload)
+                    .eq('id', songId);
+
+                if (dbErr) throw dbErr;
+
+                editForm.reset();
+                editModal.classList.add('hidden');
+                await loadUserLibrary();
+
+            } catch (err) {
+                alert('Failed to update track: ' + err.message);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'UPDATE TRACK';
+            }
+        });
+    }
+}
+
+window.openEditTrackModal = function(songId) {
+    const song = songsLibrary.find(s => s.id === songId);
+    if (!song) return;
+
+    document.getElementById('editSongId').value = song.id;
+    document.getElementById('editInputTitle').value = song.title || '';
+    document.getElementById('editInputArtist').value = song.artist || '';
+    document.getElementById('editInputAlbum').value = song.album || '';
+    document.getElementById('editInputGenre').value = song.genre || '';
+
+    const editModal = document.getElementById('editSongModal');
+    editModal?.classList.remove('hidden');
+};
+
+/* ==========================================
+   7. PLAYLIST MANAGEMENT
    ========================================== */
 function initPlaylistManagement() {
     const playlistModal = document.getElementById('playlistModal');
@@ -513,7 +599,7 @@ function initPlaylistManagement() {
 }
 
 /* ==========================================
-   7. RENDERING VIEWS
+   8. RENDERING VIEWS
    ========================================== */
 function renderListView(songs) {
     const tbody = document.getElementById('songListBody');
@@ -530,6 +616,7 @@ function renderListView(songs) {
             <td>${song.artist}</td>
             <td>${song.album}</td>
             <td>
+                <button onclick="event.stopPropagation(); openEditTrackModal('${song.id}')" style="background:none; border:1px solid #444; color:#fff; padding:4px 8px; cursor:pointer; font-size:10px; margin-right:4px;">EDIT</button>
                 <button onclick="event.stopPropagation(); deleteTrack('${song.id}')" style="background:none; border:1px solid #333; color:#aaa; padding:4px 8px; cursor:pointer; font-size:10px;">DELETE</button>
             </td>
         `;
