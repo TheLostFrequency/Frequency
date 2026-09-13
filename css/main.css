@@ -170,7 +170,7 @@ input:focus { border-color: #555; }
 .btn-primary:hover { background: #fff; transform: translateY(-1px); }
 
 /* ==========================================
-   MAIN APP CONTAINER (RECOVERED CRISP BACKGROUND)
+   MAIN APP CONTAINER
    ========================================== */
 .app-container {
     display: flex;
@@ -179,7 +179,8 @@ input:focus { border-color: #555; }
     width: 100vw;
     position: relative;
     background-color: var(--bg-black);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)), url('../assets/background.jpg'), url('../assets/background.png');
+    /* Desktop Background Default */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)), url('../assets/background.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -648,6 +649,11 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
    MOBILE OPTIMIZATION OVERRIDES (UNDER 768px)
    ========================================== */
 @media (max-width: 768px) {
+    /* Mobile Background Swap */
+    .app-container {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)), url('../assets/mobile-bg.png');
+    }
+
     .top-bar {
         position: fixed;
         top: 10px;
