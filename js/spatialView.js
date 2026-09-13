@@ -1,6 +1,6 @@
 /**
  * FREQUENCY SPATIAL COLLECTION ENGINE
- * Scoped listeners prevent accidental clicks outside of active cards from triggering playback.
+ * Touch-swipe mobile gestures, 3D record fan animation, and metadata sync.
  */
 class SpatialVault {
     constructor(containerId, onSelectCallback) {
@@ -17,12 +17,18 @@ class SpatialVault {
 
     setSongs(songs) {
         this.songs = songs;
+        this.currentIndex = 0;
         this.render();
     }
 
     render() {
         this.container.innerHTML = '';
-        if (!this.songs || this.songs.length === 0) return;
+        if (!this.songs || this.songs.length === 0) {
+            document.getElementById('activeArtist').textContent = 'VAULT EMPTY';
+            document.getElementById('activeTitle').textContent = 'No Tracks Found';
+            document.getElementById('activeMeta').textContent = '—';
+            return;
+        }
 
         this.songs.forEach((song, index) => {
             const el = document.createElement('div');
@@ -36,7 +42,6 @@ class SpatialVault {
                 <div class="vinyl-disc"></div>
             `;
 
-            // Explicit click listener on the card itself
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.selectRecord(index);
@@ -52,6 +57,8 @@ class SpatialVault {
         const elements = this.container.querySelectorAll('.record-object');
         if (elements.length === 0) return;
 
+        const isMobile = window.innerWidth <= 768;
+
         elements.forEach((el, index) => {
             const offset = index - this.currentIndex;
             const absOffset = Math.abs(offset);
@@ -59,20 +66,23 @@ class SpatialVault {
             if (offset === 0) {
                 // Active Center Card
                 el.classList.add('active');
-                el.style.transform = `translate3d(0px, -20px, 220px) rotateY(0deg) scale(1.15)`;
+                const scale = isMobile ? 'scale(1.05)' : 'scale(1.15)';
+                el.style.transform = `translate3d(0px, -15px, 220px) rotateY(0deg) ${scale}`;
                 el.style.zIndex = 200;
                 el.style.opacity = '1';
             } else {
                 // Fanned Cards to Left and Right
                 el.classList.remove('active');
                 const direction = offset < 0 ? -1 : 1;
-                const translateX = offset * 180 + (direction * 40);
-                const translateZ = -absOffset * 100;
-                const rotateY = -offset * 8;
+                const spacing = isMobile ? 120 : 180;
+                const translateX = offset * spacing + (direction * (isMobile ? 25 : 40));
+                const translateZ = -absOffset * (isMobile ? 80 : 100);
+                const rotateY = -offset * (isMobile ? 10 : 8);
+                const scaleVal = Math.max(0.6, 1 - absOffset * 0.08);
 
-                el.style.transform = `translate3d(${translateX}px, 0px, ${translateZ}px) rotateY(${rotateY}deg) scale(${1 - absOffset * 0.08})`;
+                el.style.transform = `translate3d(${translateX}px, 0px, ${translateZ}px) rotateY(${rotateY}deg) scale(${scaleVal})`;
                 el.style.zIndex = 100 - absOffset;
-                el.style.opacity = Math.max(0.3, 1 - absOffset * 0.22).toString();
+                el.style.opacity = Math.max(0.2, 1 - absOffset * 0.25).toString();
             }
         });
 
@@ -81,7 +91,7 @@ class SpatialVault {
         if (activeSong) {
             document.getElementById('activeArtist').textContent = activeSong.artist || 'ARTIST NAME';
             document.getElementById('activeTitle').textContent = activeSong.title || 'Track Title';
-            document.getElementById('activeMeta').textContent = `${activeSong.year || '2026'} • ${activeSong.album || 'Single'}`;
+            document.getElementById('activeMeta').textContent = `${activeSong.genre || 'Vault Track'} • ${activeSong.album || 'Single'}`;
         }
     }
 
@@ -89,12 +99,17 @@ class SpatialVault {
         this.currentIndex = index;
         this.updatePositions();
         if (this.onSelectCallback && this.songs[index]) {
-            this.onSelectCallback(this.songs[index]);
+            this.onSelectCallback(this.songs[index], index);
         }
     }
 
+    selectRecordSilently(index) {
+        this.currentIndex = index;
+        this.updatePositions();
+    }
+
     initEventListeners() {
-        // Scope drag gesture strictly to the 3D vault container (not entire window)
+        // Desktop Pointer Dragging
         this.container.addEventListener('mousedown', (e) => {
             this.isDragging = true;
             this.startX = e.clientX;
@@ -102,24 +117,40 @@ class SpatialVault {
 
         window.addEventListener('mousemove', (e) => {
             if (!this.isDragging) return;
-            const diff = e.clientX - this.startX;
-            this.dragOffset = diff;
-            this.updatePositions();
+            this.dragOffset = e.clientX - this.startX;
         });
 
         window.addEventListener('mouseup', () => {
             if (!this.isDragging) return;
             this.isDragging = false;
-            
-            // Only cycle if dragged far enough
-            if (this.dragOffset < -80 && this.currentIndex < this.songs.length - 1) {
-                this.currentIndex++;
-            } else if (this.dragOffset > 80 && this.currentIndex > 0) {
-                this.currentIndex--;
-            }
-            
-            this.dragOffset = 0;
-            this.updatePositions();
+            this.evaluateDragThreshold();
         });
+
+        // Mobile Touch Gestures
+        this.container.addEventListener('touchstart', (e) => {
+            this.isDragging = true;
+            this.startX = e.touches[0].clientX;
+        }, { passive: true });
+
+        this.container.addEventListener('touchmove', (e) => {
+            if (!this.isDragging) return;
+            this.dragOffset = e.touches[0].clientX - this.startX;
+        }, { passive: true });
+
+        this.container.addEventListener('touchend', () => {
+            if (!this.isDragging) return;
+            this.isDragging = false;
+            this.evaluateDragThreshold();
+        });
+    }
+
+    evaluateDragThreshold() {
+        const threshold = 50;
+        if (this.dragOffset < -threshold && this.currentIndex < this.songs.length - 1) {
+            this.selectRecord(this.currentIndex + 1);
+        } else if (this.dragOffset > threshold && this.currentIndex > 0) {
+            this.selectRecord(this.currentIndex - 1);
+        }
+        this.dragOffset = 0;
     }
 }
