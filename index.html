@@ -193,6 +193,42 @@
         </div>
     </div>
 
+    <!-- MODAL: EDIT TRACK METADATA & COVER ART -->
+    <div id="editSongModal" class="overlay-modal hidden">
+        <div class="modal-card">
+            <h2>EDIT TRACK DETAILS</h2>
+            <form id="editSongForm">
+                <input type="hidden" id="editSongId">
+                <div class="form-group">
+                    <label>SONG TITLE</label>
+                    <input type="text" id="editInputTitle" required />
+                </div>
+                <div class="form-group">
+                    <label>ARTIST</label>
+                    <input type="text" id="editInputArtist" required />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ALBUM</label>
+                        <input type="text" id="editInputAlbum" />
+                    </div>
+                    <div class="form-group">
+                        <label>GENRE</label>
+                        <input type="text" id="editInputGenre" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>UPDATE COVER ARTWORK (NEW IMAGE)</label>
+                    <input type="file" id="editInputCoverFile" accept="image/*" />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btnCloseEditSongModal" class="btn-secondary">CANCEL</button>
+                    <button type="submit" id="btnSubmitEditSong" class="btn-primary">UPDATE TRACK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: CREATE PLAYLIST -->
     <div id="playlistModal" class="overlay-modal hidden">
         <div class="modal-card">
