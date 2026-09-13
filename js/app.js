@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNavigation();
     initSongManagement();
     initPlaylistManagement();
-    initEditSongManagement(); // Added Edit Song Modal Handler
+    initEditSongManagement(); // Edit Song Modal Handler
 });
 
 /* ==========================================
@@ -129,8 +129,11 @@ function initNavigation() {
     const viewPanels = document.querySelectorAll('.view-panel');
 
     function switchView(targetView) {
+        // Construct target DOM ID (e.g., 'eq' -> 'viewEq', 'collection' -> 'viewCollection')
+        const targetId = `view${targetView.charAt(0).toUpperCase() + targetView.slice(1)}`;
+
         viewPanels.forEach(panel => {
-            if (panel.id === `view${targetView.charAt(0).toUpperCase() + targetView.slice(1)}`) {
+            if (panel.id === targetId) {
                 panel.classList.add('active');
                 panel.classList.remove('hidden');
             } else {
@@ -510,7 +513,6 @@ function initEditSongManagement() {
             try {
                 let coverUrl = null;
 
-                // Optional: Upload new artwork if selected
                 if (coverFile) {
                     const safeCoverName = sanitizeFileName(coverFile.name);
                     const coverPath = `${currentUser.id}/${Date.now()}_edit_${safeCoverName}`;
@@ -524,7 +526,6 @@ function initEditSongManagement() {
                     coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
                 }
 
-                // Build update object
                 const updatePayload = { title, artist, album, genre };
                 if (coverUrl) updatePayload.cover_url = coverUrl;
 
