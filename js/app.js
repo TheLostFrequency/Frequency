@@ -1,6 +1,6 @@
 /**
  * FREQUENCY CORE APPLICATION CONTROLLER
- * Mass Multi-File Upload, Precise Shuffle Engine, Mobile Optimization
+ * Mass Multi-File Upload, Precise Shuffle Engine, Mobile Optimization & Sanitized Storage Keys
  */
 
 let spatialVault = null;
@@ -241,7 +241,6 @@ function loadTrackIntoPlayer(index, shouldPlay = true) {
     const coverArtEl = document.getElementById('playerCover');
     if (coverArtEl) coverArtEl.style.backgroundImage = `url('${coverUrl}')`;
 
-    // Sync 3D spatial stage index and active monolith metadata
     if (spatialVault && spatialVault.currentIndex !== index) {
         spatialVault.selectRecordSilently(index);
     }
@@ -332,7 +331,7 @@ function formatTime(seconds) {
 }
 
 /* ==========================================
-   5. MASS / BATCH MULTI-TRACK UPLOADER
+   5. MASS / BATCH MULTI-TRACK UPLOADER (SANATIZED KEYS)
    ========================================== */
 function initSongManagement() {
     const songModal = document.getElementById('songModal');
@@ -351,6 +350,13 @@ function initSongManagement() {
             batchSelectedFiles = Array.from(e.target.files);
             renderBatchInputFields(batchSelectedFiles);
         });
+    }
+
+    function sanitizeFileName(filename) {
+        return filename
+            .toLowerCase()
+            .replace(/[^a-z0-9.]/g, '_')
+            .replace(/_+/g, '_');
     }
 
     function renderBatchInputFields(files) {
@@ -420,7 +426,9 @@ function initSongManagement() {
                     const genre = card.querySelector('.batch-genre').value || 'Vault Track';
                     const coverFile = card.querySelector('.batch-cover').files[0];
 
-                    const audioPath = `${currentUser.id}/${Date.now()}_${i}_${audioFile.name}`;
+                    const safeAudioName = sanitizeFileName(audioFile.name);
+                    const audioPath = `${currentUser.id}/${Date.now()}_${i}_${safeAudioName}`;
+                    
                     const { error: audioErr } = await supabaseClient.storage
                         .from('audio-files')
                         .upload(audioPath, audioFile);
@@ -431,7 +439,9 @@ function initSongManagement() {
 
                     let coverUrl = '';
                     if (coverFile) {
-                        const coverPath = `${currentUser.id}/${Date.now()}_${i}_${coverFile.name}`;
+                        const safeCoverName = sanitizeFileName(coverFile.name);
+                        const coverPath = `${currentUser.id}/${Date.now()}_${i}_${safeCoverName}`;
+                        
                         await supabaseClient.storage.from('cover-art').upload(coverPath, coverFile);
                         coverUrl = supabaseClient.storage.from('cover-art').getPublicUrl(coverPath).data.publicUrl;
                     }
