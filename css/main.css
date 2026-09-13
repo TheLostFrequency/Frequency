@@ -12,6 +12,7 @@
     margin: 0;
     padding: 0;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body, html {
@@ -43,11 +44,17 @@ body, html {
 .auth-box, .modal-card {
     background: #0d0d0f;
     border: 1px solid #1f1f24;
-    padding: 40px;
+    padding: 30px;
     width: 100%;
     max-width: 440px;
     box-shadow: var(--shadow-deep);
     text-align: center;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-card-wide {
+    max-width: 680px !important;
 }
 
 .modal-card h2 {
@@ -60,6 +67,44 @@ body, html {
 .form-group { text-align: left; margin-bottom: 12px; }
 .form-group label { display: block; font-size: 9px; letter-spacing: 2px; color: #888; margin-bottom: 6px; }
 .form-row { display: flex; gap: 10px; }
+
+/* BATCH MASS UPLOAD STYLES */
+.batch-tracks-wrapper {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid #1f1f24;
+    padding: 12px;
+    background: #08080a;
+    margin-bottom: 16px;
+    border-radius: 4px;
+}
+
+.batch-track-card {
+    background: #101014;
+    border: 1px solid #22222a;
+    padding: 14px;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.batch-track-card h4 {
+    font-size: 10px;
+    color: #aaa;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.batch-placeholder-text {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 1px;
+    padding: 30px 0;
+    text-align: center;
+}
 
 .brand-monolith {
     padding: 20px;
@@ -96,6 +141,12 @@ input[type="email"], input[type="password"], input[type="text"], input[type="fil
 
 input:focus { border-color: #555; }
 
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
 .btn-primary, .btn-secondary, .btn-action {
     width: 100%;
     padding: 12px;
@@ -113,13 +164,13 @@ input:focus { border-color: #555; }
     background: transparent;
     color: #888;
     border: 1px solid #222;
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 .btn-primary:hover { background: #fff; transform: translateY(-1px); }
 
 /* ==========================================
-   MAIN APP CONTAINER (ENHANCED CRISP BACKGROUND)
+   MAIN APP CONTAINER (RECOVERED CRISP BACKGROUND)
    ========================================== */
 .app-container {
     display: flex;
@@ -128,7 +179,7 @@ input:focus { border-color: #555; }
     width: 100vw;
     position: relative;
     background-color: var(--bg-black);
-    background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.25)), url('../assets/background.jpg');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)), url('../assets/background.jpg'), url('../assets/background.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -252,7 +303,7 @@ input:focus { border-color: #555; }
 .view-panel { flex: 1; position: relative; overflow: hidden; display: none; }
 .view-panel.active { display: block !important; }
 
-/* ARCHITECTURAL STAGE */
+/* ARCHITECTURAL STAGE (HARDWARE ACCELERATED) */
 .architectural-stage {
     width: 100vw;
     height: 100vh;
@@ -264,6 +315,7 @@ input:focus { border-color: #555; }
     justify-content: center;
     align-items: center;
     perspective: 1200px;
+    transform: translateZ(0);
 }
 
 .pillar { display: none; }
@@ -277,6 +329,8 @@ input:focus { border-color: #555; }
     align-items: center;
     transform-style: preserve-3d;
     z-index: 50;
+    touch-action: pan-y;
+    will-change: transform;
 }
 
 .record-object {
@@ -284,8 +338,9 @@ input:focus { border-color: #555; }
     width: 270px;
     height: 270px;
     cursor: pointer;
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
     transform-style: preserve-3d;
+    will-change: transform, opacity;
 }
 
 .album-sleeve {
@@ -297,6 +352,7 @@ input:focus { border-color: #555; }
     border-radius: 3px;
     position: relative;
     border: 1px solid rgba(255,255,255,0.08);
+    background-color: #121215;
 }
 
 .vinyl-disc {
@@ -310,6 +366,7 @@ input:focus { border-color: #555; }
     z-index: -1;
     box-shadow: 0 10px 25px rgba(0,0,0,0.6);
     transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
 }
 
 .record-object.active .vinyl-disc {
@@ -327,6 +384,7 @@ input:focus { border-color: #555; }
     flex-direction: column;
     align-items: center;
     z-index: 80;
+    pointer-events: none;
 }
 
 .monolith-top {
@@ -411,7 +469,7 @@ input:focus { border-color: #555; }
 }
 
 /* ==========================================
-   FLOATING CAPSULE PLAYER & INTEGRATED VOLUME
+   FLOATING CAPSULE PLAYER
    ========================================== */
 .floating-player {
     position: fixed;
@@ -431,6 +489,7 @@ input:focus { border-color: #555; }
     box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     z-index: 400;
     overflow: hidden;
+    will-change: transform;
 }
 
 .player-left { 
@@ -446,6 +505,7 @@ input:focus { border-color: #555; }
     height: 40px;
     background: #1a1a1e;
     background-size: cover;
+    background-position: center;
     border-radius: 4px;
     border: 1px solid #333;
     flex-shrink: 0;
@@ -489,10 +549,7 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
     width: 100px;
 }
 
-.volume-icon {
-    font-size: 11px;
-    color: #888;
-}
+.vol-icon { font-size: 11px; color: #888; }
 
 .volume-slider {
     width: 70px;
@@ -588,15 +645,15 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 .search-container { padding: 120px 60px 20px 60px; }
 
 /* ==========================================
-   MOBILE RESPONSIVE OVERRIDES (UNDER 768px)
+   MOBILE OPTIMIZATION OVERRIDES (UNDER 768px)
    ========================================== */
 @media (max-width: 768px) {
     .top-bar {
         position: fixed;
         top: 10px;
-        padding: 0 12px;
+        padding: 0 10px;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         width: 100%;
     }
 
@@ -611,13 +668,41 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 
     .nav-pill-group::-webkit-scrollbar { display: none; }
 
+    .top-right-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .record-object {
+        width: 200px;
+        height: 200px;
+    }
+
+    .vinyl-disc {
+        width: 190px;
+        height: 190px;
+    }
+
+    .center-monolith {
+        bottom: 18%;
+    }
+
+    .monolith-top {
+        width: 240px;
+        height: 46px;
+    }
+
+    .active-title-text {
+        font-size: 18px;
+    }
+
     .floating-player {
-        width: calc(100% - 24px);
+        width: calc(100% - 20px);
         height: auto;
-        bottom: 12px;
+        bottom: 10px;
         flex-direction: column;
-        padding: 12px;
-        gap: 8px;
+        padding: 10px 14px;
+        gap: 6px;
         border-radius: 20px;
     }
 
@@ -627,8 +712,8 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 
     .list-wrapper, .playlists-wrapper, #viewAlbums, #viewPlaylists, #viewList { 
         padding-top: 140px !important;
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-left: 14px;
+        padding-right: 14px;
     }
-    .albums-grid, .playlists-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+    .albums-grid, .playlists-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
 }
