@@ -132,8 +132,12 @@
         <main id="viewTransmissions" class="view-panel hidden">
             <div class="transmissions-stage">
                 <div class="transmission-asset-wrapper">
-                    <img id="transGraphic" src="assets/transmission.JPG" class="transmission-graphic" alt="Transmissions Visual" 
-                         onerror="if(this.src.endsWith('.JPG')) this.src='assets/transmission.jpg'; else if(this.src.endsWith('.jpg')) this.src='assets/transmission.PNG'; else if(this.src.endsWith('.PNG')) this.src='assets/transmission.png'; else if(this.src.endsWith('.png')) this.src='assets/transmission.jpeg';">
+                    <picture>
+                        <!-- Mobile Asset Override -->
+                        <source media="(max-width: 768px)" srcset="assets/mobile-transmission.png">
+                        <!-- Desktop Fallback Asset -->
+                        <img id="transGraphic" src="assets/transmission.png" class="transmission-graphic" alt="Transmissions Visual">
+                    </picture>
                 </div>
             </div>
         </main>
