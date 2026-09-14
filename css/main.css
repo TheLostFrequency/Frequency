@@ -184,19 +184,19 @@ input:focus { border-color: #555; }
 
 .eq-overlay.hidden { display: none !important; }
 
-/* Thick Heavy Refractive Ice-Glass Body with Light Trapping & Icy Blue Edge Bevels */
+/* Refractive Crystal Glass Frame with Internal Icy Blue Glow */
 .eq-glass-panel {
     pointer-events: auto;
     width: min(92%, 960px);
     background: 
-        linear-gradient(135deg, rgba(220, 245, 255, 0.28) 0%, rgba(120, 180, 220, 0.08) 50%, rgba(20, 50, 80, 0.18) 100%),
-        rgba(200, 230, 255, 0.05);
+        linear-gradient(135deg, rgba(220, 245, 255, 0.28) 0%, rgba(120, 180, 220, 0.08) 50%, rgba(20, 50, 80, 0.22) 100%),
+        rgba(15, 22, 32, 0.55);
     backdrop-filter: blur(40px) saturate(240%) contrast(115%);
     -webkit-backdrop-filter: blur(40px) saturate(240%) contrast(115%);
     border: 2px solid var(--glass-border);
     border-radius: 14px;
     box-shadow: 
-        0 40px 100px rgba(0, 0, 0, 0.75),
+        0 40px 100px rgba(0, 0, 0, 0.85),
         0 0 25px var(--icy-blue-glow),
         inset 0 2px 1px rgba(255, 255, 255, 0.95),
         inset 0 -3px 8px rgba(100, 180, 240, 0.4),
@@ -236,17 +236,17 @@ input:focus { border-color: #555; }
 }
 
 .eq-visualizer-container {
-    background: rgba(10, 20, 30, 0.35);
+    background: rgba(10, 20, 30, 0.4);
     border: 1px solid rgba(180, 230, 255, 0.25);
     border-radius: 6px;
     padding: 4px;
     margin-bottom: 12px;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 #eq-canvas { width: 100%; height: 75px; display: block; }
 
-/* 10-Band Translucent Glass Grid */
+/* 10-Band Sliders Grid */
 .eq-sliders-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
@@ -282,7 +282,7 @@ input:focus { border-color: #555; }
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.3);
     border-left: 1px solid rgba(255, 255, 255, 0.3);
     border-right: 1px solid rgba(100, 180, 230, 0.3);
     border-radius: 3px;
@@ -327,10 +327,11 @@ input:focus { border-color: #555; }
     cursor: pointer;
 }
 
-/* Bottom Hardware Controls */
+/* Bottom Hardware Controls Row */
 .eq-hardware-controls {
     display: flex;
     gap: 16px;
+    align-items: stretch;
     border-top: 1.5px solid rgba(200, 235, 255, 0.35);
     padding-top: 14px;
 }
@@ -343,7 +344,7 @@ input:focus { border-color: #555; }
 }
 
 .ctrl-block {
-    background: rgba(10, 20, 30, 0.25);
+    background: rgba(10, 20, 30, 0.3);
     border: 1px solid rgba(180, 230, 255, 0.25);
     padding: 10px;
     border-radius: 6px;
@@ -363,37 +364,36 @@ input:focus { border-color: #555; }
     width: 100%;
 }
 
-/* FULLY EXPANDED DEBOSSED CARVED EMBLEM INLAY */
+/* Recessed Inset Carved Logo Frame */
 .eq-carved-logo {
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 110px;
-    width: 100%;
+    min-height: 85px;
     padding: 10px;
-    background: rgba(5, 12, 20, 0.5);
-    border: 1.5px solid rgba(180, 230, 255, 0.2);
-    border-bottom: 1.5px solid rgba(255, 255, 255, 0.55);
-    border-right: 1.5px solid rgba(255, 255, 255, 0.55);
-    border-radius: 8px;
+    background: rgba(4, 10, 16, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.45);
+    border-right: 1.5px solid rgba(255, 255, 255, 0.45);
+    border-radius: 6px;
     box-shadow: 
-        inset 4px 4px 12px rgba(0, 0, 0, 0.9),
-        inset -2px -2px 6px rgba(200, 235, 255, 0.25),
-        0 0 15px rgba(0, 0, 0, 0.6);
+        inset 4px 4px 10px rgba(0, 0, 0, 0.9),
+        inset -1px -1px 3px rgba(200, 235, 255, 0.2);
 }
 
 .carved-emblem {
-    width: 100%;
-    height: 100%;
+    max-width: 82%;
+    max-height: 82%;
     object-fit: contain;
-    opacity: 0.92;
+    opacity: 0.9;
     filter: 
-        drop-shadow(2px 2px 0px rgba(255, 255, 255, 0.65))
+        drop-shadow(1.5px 1.5px 0px rgba(255, 255, 255, 0.6))
         drop-shadow(-2px -2px 2px rgba(0, 0, 0, 0.95))
-        drop-shadow(0px 0px 10px rgba(180, 230, 255, 0.55));
+        drop-shadow(0px 0px 8px rgba(180, 230, 255, 0.45));
 }
 
-/* Tactile Glass Acoustic Preset Buttons */
+/* Tactile Glass Acoustic Preset Grid */
 .eq-preset-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
