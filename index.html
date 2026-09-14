@@ -129,82 +129,154 @@
             </div>
         </main>
 
-        <!-- VIEW CONTAINER: EQUALIZER VIEW (FLOATING GLASS OVERLAY) -->
+        <!-- VIEW CONTAINER: EQUALIZER VIEW (GLASS BLOCK HARDWARE RACK) -->
         <main id="viewEq" class="view-panel hidden">
             <div class="eq-overlay">
                 <div class="eq-glass-panel">
                     
                     <!-- EQ Panel Header -->
                     <div class="eq-header">
-                        <div class="eq-title">
-                            <span class="eq-icon">///</span>
-                            <h2>SIGNAL PARAMETRICS & EQUALIZER</h2>
+                        <div class="eq-title-group">
+                            <h2 class="eq-brand-title">DIGITAL EQUALIZER</h2>
                         </div>
-                        <div class="eq-actions">
-                            <select id="eq-preset" class="eq-dropdown">
-                                <option value="flat">PRESET: FLAT</option>
-                                <option value="bass">PRESET: BASS BOOST</option>
-                                <option value="vocal">PRESET: VOCAL ENHANCE</option>
-                                <option value="treble">PRESET: TREBLE BOOST</option>
-                            </select>
-                        </div>
+                        <div class="eq-brand-logo">FREQUENCY</div>
                     </div>
 
-                    <!-- Spectrum Visualizer -->
+                    <!-- Spectrum Visualizer Canvas -->
                     <div class="eq-visualizer-container">
-                        <canvas id="eq-canvas" width="650" height="100"></canvas>
+                        <canvas id="eq-canvas" width="800" height="80"></canvas>
                     </div>
 
-                    <!-- Dynamic Slider Rack -->
+                    <!-- 10-Band Glass Slider Rack -->
                     <div class="eq-sliders-grid">
-                        <!-- SUB BASS (60Hz) -->
+                        <!-- 32 Hz -->
                         <div class="eq-band">
-                            <span class="eq-val" id="val-60">0 dB</span>
-                            <input type="range" class="eq-slider" id="eq-60" data-freq="60" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            <label class="eq-freq">60 Hz</label>
-                            <span class="eq-label">SUB</span>
+                            <span class="eq-val" id="val-32">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-32" data-freq="32" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">32Hz</label>
                         </div>
 
-                        <!-- LOW BASS (250Hz) -->
+                        <!-- 64 Hz -->
                         <div class="eq-band">
-                            <span class="eq-val" id="val-250">0 dB</span>
-                            <input type="range" class="eq-slider" id="eq-250" data-freq="250" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            <label class="eq-freq">250 Hz</label>
-                            <span class="eq-label">LOW</span>
+                            <span class="eq-val" id="val-64">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-64" data-freq="64" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">64Hz</label>
                         </div>
 
-                        <!-- MID (1kHz) -->
+                        <!-- 128 Hz -->
                         <div class="eq-band">
-                            <span class="eq-val" id="val-1000">0 dB</span>
-                            <input type="range" class="eq-slider" id="eq-1000" data-freq="1000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            <label class="eq-freq">1 kHz</label>
-                            <span class="eq-label">MID</span>
+                            <span class="eq-val" id="val-128">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-128" data-freq="128" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">128Hz</label>
                         </div>
 
-                        <!-- PRESENCE (4kHz) -->
+                        <!-- 250 Hz -->
                         <div class="eq-band">
-                            <span class="eq-val" id="val-4000">0 dB</span>
-                            <input type="range" class="eq-slider" id="eq-4000" data-freq="4000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            <label class="eq-freq">4 kHz</label>
-                            <span class="eq-label">PRESENCE</span>
+                            <span class="eq-val" id="val-250">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-250" data-freq="250" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">250Hz</label>
                         </div>
 
-                        <!-- TREBLE (12kHz) -->
+                        <!-- 500 Hz -->
                         <div class="eq-band">
-                            <span class="eq-val" id="val-12000">0 dB</span>
-                            <input type="range" class="eq-slider" id="eq-12000" data-freq="12000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            <label class="eq-freq">12 kHz</label>
-                            <span class="eq-label">TREBLE</span>
+                            <span class="eq-val" id="val-500">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-500" data-freq="500" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">500Hz</label>
+                        </div>
+
+                        <!-- 1 kHz -->
+                        <div class="eq-band">
+                            <span class="eq-val" id="val-1000">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-1000" data-freq="1000" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">1kHz</label>
+                        </div>
+
+                        <!-- 2 kHz -->
+                        <div class="eq-band">
+                            <span class="eq-val" id="val-2000">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-2000" data-freq="2000" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">2kHz</label>
+                        </div>
+
+                        <!-- 4 kHz -->
+                        <div class="eq-band">
+                            <span class="eq-val" id="val-4000">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-4000" data-freq="4000" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">4kHz</label>
+                        </div>
+
+                        <!-- 8 kHz -->
+                        <div class="eq-band">
+                            <span class="eq-val" id="val-8000">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-8000" data-freq="8000" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">8kHz</label>
+                        </div>
+
+                        <!-- 16 kHz -->
+                        <div class="eq-band">
+                            <span class="eq-val" id="val-16000">0dB</span>
+                            <div class="slider-track-wrap">
+                                <input type="range" class="eq-slider" id="eq-16000" data-freq="16000" min="-12" max="12" value="0" step="0.5" orient="vertical">
+                            </div>
+                            <label class="eq-freq">16kHz</label>
                         </div>
                     </div>
 
-                    <!-- Panel Footer -->
-                    <div class="eq-footer">
-                        <button id="eq-reset" class="eq-btn">FLAT RESPONSE</button>
-                        <div class="eq-preamp">
-                            <label for="preamp-gain">PREAMP / GAIN</label>
-                            <input type="range" id="preamp-gain" min="-12" max="12" value="0" step="0.5">
-                            <span id="val-preamp" class="eq-val">0 dB</span>
+                    <!-- Bottom Hardware Controls & Acoustic Presets Grid -->
+                    <div class="eq-hardware-controls">
+                        <!-- Left Block: Master Vol & Input Source Select -->
+                        <div class="eq-left-controls">
+                            <div class="ctrl-block">
+                                <label class="ctrl-label">MASTER VOL</label>
+                                <input type="range" id="master-vol" min="0" max="100" value="80" class="mini-slider">
+                                <button class="btn-glass-sub" id="btn-glass-mode">GLASS</button>
+                            </div>
+                            <div class="ctrl-block">
+                                <label class="ctrl-label">INPUT SELECT</label>
+                                <div class="led-indicators">
+                                    <span class="led active" id="led-glass">GLASS</span>
+                                    <span class="led" id="led-optical">OPTICAL</span>
+                                    <span class="led" id="led-usb">USB</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Block: Tactile Acoustic Preset Buttons -->
+                        <div class="eq-preset-grid">
+                            <button class="preset-btn active" data-preset="flat">FLAT / NEUTRAL</button>
+                            <button class="preset-btn" data-preset="bass-booster">BASS BOOSTER</button>
+                            <button class="preset-btn" data-preset="bass-reducer">BASS REDUCER</button>
+                            <button class="preset-btn" data-preset="rock">ROCK</button>
+                            <button class="preset-btn" data-preset="hard">HARD</button>
+                            <button class="preset-btn" data-preset="hip-hop">HIP-HOP / RAP</button>
+                            <button class="preset-btn" data-preset="dance">ELECTRONIC / DANCE (EDM)</button>
+                            <button class="preset-btn" data-preset="pop">POP</button>
+
+                            <button class="preset-btn" data-preset="vocal">VOCAL BOOSTER</button>
+                            <button class="preset-btn" data-preset="acoustic">ACOUSTIC / FOLK</button>
+                            <button class="preset-btn" data-preset="loudness">LOUDNESS</button>
+                            <button class="preset-btn" data-preset="piano">PIANO</button>
+                            <button class="preset-btn" data-preset="rnb">R&B</button>
+                            <button class="preset-btn" data-preset="soul">R&B / SOUL</button>
+                            <button class="preset-btn" data-preset="spoken">SMALL SPEAKERS / SPOKEN WORD</button>
                         </div>
                     </div>
 
