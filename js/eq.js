@@ -7,6 +7,7 @@ class EqualizerEngine {
     constructor() {
         this.audioCtx = null;
         this.sourceNode = null;
+        this.masterGainNode = null;
         this.analyser = null;
         this.canvas = null;
         this.canvasCtx = null;
@@ -60,6 +61,16 @@ class EqualizerEngine {
             }
         });
 
+        // Master Volume slider listener
+        const masterVolSlider = document.getElementById('master-vol');
+        if (masterVolSlider) {
+            masterVolSlider.addEventListener('input', (e) => {
+                if (this.masterGainNode) {
+                    this.masterGainNode.gain.setValueAtTime(e.target.value / 100, this.audioCtx ? this.audioCtx.currentTime + 0.01 : 0);
+                }
+            });
+        }
+
         // Attach listeners to preset buttons
         const presetBtns = document.querySelectorAll('.preset-btn');
         presetBtns.forEach(btn => {
@@ -71,14 +82,6 @@ class EqualizerEngine {
                 e.target.classList.add('active');
             });
         });
-
-        // Glass Mode / Hardware Switch Toggle
-        const btnGlass = document.getElementById('btn-glass-mode');
-        if (btnGlass) {
-            btnGlass.addEventListener('click', () => {
-                btnGlass.classList.toggle('active');
-            });
-        }
     }
 
     /**
@@ -90,14 +93,21 @@ class EqualizerEngine {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.audioCtx = new AudioContext();
 
-        // Create Analyser Node for Spectrum Visualizer
+        this.masterGainNode = this.audioCtx.createGain();
         this.analyser = this.audioCtx.createAnalyser();
         this.analyser.fftSize = 128;
 
-        // Build BiquadFilter Cascade
-        this.sourceNode = this.audioCtx.createMediaElementSource(audioElement);
-        let previousNode = this.sourceNode;
+        try {
+            this.sourceNode = this.audioCtx.createMediaElementSource(audioElement);
+        } catch (err) {
+            console.warn("MediaElementSource warning:", err);
+            return;
+        }
 
+        let previousNode = this.sourceNode;
+        this.filters = [];
+
+        // Build BiquadFilter Cascade
         this.frequencies.forEach((freq, index) => {
             const filter = this.audioCtx.createBiquadFilter();
             
@@ -118,8 +128,9 @@ class EqualizerEngine {
             this.filters.push({ freq, node: filter });
         });
 
-        // Connect last filter to Analyser, then to Audio Destination
-        previousNode.connect(this.analyser);
+        // Pipeline Routing: Source -> Filters -> Master Gain -> Analyser -> Output
+        previousNode.connect(this.masterGainNode);
+        this.masterGainNode.connect(this.analyser);
         this.analyser.connect(this.audioCtx.destination);
 
         // Start Spectrum Canvas Animation
@@ -140,7 +151,7 @@ class EqualizerEngine {
      */
     setBandGain(freq, gainValue) {
         const targetFilter = this.filters.find(f => f.freq === freq);
-        if (targetFilter && targetFilter.node) {
+        if (targetFilter && targetFilter.node && this.audioCtx) {
             targetFilter.node.gain.setValueAtTime(gainValue, this.audioCtx.currentTime + 0.01);
         }
     }
@@ -182,7 +193,7 @@ class EqualizerEngine {
     }
 
     /**
-     * Render Glassmorphic Spectrum Visualizer Loop
+     * Render Clear-Glass Spectrum Visualizer Loop
      */
     renderVisualizer() {
         if (!this.canvasCtx || !this.analyser) return;
@@ -206,11 +217,10 @@ class EqualizerEngine {
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = (dataArray[i] / 255) * height;
 
-                // Cyan / Ice Blue Ambient Glow Line
                 const gradient = this.canvasCtx.createLinearGradient(0, height, 0, 0);
                 gradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
-                gradient.addColorStop(0.5, 'rgba(180, 220, 245, 0.4)');
-                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+                gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
 
                 this.canvasCtx.fillStyle = gradient;
                 this.canvasCtx.fillRect(x, height - barHeight, barWidth - 2, barHeight);
