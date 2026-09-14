@@ -23,20 +23,20 @@ class AudioEngine {
 
     /**
      * Initializes Web Audio Context on first user interaction
-     * and connects audio element to global equalizer node chain.
+     * and routes audio through global 10-band Equalizer Engine.
      */
     initWebAudio() {
         if (this.isAudioContextSetup) return;
 
         try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            this.audioCtx = new AudioCtx();
-            this.sourceNode = this.audioCtx.createMediaElementSource(this.audio);
-
-            // Hook source node into Equalizer if available
-            if (window.frequencyEQ && typeof window.frequencyEQ.init === 'function') {
-                window.frequencyEQ.init(this.audioCtx, this.sourceNode);
+            // Hand over audio context initialization and routing to eqEngine
+            if (window.eqEngine && typeof window.eqEngine.initAudioContext === 'function') {
+                window.eqEngine.initAudioContext(this.audio);
+                this.audioCtx = window.eqEngine.audioCtx;
             } else {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.audioCtx = new AudioCtx();
+                this.sourceNode = this.audioCtx.createMediaElementSource(this.audio);
                 this.sourceNode.connect(this.audioCtx.destination);
             }
 
@@ -71,8 +71,10 @@ class AudioEngine {
         // Setup Web Audio Context on first playback
         this.initWebAudio();
 
-        // Resume Audio Context if suspended by browser autoplay policy
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        // Resume Audio Context via EQ Engine or direct context reference
+        if (window.eqEngine && typeof window.eqEngine.resumeContext === 'function') {
+            window.eqEngine.resumeContext();
+        } else if (this.audioCtx && this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
 
