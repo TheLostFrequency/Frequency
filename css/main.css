@@ -6,8 +6,8 @@
     --font-mono: 'Helvetica Neue', Arial, sans-serif;
     --shadow-deep: 0 30px 60px rgba(0,0,0,0.95);
     --accent-cyan: #00F2FE;
-    --glass-border: rgba(255, 255, 255, 0.4);
-    --glass-bg: rgba(180, 215, 235, 0.18);
+    --glass-border: rgba(255, 255, 255, 0.45);
+    --glass-bg: rgba(255, 255, 255, 0.07);
 }
 
 * {
@@ -167,7 +167,7 @@ input:focus { border-color: #555; }
 .btn-primary:hover { background: #fff; transform: translateY(-1px); }
 
 /* ==========================================
-   GLASS BLOCK HARDWARE RACK EQUALIZER (MOCKUP ACCURATE)
+   PURE ULTRA-CLEAR GLASS BLOCK EQUALIZER
    ========================================== */
 .eq-overlay {
     position: absolute;
@@ -184,22 +184,25 @@ input:focus { border-color: #555; }
 
 .eq-overlay.hidden { display: none !important; }
 
-/* Thick Heavy Refractive Glass Body */
+/* Thick Photorealistic Clear Glass Body */
 .eq-glass-panel {
     pointer-events: auto;
     width: min(92%, 960px);
-    background: linear-gradient(135deg, rgba(200, 230, 245, 0.28) 0%, rgba(100, 150, 180, 0.12) 100%);
-    backdrop-filter: blur(16px) saturate(180%) contrast(110%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%) contrast(110%);
-    border: 2px solid var(--glass-border);
-    border-radius: 8px;
+    background: 
+        radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 60%),
+        radial-gradient(ellipse at bottom right, rgba(160, 210, 240, 0.12) 0%, rgba(0, 0, 0, 0) 70%),
+        rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(35px) saturate(220%) contrast(110%);
+    -webkit-backdrop-filter: blur(35px) saturate(220%) contrast(110%);
+    border: 1.5px solid var(--glass-border);
+    border-radius: 12px;
     box-shadow: 
-        0 40px 80px rgba(0, 0, 0, 0.6),
-        inset 0 2px 4px rgba(255, 255, 255, 0.8),
-        inset 0 -4px 12px rgba(0, 0, 0, 0.3),
-        inset 2px 0 6px rgba(255, 255, 255, 0.4);
+        0 40px 90px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+        inset 1px 0 2px rgba(255, 255, 255, 0.5);
     padding: 24px;
-    color: #DDEEFA;
+    color: #FFFFFF;
     animation: eqPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -212,37 +215,38 @@ input:focus { border-color: #555; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     padding-bottom: 10px;
     margin-bottom: 14px;
 }
 
 .eq-brand-title {
-    font-size: 16px;
+    font-size: 14px;
     letter-spacing: 4px;
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.95);
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    color: #FFFFFF;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
 }
 
 .eq-brand-logo {
-    font-size: 16px;
+    font-size: 14px;
     letter-spacing: 6px;
     font-weight: 900;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .eq-visualizer-container {
-    background: rgba(10, 25, 35, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
     padding: 4px;
     margin-bottom: 12px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 #eq-canvas { width: 100%; height: 75px; display: block; }
 
-/* 10-Band Hardware Grid */
+/* 10-Band Glass Rack Grid */
 .eq-sliders-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
@@ -268,7 +272,7 @@ input:focus { border-color: #555; }
 .eq-freq {
     font-size: 11px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .slider-track-wrap {
@@ -280,53 +284,51 @@ input:focus { border-color: #555; }
     align-items: center;
     background: rgba(0, 0, 0, 0.2);
     border-left: 1px solid rgba(255, 255, 255, 0.2);
-    border-right: 1px solid rgba(0, 0, 0, 0.4);
-    border-radius: 2px;
+    border-right: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
 }
 
-/* Custom Glass Vertical Sliders */
 .eq-slider[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     writing-mode: bt-lr;
     width: 150px;
-    height: 4px;
+    height: 3px;
     transform: rotate(-90deg);
     background: rgba(255, 255, 255, 0.3);
     outline: none;
 }
 
-/* Glass Slider Knobs (Frosted Block Handles) */
 .eq-slider[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 26px;
-    height: 34px;
+    width: 22px;
+    height: 30px;
     border-radius: 3px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(180, 215, 235, 0.6) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.9);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 225, 240, 0.75) 100%);
+    border: 1px solid #FFFFFF;
     box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.4),
-        inset 0 1px 2px rgba(255, 255, 255, 1);
+        0 4px 10px rgba(0, 0, 0, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 1);
     cursor: pointer;
 }
 
 .eq-slider[type="range"]::-moz-range-thumb {
-    width: 26px;
-    height: 34px;
+    width: 22px;
+    height: 30px;
     border-radius: 3px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(180, 215, 235, 0.6) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.9);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 225, 240, 0.75) 100%);
+    border: 1px solid #FFFFFF;
     box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.4),
-        inset 0 1px 2px rgba(255, 255, 255, 1);
+        0 4px 10px rgba(0, 0, 0, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 1);
     cursor: pointer;
 }
 
-/* Bottom Hardware Row: Controls & Preset Grid */
+/* Bottom Hardware Row */
 .eq-hardware-controls {
     display: flex;
     gap: 16px;
-    border-top: 2px solid rgba(255, 255, 255, 0.25);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
     padding-top: 14px;
 }
 
@@ -334,53 +336,53 @@ input:focus { border-color: #555; }
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 28%;
+    width: 24%;
 }
 
 .ctrl-block {
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 8px;
-    border-radius: 4px;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .ctrl-label {
     font-size: 9px;
     font-weight: 800;
     letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.85);
     display: block;
     margin-bottom: 6px;
 }
 
-.btn-glass-sub {
-    margin-top: 6px;
+.mini-slider {
     width: 100%;
-    padding: 6px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #FFF;
-    font-size: 10px;
-    font-weight: 700;
-    cursor: pointer;
 }
 
-.led-indicators {
+/* Carved / Engraved Glass Inset Logo Block */
+.eq-carved-logo {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+    border-right-color: rgba(255, 255, 255, 0.35);
+    border-radius: 6px;
+    box-shadow: 
+        inset 2px 2px 5px rgba(0, 0, 0, 0.6),
+        inset -1px -1px 2px rgba(255, 255, 255, 0.2);
 }
 
-.led {
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.led.active {
-    color: #FFF;
-    text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+.carved-emblem {
+    width: 60px;
+    height: auto;
+    opacity: 0.85;
+    filter: 
+        drop-shadow(1px 1px 0px rgba(255, 255, 255, 0.5))
+        drop-shadow(-1px -1px 1px rgba(0, 0, 0, 0.9));
 }
 
 /* Tactile Glass Acoustic Preset Grid */
@@ -392,29 +394,31 @@ input:focus { border-color: #555; }
 }
 
 .preset-btn {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
     color: rgba(255, 255, 255, 0.9);
     font-size: 8px;
     font-weight: 800;
     letter-spacing: 0.5px;
-    padding: 8px 4px;
+    padding: 10px 4px;
     cursor: pointer;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.2);
     transition: all 0.15s ease;
 }
 
 .preset-btn:hover {
-    background: rgba(255, 255, 255, 0.35);
-    color: #FFF;
+    background: rgba(255, 255, 255, 0.22);
+    color: #FFFFFF;
 }
 
 .preset-btn.active {
-    background: rgba(255, 255, 255, 0.5);
-    color: #000;
-    border-color: #FFF;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.9);
+    color: #000000;
+    border-color: #FFFFFF;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
 }
 
 /* ==========================================
@@ -551,7 +555,7 @@ input:focus { border-color: #555; }
 .view-panel { flex: 1; position: relative; overflow: hidden; display: none; }
 .view-panel.active { display: block !important; }
 
-/* ARCHITECTURAL STAGE (HARDWARE ACCELERATED) */
+/* ARCHITECTURAL STAGE */
 .architectural-stage {
     width: 100vw;
     height: 100vh;
@@ -893,7 +897,7 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
 .search-container { padding: 120px 60px 20px 60px; }
 
 /* ==========================================
-   MOBILE OPTIMIZATION OVERRIDES (UNDER 768px)
+   MOBILE OPTIMIZATION OVERRIDES
    ========================================== */
 @media (max-width: 768px) {
     .app-container {
@@ -925,28 +929,11 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
         justify-content: space-between;
     }
 
-    .record-object {
-        width: 200px;
-        height: 200px;
-    }
-
-    .vinyl-disc {
-        width: 190px;
-        height: 190px;
-    }
-
-    .center-monolith {
-        bottom: 18%;
-    }
-
-    .monolith-top {
-        width: 240px;
-        height: 46px;
-    }
-
-    .active-title-text {
-        font-size: 18px;
-    }
+    .record-object { width: 200px; height: 200px; }
+    .vinyl-disc { width: 190px; height: 190px; }
+    .center-monolith { bottom: 18%; }
+    .monolith-top { width: 240px; height: 46px; }
+    .active-title-text { font-size: 18px; }
 
     .floating-player {
         width: calc(100% - 20px);
@@ -969,33 +956,10 @@ input[type="range"] { flex: 1; accent-color: #fff; cursor: pointer; height: 3px;
     }
     .albums-grid, .playlists-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
 
-    /* Mobile adjustments for Glass Hardware EQ Overlay */
-    .eq-overlay {
-        top: 80px;
-        bottom: 70px;
-    }
-
-    .eq-glass-panel {
-        width: 98%;
-        padding: 12px;
-        max-height: 85vh;
-        overflow-y: auto;
-    }
-
-    .eq-sliders-grid {
-        gap: 2px;
-        height: 180px;
-    }
-
-    .eq-preset-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    .eq-hardware-controls {
-        flex-direction: column;
-    }
-
-    .eq-left-controls {
-        width: 100%;
-    }
+    .eq-overlay { top: 80px; bottom: 70px; }
+    .eq-glass-panel { width: 98%; padding: 12px; max-height: 85vh; overflow-y: auto; }
+    .eq-sliders-grid { gap: 2px; height: 180px; }
+    .eq-preset-grid { grid-template-columns: repeat(3, 1fr); }
+    .eq-hardware-controls { flex-direction: column; }
+    .eq-left-controls { width: 100%; }
 }
