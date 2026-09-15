@@ -181,27 +181,48 @@ input:focus { border-color: #555; }
 
 .eq-overlay.hidden { display: none !important; }
 
-/* Expanded Width & High Transparency Glass Chassis */
+/* Heavy Crystal Glass Slab Chassis */
 .eq-glass-panel {
     pointer-events: auto;
     width: min(96%, 1200px);
     background: 
-        linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%),
-        radial-gradient(ellipse at top left, rgba(220, 245, 255, 0.08) 0%, transparent 70%),
-        rgba(255, 255, 255, 0.01);
-    backdrop-filter: blur(8px) saturate(140%) contrast(105%);
-    -webkit-backdrop-filter: blur(8px) saturate(140%) contrast(105%);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+        linear-gradient(115deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 30%, transparent 50%, rgba(255, 255, 255, 0.08) 100%),
+        radial-gradient(ellipse at top left, rgba(220, 245, 255, 0.15) 0%, transparent 65%),
+        rgba(255, 255, 255, 0.015);
+    backdrop-filter: blur(14px) saturate(180%) contrast(110%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%) contrast(110%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 16px;
     box-shadow: 
-        0 40px 100px rgba(0, 0, 0, 0.7),
-        0 0 40px rgba(200, 235, 255, 0.15),
-        inset 0 1px 2px rgba(255, 255, 255, 0.6),
-        inset 0 -2px 8px rgba(180, 230, 255, 0.1);
+        0 40px 100px rgba(0, 0, 0, 0.8),
+        0 0 50px rgba(200, 235, 255, 0.2),
+        inset 0 2px 2px rgba(255, 255, 255, 0.9),
+        inset 2px 0 2px rgba(255, 255, 255, 0.7),
+        inset 0 -3px 12px rgba(180, 230, 255, 0.25),
+        inset -2px 0 8px rgba(180, 230, 255, 0.2),
+        inset 0 0 30px rgba(0, 0, 0, 0.4);
     padding: 34px;
     color: #FFFFFF;
     position: relative;
+    overflow: hidden;
     animation: eqPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glass Surface Diagonal Glare Overlay */
+.eq-glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        transparent 45%,
+        rgba(255, 255, 255, 0.06) 50%,
+        transparent 55%
+    );
+    pointer-events: none;
 }
 
 @keyframes eqPopIn {
@@ -213,7 +234,7 @@ input:focus { border-color: #555; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     padding-bottom: 12px;
     margin-bottom: 16px;
     opacity: 1;
@@ -225,29 +246,32 @@ input:focus { border-color: #555; }
     letter-spacing: 6px;
     font-weight: 700;
     color: #FFFFFF;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
 }
 
 .eq-brand-logo {
     font-size: 14px;
     letter-spacing: 8px;
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
 }
 
+/* Glass Inset Visualizer Container */
 .eq-visualizer-container {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 6px;
     padding: 6px;
     margin-bottom: 16px;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+        inset 0 2px 8px rgba(0, 0, 0, 0.6),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2);
 }
 
 #eq-canvas { width: 100%; height: 90px; display: block; }
 
-/* Scaled Up 10-Band Crystal Sliders */
+/* 10-Band Crystal Sliders */
 .eq-sliders-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
@@ -278,6 +302,7 @@ input:focus { border-color: #555; }
     text-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
 }
 
+/* Etched Slider Channels */
 .slider-track-wrap {
     position: relative;
     height: 200px;
@@ -285,10 +310,12 @@ input:focus { border-color: #555; }
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 
+        inset 0 2px 6px rgba(0, 0, 0, 0.6),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
 .eq-slider[type="range"] {
@@ -298,21 +325,21 @@ input:focus { border-color: #555; }
     width: 190px;
     height: 2px;
     transform: rotate(-90deg);
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.35);
     outline: none;
 }
 
-/* Translucent Glass Knobs */
+/* Polished Crystal Slider Handles */
 .eq-slider[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 24px;
     height: 30px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 230, 255, 0.4) 100%);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 230, 255, 0.5) 100%);
     border: 1px solid #FFFFFF;
     box-shadow: 
-        0 4px 10px rgba(0, 0, 0, 0.5),
-        0 0 8px rgba(255, 255, 255, 0.8),
+        0 4px 12px rgba(0, 0, 0, 0.6),
+        0 0 10px rgba(255, 255, 255, 0.9),
         inset 0 1px 2px rgba(255, 255, 255, 1);
     cursor: pointer;
 }
@@ -320,22 +347,22 @@ input:focus { border-color: #555; }
 .eq-slider[type="range"]::-moz-range-thumb {
     width: 24px;
     height: 30px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 230, 255, 0.4) 100%);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(200, 230, 255, 0.5) 100%);
     border: 1px solid #FFFFFF;
     box-shadow: 
-        0 4px 10px rgba(0, 0, 0, 0.5),
-        0 0 8px rgba(255, 255, 255, 0.8),
+        0 4px 12px rgba(0, 0, 0, 0.6),
+        0 0 10px rgba(255, 255, 255, 0.9),
         inset 0 1px 2px rgba(255, 255, 255, 1);
     cursor: pointer;
 }
 
-/* Bottom Hardware Row */
+/* Bottom Hardware Controls */
 .eq-hardware-controls {
     display: flex;
     gap: 18px;
     align-items: stretch;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
     padding-top: 16px;
 }
 
@@ -347,11 +374,13 @@ input:focus { border-color: #555; }
 }
 
 .ctrl-block {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 12px;
     border-radius: 4px;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 
 .ctrl-label {
@@ -369,7 +398,7 @@ input:focus { border-color: #555; }
     width: 100%;
 }
 
-/* CARVED CRYSTAL EMBLEM BLOCK */
+/* Carved Emblem Recess */
 .eq-carved-logo {
     flex: 1;
     display: flex;
@@ -377,12 +406,12 @@ input:focus { border-color: #555; }
     align-items: center;
     min-height: 115px;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     box-shadow: 
-        inset 0 1px 4px rgba(0, 0, 0, 0.3),
-        inset 0 0 15px rgba(255, 255, 255, 0.05);
+        inset 0 2px 6px rgba(0, 0, 0, 0.5),
+        inset 0 0 15px rgba(255, 255, 255, 0.08);
     opacity: 1;
     pointer-events: auto;
 }
@@ -397,7 +426,7 @@ input:focus { border-color: #555; }
         drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.8));
 }
 
-/* Etched Crystal Preset Buttons */
+/* Glass Preset Buttons */
 .eq-preset-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -406,8 +435,8 @@ input:focus { border-color: #555; }
 }
 
 .preset-btn {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     color: rgba(255, 255, 255, 0.9);
     font-size: 9px;
@@ -415,22 +444,28 @@ input:focus { border-color: #555; }
     letter-spacing: 1px;
     padding: 12px 6px;
     cursor: pointer;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
 }
 
 .preset-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.18);
     color: #FFFFFF;
     border-color: #FFFFFF;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    box-shadow: 
+        0 0 15px rgba(255, 255, 255, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .preset-btn.active {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     color: #000000;
     border-color: #FFFFFF;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+    box-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.9),
+        inset 0 0 10px rgba(255, 255, 255, 0.6);
 }
 
 /* ==========================================
