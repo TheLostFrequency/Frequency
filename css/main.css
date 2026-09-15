@@ -164,7 +164,7 @@ input:focus { border-color: #555; }
 .btn-primary:hover { background: #fff; transform: translateY(-1px); }
 
 /* ==========================================
-   PURE CRYSTAL GLASS BLOCK EQUALIZER
+   PURE CRYSTAL GLASS BLOCK EQUALIZER (PURE CSS)
    ========================================== */
 .eq-overlay {
     position: absolute;
@@ -181,20 +181,25 @@ input:focus { border-color: #555; }
 
 .eq-overlay.hidden { display: none !important; }
 
-/* Image-Based Crystal Panel Frame */
+/* Native Pure CSS Glass Panel */
 .eq-glass-panel {
     pointer-events: auto;
     width: min(92%, 960px);
-    aspect-ratio: 960 / 640;
-    background-image: url('../assets/eq-panel.png');
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
-    padding: 4%;
+    background: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%),
+        radial-gradient(ellipse at top left, rgba(220, 245, 255, 0.2) 0%, transparent 70%),
+        rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px) saturate(160%) contrast(115%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%) contrast(115%);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    box-shadow: 
+        0 30px 80px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(200, 235, 255, 0.2),
+        inset 0 1px 2px rgba(255, 255, 255, 0.8),
+        inset 0 -2px 8px rgba(180, 230, 255, 0.2),
+        inset 2px 0 8px rgba(255, 255, 255, 0.4);
+    padding: 28px;
     color: #FFFFFF;
     position: relative;
     animation: eqPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -209,11 +214,11 @@ input:focus { border-color: #555; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-bottom: 14px;
-    opacity: 0; /* Hidden to rely on baked-in image labels */
-    pointer-events: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .eq-brand-title {
@@ -233,17 +238,17 @@ input:focus { border-color: #555; }
 }
 
 .eq-visualizer-container {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin-bottom: 12px;
-    box-shadow: none;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    padding: 6px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 #eq-canvas { width: 100%; height: 75px; display: block; }
 
-/* 10-Band Crystal Sliders Overlay */
+/* 10-Band Crystal Sliders */
 .eq-sliders-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
@@ -281,10 +286,10 @@ input:focus { border-color: #555; }
     display: flex;
     justify-content: center;
     align-items: center;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .eq-slider[type="range"] {
@@ -294,7 +299,7 @@ input:focus { border-color: #555; }
     width: 150px;
     height: 2px;
     transform: rotate(-90deg);
-    background: transparent;
+    background: rgba(255, 255, 255, 0.4);
     outline: none;
 }
 
@@ -331,7 +336,7 @@ input:focus { border-color: #555; }
     display: flex;
     gap: 16px;
     align-items: stretch;
-    border-top: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     padding-top: 14px;
 }
 
@@ -343,11 +348,11 @@ input:focus { border-color: #555; }
 }
 
 .ctrl-block {
-    background: transparent;
-    border: none;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     padding: 10px;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 .ctrl-label {
@@ -358,7 +363,7 @@ input:focus { border-color: #555; }
     display: block;
     margin-bottom: 6px;
     text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
-    opacity: 0; /* Hidden to rely on baked-in image text */
+    opacity: 1;
 }
 
 .mini-slider {
@@ -373,12 +378,14 @@ input:focus { border-color: #555; }
     align-items: center;
     min-height: 105px;
     padding: 12px;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    opacity: 0; /* Hidden as the logo is already carved into eq-panel.png */
-    pointer-events: none;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    box-shadow: 
+        inset 0 1px 4px rgba(0, 0, 0, 0.4),
+        inset 0 0 15px rgba(255, 255, 255, 0.05);
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .carved-emblem {
@@ -400,33 +407,31 @@ input:focus { border-color: #555; }
 }
 
 .preset-btn {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 4px;
-    color: transparent; /* Text is visually baked into the image asset */
+    color: rgba(255, 255, 255, 0.9);
     font-size: 8px;
     font-weight: 700;
     letter-spacing: 1px;
     padding: 10px 4px;
     cursor: pointer;
-    box-shadow: none;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
     transition: all 0.2s ease;
 }
 
 .preset-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: transparent;
-    border-color: transparent;
+    background: rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+    border-color: #FFFFFF;
     box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
 }
 
 .preset-btn.active {
-    background: rgba(255, 255, 255, 0.25);
-    color: #FFFFFF;
-    border-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 
-        0 0 20px rgba(255, 255, 255, 0.8),
-        inset 0 0 10px rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.9);
+    color: #000000;
+    border-color: #FFFFFF;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
 }
 
 /* ==========================================
