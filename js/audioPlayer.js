@@ -1,135 +1,65 @@
-/**
- * FREQUENCY AUDIO ENGINE
- * Handles playback, Web Audio API context initialization, filter routing, volume, and player state.
- */
-class AudioEngine {
+export class AudioPlayer {
     constructor() {
-        this.audio = document.getElementById('audioElement');
-        this.playPauseBtn = document.getElementById('btnPlay') || document.getElementById('btnPlayPause');
-        this.seekSlider = document.getElementById('seekSlider');
-        this.volumeSlider = document.getElementById('volumeSlider');
-        this.currentTimeEl = document.getElementById('currentTime');
-        this.durationTimeEl = document.getElementById('durationTime');
-
-        this.currentSong = null;
-
-        // Web Audio API Pipeline Properties
-        this.audioCtx = null;
-        this.sourceNode = null;
-        this.isAudioContextSetup = false;
-
-        this.initListeners();
-    }
-
-    /**
-     * Initializes Web Audio Context on first user interaction
-     * and routes audio through global 10-band Equalizer Engine.
-     */
-    initWebAudio() {
-        if (this.isAudioContextSetup) return;
-
-        try {
-            // Hand over audio context initialization and routing to eqEngine
-            if (window.eqEngine && typeof window.eqEngine.initAudioContext === 'function') {
-                window.eqEngine.initAudioContext(this.audio);
-                this.audioCtx = window.eqEngine.audioCtx;
-            } else {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                this.audioCtx = new AudioCtx();
-                this.sourceNode = this.audioCtx.createMediaElementSource(this.audio);
-                this.sourceNode.connect(this.audioCtx.destination);
-            }
-
-            this.isAudioContextSetup = true;
-        } catch (err) {
-            console.warn('Web Audio Context initialization warning:', err);
-        }
-    }
-
-    loadSong(song) {
-        if (!song) return;
-        this.currentSong = song;
-        this.audio.src = song.audio_url;
+        this.audio = new Audio();
+        this.isPlaying = false;
+        this.currentTime = 0;
+        this.duration = 0;
         
-        // Update Player UI
-        const titleEl = document.getElementById('playerTitle');
-        const artistEl = document.getElementById('playerArtist');
-        const coverEl = document.getElementById('playerCover');
+        // Event listeners hooks
+        this.onTimeUpdate = null;
+        this.onEnded = null;
+        this.onPlayStateChange = null;
 
-        if (titleEl) titleEl.textContent = song.title;
-        if (artistEl) artistEl.textContent = song.artist;
-        if (coverEl && song.cover_url) {
-            coverEl.style.backgroundImage = `url('${song.cover_url}')`;
+        this.audio.addEventListener('timeupdate', () => {
+            this.currentTime = this.audio.currentTime;
+            if (this.onTimeUpdate) this.onTimeUpdate(this.currentTime, this.duration);
+        });
+
+        this.audio.addEventListener('loadedmetadata', () => {
+            this.duration = this.audio.duration;
+        });
+
+        this.audio.addEventListener('ended', () => {
+            this.isPlaying = false;
+            if (this.onEnded) this.onEnded();
+        });
+    }
+
+    load(track) {
+        if (track && track.audioUrl) {
+            this.audio.src = track.audioUrl;
+            this.audio.load();
         }
-
-        this.play();
     }
 
     play() {
-        if (!this.audio.src) return;
-
-        // Setup Web Audio Context on first playback
-        this.initWebAudio();
-
-        // Resume Audio Context via EQ Engine or direct context reference
-        if (window.eqEngine && typeof window.eqEngine.resumeContext === 'function') {
-            window.eqEngine.resumeContext();
-        } else if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume();
-        }
-
-        this.audio.play().catch((e) => console.log("Playback interrupted:", e));
-        if (this.playPauseBtn) this.playPauseBtn.textContent = '⏸';
+        this.audio.play().then(() => {
+            this.isPlaying = true;
+            if (this.onPlayStateChange) this.onPlayStateChange(true);
+        }).catch(err => console.log("Playback prevented:", err));
     }
 
     pause() {
         this.audio.pause();
-        if (this.playPauseBtn) this.playPauseBtn.textContent = '▶';
+        this.isPlaying = false;
+        if (this.onPlayStateChange) this.onPlayStateChange(false);
     }
 
     togglePlay() {
-        if (this.audio.paused) {
-            this.play();
-        } else {
+        if (this.isPlaying) {
             this.pause();
+        } else {
+            this.play();
         }
     }
 
-    initListeners() {
-        if (this.playPauseBtn) {
-            this.playPauseBtn.addEventListener('click', () => this.togglePlay());
-        }
-
-        this.audio.addEventListener('timeupdate', () => {
-            if (this.audio.duration && this.seekSlider) {
-                const pct = (this.audio.currentTime / this.audio.duration) * 100;
-                this.seekSlider.value = pct;
-                if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(this.audio.currentTime);
-                if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(this.audio.duration);
-            }
-        });
-
-        if (this.seekSlider) {
-            this.seekSlider.addEventListener('input', () => {
-                if (this.audio.duration) {
-                    this.audio.currentTime = (this.seekSlider.value / 100) * this.audio.duration;
-                }
-            });
-        }
-
-        if (this.volumeSlider) {
-            this.volumeSlider.addEventListener('input', () => {
-                this.audio.volume = this.volumeSlider.value / 100;
-            });
+    seek(timeInSeconds) {
+        if (!isNaN(this.audio.duration)) {
+            this.audio.currentTime = timeInSeconds;
         }
     }
 
-    formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    setVolume(value) {
+        this.audio.volume = Math.max(0, Math.min(1, value));
     }
 }
-
-// Instantiate engine globally
-window.audioEngine = new AudioEngine();
