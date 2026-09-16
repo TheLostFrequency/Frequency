@@ -5,7 +5,6 @@ export class AudioPlayer {
         this.currentTime = 0;
         this.duration = 0;
         
-        // Event listeners hooks
         this.onTimeUpdate = null;
         this.onEnded = null;
         this.onPlayStateChange = null;
