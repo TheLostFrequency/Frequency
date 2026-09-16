@@ -32,6 +32,7 @@ export class AudioAnalyzer {
             node.connect(this.analyser);
             this.analyser.connect(this.audioCtx.destination);
             this.isInitialized = true;
+            window.frequencyAnalyzer = this;
             return true;
         } catch (error) {
             console.warn('Audio analyzer connection note:', error);
