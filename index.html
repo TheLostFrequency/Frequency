@@ -24,26 +24,27 @@
 </head>
 <body class="w-screen h-screen relative flex flex-col justify-between p-6 select-none overflow-hidden vault-container">
 
-    <!-- PURE CSS ARCHITECTURAL ENVIRONMENT -->
+    <!-- ARCHITECTURAL ENVIRONMENT BACKGROUND -->
     <div class="absolute inset-0 z-0 pointer-events-none architectural-bg">
         <div class="absolute inset-0 bg-gradient-to-b from-[#080a0f] via-[#050608] to-[#030406]"></div>
-        <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[800px] h-full border-x border-white/[0.03] flex justify-between">
-            <div class="w-20 h-full bg-gradient-to-r from-white/[0.01] to-transparent"></div>
-            <div class="w-20 h-full bg-gradient-to-l from-white/[0.01] to-transparent"></div>
+        <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[900px] h-full border-x border-white/[0.03] flex justify-between">
+            <div class="w-24 h-full bg-gradient-to-r from-white/[0.01] to-transparent"></div>
+            <div class="w-24 h-full bg-gradient-to-l from-white/[0.01] to-transparent"></div>
         </div>
     </div>
 
     <!-- TOP NAVIGATION -->
     <header class="flex justify-between items-center z-35 select-none relative">
         <div class="flex items-center space-x-3">
-            <svg class="w-6 h-6 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <img src="assets/logo.png" class="w-7 h-7 object-contain opacity-95" alt="FREQUENCY Logo">
             <span class="tracking-[0.25em] font-light text-sm text-white">FREQUENCY</span>
         </div>
         
-        <nav class="flex space-x-8 text-xs tracking-[0.2em]">
-            <a href="#" class="text-white border-b border-white pb-1 font-medium" id="nav-collection">COLLECTION</a>
-            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-transmissions">TRANSMISSIONS</a>
-            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-signals">SIGNALS</a>
+        <nav class="flex space-x-6 text-[11px] tracking-[0.18em]">
+            <a href="#" class="text-white border-b border-white pb-1 font-medium transition" id="nav-collection">COLLECTION</a>
+            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-listview">LIST VIEW</a>
+            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-equalizer">EQUALIZER</a>
+            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-transmission">TRANSMISSION</a>
             <a href="#" class="text-gray-400 hover:text-white transition" id="nav-profile">PROFILE</a>
         </nav>
 
@@ -55,33 +56,62 @@
     <!-- INTERACTIVE VIEWPORT OVERLAY -->
     <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
         
-        <!-- Centerpiece Altar Artifact -->
-        <div class="absolute flex flex-col items-center top-[42%] pointer-events-auto">
-            <div id="active-artwork-container" class="w-32 h-32 border border-white/20 bg-black/90 shadow-2xl p-2 relative mb-4 transition-all duration-500">
-                <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-95 filter contrast-125" alt="Vault Artifact">
-                <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
-            </div>
-
-            <div class="flex items-center space-x-3 mb-2 opacity-60">
-                <div class="h-[1px] w-10 bg-white/40"></div>
-                <span class="text-[9px] tracking-[0.3em] text-white">NOW PLAYING</span>
-                <div class="h-[1px] w-10 bg-white/40"></div>
-            </div>
-        </div>
-
-        <!-- RIGHT-SIDE CURVED SIGNAL SELECTOR -->
-        <div class="absolute right-[8%] top-1/2 -translate-y-1/2 h-[550px] w-[340px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
-            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-3 text-right pr-16" id="song-list">
-                <!-- Populated dynamically from Supabase or empty vault state -->
-            </div>
-        </div>
-
-        <!-- TRANSMISSIONS VIEW -->
-        <div id="transmissions-view" class="absolute inset-0 bg-[#050608]/95 backdrop-blur-xl z-40 hidden flex items-center justify-center pointer-events-auto">
-            <div class="max-w-xl p-8 border border-white/10 bg-[#090a0e] text-left relative shadow-2xl">
-                <div class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer" id="close-transmissions">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        <!-- COLLECTION VIEW (Default Architectural Pedestal View) -->
+        <div id="view-collection" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <!-- Centerpiece Altar Artifact -->
+            <div class="absolute flex flex-col items-center top-[38%] pointer-events-auto">
+                <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black/90 shadow-2xl p-2 relative mb-4 transition-all duration-500">
+                    <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-95 filter contrast-125" alt="Vault Artifact">
+                    <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
                 </div>
+
+                <div class="flex items-center space-x-3 mb-2 opacity-60">
+                    <div class="h-[1px] w-12 bg-white/40"></div>
+                    <span class="text-[9px] tracking-[0.3em] text-white">NOW PLAYING</span>
+                    <div class="h-[1px] w-12 bg-white/40"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT-SIDE CURVED SIGNAL SELECTOR -->
+            <div class="absolute right-[8%] top-1/2 -translate-y-1/2 h-[550px] w-[340px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
+                <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-3 text-right pr-16" id="song-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- LIST VIEW (Alternative tabular library view) -->
+        <div id="view-listview" class="absolute inset-0 bg-[#050608]/90 backdrop-blur-md z-30 hidden flex flex-col items-center justify-center pointer-events-auto p-12">
+            <div class="w-full max-w-3xl bg-[#090a0e] border border-white/15 p-6 shadow-2xl max-h-[70vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h2 class="text-sm tracking-[0.25em] text-white font-medium">VAULT LIST VIEW</h2>
+                    <span class="text-[10px] text-gray-400 tracking-widest" id="list-count">0 SIGNALS</span>
+                </div>
+                <div id="list-container" class="space-y-2">
+                    <!-- Dynamic list items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- EQUALIZER VIEW -->
+        <div id="view-equalizer" class="absolute inset-0 bg-[#050608]/90 backdrop-blur-md z-30 hidden flex flex-col items-center justify-center pointer-events-auto">
+            <div class="w-full max-w-xl bg-[#090a0e] border border-white/15 p-8 shadow-2xl text-center">
+                <h2 class="text-sm tracking-[0.25em] text-white font-medium mb-2">SIGNAL EQUALIZER ARCHITECTURE</h2>
+                <p class="text-xs text-gray-400 tracking-wider mb-8">Fine-tune frequency response and gain parameters.</p>
+                <div class="grid grid-cols-5 gap-6 mb-8">
+                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">60Hz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
+                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">250Hz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
+                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">1kHz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
+                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">4kHz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
+                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">16kHz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
+                </div>
+                <div class="text-[10px] tracking-[0.2em] text-white/50">SYSTEM FREQUENCY MATRIX ACTIVE</div>
+            </div>
+        </div>
+
+        <!-- TRANSMISSION VIEW -->
+        <div id="view-transmission" class="absolute inset-0 bg-[#050608]/95 backdrop-blur-xl z-30 hidden flex items-center justify-center pointer-events-auto">
+            <div class="max-w-xl p-8 border border-white/10 bg-[#090a0e] text-left relative shadow-2xl">
                 <h2 class="text-2xl font-light tracking-[0.25em] text-white mb-2">TRANSMISSION</h2>
                 <h3 class="text-xs tracking-[0.2em] text-gray-400 mb-6">THE SIGNAL IS NOT YET ACTIVE.</h3>
                 <p class="text-sm text-gray-400 font-light leading-relaxed mb-4">
@@ -89,6 +119,29 @@
                     A new way to discover, share, and experience music is coming to Frequency.
                 </p>
                 <div class="text-[10px] tracking-[0.3em] text-white/60 mt-8">STAND BY.</div>
+            </div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="view-profile" class="absolute inset-0 bg-[#050608]/90 backdrop-blur-md z-30 hidden flex flex-col items-center justify-center pointer-events-auto">
+            <div class="w-full max-w-md bg-[#090a0e] border border-white/15 p-8 shadow-2xl text-left">
+                <div class="flex items-center space-x-4 mb-6 border-b border-white/10 pb-4">
+                    <img src="assets/logo.png" class="w-10 h-10 object-contain">
+                    <div>
+                        <h2 class="text-sm font-medium tracking-[0.2em] text-white">VAULT OWNER</h2>
+                        <p class="text-[10px] text-gray-400 tracking-wider">SECURE SUPABASE SESSION ACTIVE</p>
+                    </div>
+                </div>
+                <div class="space-y-4 text-xs text-gray-300">
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-gray-500">Storage Buckets</span>
+                        <span>audio / covers</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-gray-500">Vault Protocol</span>
+                        <span>Cosmic Brutalist v2.6</span>
+                    </div>
+                </div>
             </div>
         </div>
 
