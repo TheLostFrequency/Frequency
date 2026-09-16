@@ -22,61 +22,64 @@
     </script>
     <link rel="stylesheet" href="main.css">
 </head>
-<body class="w-screen h-screen relative flex flex-col justify-between p-6 select-none overflow-hidden">
+<body class="w-screen h-screen relative flex flex-col justify-between p-6 select-none overflow-hidden vault-container">
+
+    <!-- PURE CSS ARCHITECTURAL ENVIRONMENT -->
+    <div class="absolute inset-0 z-0 pointer-events-none architectural-bg">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#080a0f] via-[#050608] to-[#030406]"></div>
+        <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[800px] h-full border-x border-white/[0.03] flex justify-between">
+            <div class="w-20 h-full bg-gradient-to-r from-white/[0.01] to-transparent"></div>
+            <div class="w-20 h-full bg-gradient-to-l from-white/[0.01] to-transparent"></div>
+        </div>
+    </div>
 
     <!-- TOP NAVIGATION -->
-    <header class="flex justify-between items-center z-35 select-none">
+    <header class="flex justify-between items-center z-35 select-none relative">
         <div class="flex items-center space-x-3">
-            <img src="assets/logo.png" class="w-6 h-6 object-contain opacity-90" alt="FREQUENCY Logo">
+            <svg class="w-6 h-6 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             <span class="tracking-[0.25em] font-light text-sm text-white">FREQUENCY</span>
         </div>
         
         <nav class="flex space-x-8 text-xs tracking-[0.2em]">
             <a href="#" class="text-white border-b border-white pb-1 font-medium" id="nav-collection">COLLECTION</a>
-            <a href="#" class="text-gray-500 hover:text-gray-300 transition" id="nav-transmissions">TRANSMISSIONS</a>
-            <a href="#" class="text-gray-500 hover:text-gray-300 transition" id="nav-signals">SIGNALS</a>
-            <a href="#" class="text-gray-500 hover:text-gray-300 transition" id="nav-profile">PROFILE</a>
+            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-transmissions">TRANSMISSIONS</a>
+            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-signals">SIGNALS</a>
+            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-profile">PROFILE</a>
         </nav>
 
-        <div class="text-gray-500 hover:text-white cursor-pointer transition">
+        <div class="text-gray-400 hover:text-white cursor-pointer transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </div>
     </header>
 
-    <!-- ARCHITECTURAL VIEWPORT -->
-    <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10" id="main-viewport">
+    <!-- INTERACTIVE VIEWPORT OVERLAY -->
+    <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
         
-        <!-- Centerpiece Monumental Pedestal & Active Artwork -->
-        <div class="absolute flex flex-col items-center bottom-[26%] pointer-events-auto">
-            <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black shadow-2xl p-2 relative mb-6 transition-all duration-500 group">
-                <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-90 filter contrast-125" alt="Current Vault Artifact">
+        <!-- Centerpiece Altar Artifact -->
+        <div class="absolute flex flex-col items-center top-[42%] pointer-events-auto">
+            <div id="active-artwork-container" class="w-32 h-32 border border-white/20 bg-black/90 shadow-2xl p-2 relative mb-4 transition-all duration-500">
+                <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-95 filter contrast-125" alt="Vault Artifact">
                 <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
             </div>
 
             <div class="flex items-center space-x-3 mb-2 opacity-60">
-                <div class="h-[1px] w-12 bg-white/40"></div>
+                <div class="h-[1px] w-10 bg-white/40"></div>
                 <span class="text-[9px] tracking-[0.3em] text-white">NOW PLAYING</span>
-                <div class="h-[1px] w-12 bg-white/40"></div>
-            </div>
-
-            <div class="w-52 h-28 bg-[#090a0e] border border-white/10 flex flex-col items-center justify-center relative shadow-2xl">
-                <div class="carved-emblem w-20 h-10 rounded flex items-center justify-center text-white/50">
-                    <img src="assets/logo.png" class="w-6 h-6 object-contain opacity-70">
-                </div>
+                <div class="h-[1px] w-10 bg-white/40"></div>
             </div>
         </div>
 
         <!-- RIGHT-SIDE CURVED SIGNAL SELECTOR -->
-        <div class="absolute right-[-120px] top-1/2 -translate-y-1/2 h-[600px] w-[380px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
-            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-4 text-right pr-28" id="song-list">
-                <!-- Dynamically populated from Supabase or empty vault state -->
+        <div class="absolute right-[8%] top-1/2 -translate-y-1/2 h-[550px] w-[340px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
+            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-3 text-right pr-16" id="song-list">
+                <!-- Populated dynamically from Supabase or empty vault state -->
             </div>
         </div>
 
-        <!-- TRANSMISSIONS VIEW (Hidden by default until tab switch) -->
+        <!-- TRANSMISSIONS VIEW -->
         <div id="transmissions-view" class="absolute inset-0 bg-[#050608]/95 backdrop-blur-xl z-40 hidden flex items-center justify-center pointer-events-auto">
             <div class="max-w-xl p-8 border border-white/10 bg-[#090a0e] text-left relative shadow-2xl">
-                <div class="absolute top-4 right-4 text-gray-500 hover:text-white cursor-pointer" id="close-transmissions">
+                <div class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer" id="close-transmissions">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
                 </div>
                 <h2 class="text-2xl font-light tracking-[0.25em] text-white mb-2">TRANSMISSION</h2>
@@ -92,15 +95,15 @@
     </main>
 
     <!-- BOTTOM-CENTER CONSOLE MEDIA PLAYER -->
-    <footer class="w-full flex justify-center z-30 pointer-events-auto pb-2">
+    <footer class="w-full flex justify-center z-30 pointer-events-auto pb-4 relative">
         <div class="w-[720px] bg-[#090a0e]/95 backdrop-blur-md border border-white/15 px-6 py-4 shadow-2xl relative">
             
-            <div class="flex justify-between items-center text-[9px] tracking-[0.25em] text-gray-500 mb-3">
+            <div class="flex justify-between items-center text-[9px] tracking-[0.25em] text-gray-400 mb-2">
                 <span id="player-status-label">SIGNAL ACTIVE</span>
                 <span>TRANSMISSIONS // 44.1kHz</span>
             </div>
 
-            <div class="relative w-full h-12 mb-3 flex items-center cursor-pointer" id="waveform-container">
+            <div class="relative w-full h-10 mb-2 flex items-center cursor-pointer" id="waveform-container">
                 <canvas id="waveform-canvas" class="w-full h-full"></canvas>
             </div>
 
@@ -136,12 +139,6 @@
 
         </div>
     </footer>
-
-    <!-- BACKGROUND ATMOSPHERE -->
-    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image: url('assets/background.png');"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#050608] via-transparent to-[#050608]"></div>
-    </div>
 
     <!-- Script Entrypoints -->
     <script type="module" src="app.js"></script>
