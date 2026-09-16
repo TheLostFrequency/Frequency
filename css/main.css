@@ -6,8 +6,12 @@ body {
     user-select: none;
 }
 
+.architectural-bg {
+    background: radial-gradient(circle at 50% 40%, #111520 0%, #06080c 60%, #030406 100%);
+}
+
 .curved-track {
-    transform: perspective(1200px) rotateY(-15deg);
+    transform: perspective(1000px) rotateY(-18deg);
 }
 
 .carved-emblem {
@@ -16,7 +20,6 @@ body {
     border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Custom Scrollbar & Selection Styling */
 ::-webkit-scrollbar {
     width: 4px;
 }
