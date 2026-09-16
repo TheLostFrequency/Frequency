@@ -12,8 +12,8 @@
             theme: {
                 extend: {
                     colors: {
-                        sciDark: '#08090c',
-                        sciPanel: '#0e1015',
+                        sciDark: '#050608',
+                        sciPanel: '#090a0e',
                         sciBorder: '#1f242d',
                     }
                 }
@@ -22,20 +22,20 @@
     </script>
     <link rel="stylesheet" href="main.css">
 </head>
-<body class="w-screen h-screen relative flex flex-col justify-between p-6">
+<body class="w-screen h-screen relative flex flex-col justify-between p-6 select-none overflow-hidden">
 
     <!-- TOP NAVIGATION -->
     <header class="flex justify-between items-center z-35 select-none">
         <div class="flex items-center space-x-3">
-            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <img src="assets/logo.png" class="w-6 h-6 object-contain opacity-90" alt="FREQUENCY Logo">
             <span class="tracking-[0.25em] font-light text-sm text-white">FREQUENCY</span>
         </div>
         
         <nav class="flex space-x-8 text-xs tracking-[0.2em]">
-            <a href="#" class="text-white border-b border-white pb-1 font-medium">COLLECTION</a>
-            <a href="#" class="text-gray-500 hover:text-gray-300 transition">TRANSMISSIONS</a>
-            <a href="#" class="text-gray-500 hover:text-gray-300 transition">SIGNALS</a>
-            <a href="#" class="text-gray-500 hover:text-gray-300 transition">PROFILE</a>
+            <a href="#" class="text-white border-b border-white pb-1 font-medium" id="nav-collection">COLLECTION</a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition" id="nav-transmissions">TRANSMISSIONS</a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition" id="nav-signals">SIGNALS</a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition" id="nav-profile">PROFILE</a>
         </nav>
 
         <div class="text-gray-500 hover:text-white cursor-pointer transition">
@@ -44,12 +44,12 @@
     </header>
 
     <!-- ARCHITECTURAL VIEWPORT -->
-    <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+    <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10" id="main-viewport">
         
-        <!-- Centerpiece Pedestal & Active Artwork -->
-        <div class="absolute flex flex-col items-center bottom-[28%] pointer-events-auto">
-            <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black shadow-2xl p-2 relative mb-6 transition-all duration-500">
-                <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-90 filter contrast-125" alt="Current Album">
+        <!-- Centerpiece Monumental Pedestal & Active Artwork -->
+        <div class="absolute flex flex-col items-center bottom-[26%] pointer-events-auto">
+            <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black shadow-2xl p-2 relative mb-6 transition-all duration-500 group">
+                <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-90 filter contrast-125" alt="Current Vault Artifact">
                 <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
             </div>
 
@@ -59,26 +59,44 @@
                 <div class="h-[1px] w-12 bg-white/40"></div>
             </div>
 
-            <div class="w-48 h-32 bg-[#090a0e] border border-white/10 flex flex-col items-center justify-center relative shadow-2xl">
-                <div class="carved-emblem w-20 h-10 rounded flex items-center justify-center text-white/40">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <div class="w-52 h-28 bg-[#090a0e] border border-white/10 flex flex-col items-center justify-center relative shadow-2xl">
+                <div class="carved-emblem w-20 h-10 rounded flex items-center justify-center text-white/50">
+                    <img src="assets/logo.png" class="w-6 h-6 object-contain opacity-70">
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT-SIDE CURVED SONG SELECTOR -->
-        <div class="absolute right-[-140px] top-1/2 -translate-y-1/2 h-[600px] w-[400px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
-            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-4 text-right pr-32" id="song-list"></div>
+        <!-- RIGHT-SIDE CURVED SIGNAL SELECTOR -->
+        <div class="absolute right-[-120px] top-1/2 -translate-y-1/2 h-[600px] w-[380px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
+            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-4 text-right pr-28" id="song-list">
+                <!-- Dynamically populated from Supabase or empty vault state -->
+            </div>
+        </div>
+
+        <!-- TRANSMISSIONS VIEW (Hidden by default until tab switch) -->
+        <div id="transmissions-view" class="absolute inset-0 bg-[#050608]/95 backdrop-blur-xl z-40 hidden flex items-center justify-center pointer-events-auto">
+            <div class="max-w-xl p-8 border border-white/10 bg-[#090a0e] text-left relative shadow-2xl">
+                <div class="absolute top-4 right-4 text-gray-500 hover:text-white cursor-pointer" id="close-transmissions">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                </div>
+                <h2 class="text-2xl font-light tracking-[0.25em] text-white mb-2">TRANSMISSION</h2>
+                <h3 class="text-xs tracking-[0.2em] text-gray-400 mb-6">THE SIGNAL IS NOT YET ACTIVE.</h3>
+                <p class="text-sm text-gray-400 font-light leading-relaxed mb-4">
+                    Something is being prepared.<br>
+                    A new way to discover, share, and experience music is coming to Frequency.
+                </p>
+                <div class="text-[10px] tracking-[0.3em] text-white/60 mt-8">STAND BY.</div>
+            </div>
         </div>
 
     </main>
 
-    <!-- BOTTOM-CENTER MEDIA PLAYER -->
+    <!-- BOTTOM-CENTER CONSOLE MEDIA PLAYER -->
     <footer class="w-full flex justify-center z-30 pointer-events-auto pb-2">
         <div class="w-[720px] bg-[#090a0e]/95 backdrop-blur-md border border-white/15 px-6 py-4 shadow-2xl relative">
             
             <div class="flex justify-between items-center text-[9px] tracking-[0.25em] text-gray-500 mb-3">
-                <span>SIGNAL ACTIVE</span>
+                <span id="player-status-label">SIGNAL ACTIVE</span>
                 <span>TRANSMISSIONS // 44.1kHz</span>
             </div>
 
@@ -92,8 +110,8 @@
                         <img id="player-thumb" src="assets/default-art.jpg" class="w-full h-full object-cover">
                     </div>
                     <div class="overflow-hidden">
-                        <h4 id="player-title" class="text-xs text-white tracking-wider truncate font-medium">Song Ration</h4>
-                        <p id="player-artist" class="text-[10px] text-gray-400 tracking-wide truncate">Artists</p>
+                        <h4 id="player-title" class="text-xs text-white tracking-wider truncate font-medium">Vault Empty</h4>
+                        <p id="player-artist" class="text-[10px] text-gray-400 tracking-wide truncate">Upload via Supabase</p>
                     </div>
                 </div>
 
@@ -110,9 +128,9 @@
                 </div>
 
                 <div class="flex items-center space-x-4 text-[10px] text-gray-400 tracking-widest w-1/4 justify-end">
-                    <span id="current-time">02:15</span>
+                    <span id="current-time">00:00</span>
                     <span class="text-gray-600">/</span>
-                    <span id="total-time">03:45</span>
+                    <span id="total-time">00:00</span>
                 </div>
             </div>
 
@@ -120,12 +138,9 @@
     </footer>
 
     <!-- BACKGROUND ATMOSPHERE -->
-    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image: url('assets/background.png');"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-[#050608] via-transparent to-[#050608]"></div>
-        <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[600px] h-full border-x border-white/5 flex justify-between">
-            <div class="w-12 h-full bg-gradient-to-r from-white/[0.02] to-transparent"></div>
-            <div class="w-12 h-full bg-gradient-to-l from-white/[0.02] to-transparent"></div>
-        </div>
     </div>
 
     <!-- Script Entrypoints -->
