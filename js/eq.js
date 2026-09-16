@@ -15,16 +15,18 @@ export class AudioAnalyzer {
         this.analyser = this.audioCtx.createAnalyser();
         this.analyser.fftSize = 256;
 
-        this.source = this.audioCtx.createMediaElementSource(this.audioElement);
-        this.source.connect(this.analyser);
-        this.analyser.connect(this.audioCtx.destination);
-        
-        this.isInitialized = true;
+        try {
+            this.source = this.audioCtx.createMediaElementSource(this.audioElement);
+            this.source.connect(this.analyser);
+            this.analyser.connect(this.audioCtx.destination);
+            this.isInitialized = true;
+        } catch (e) {
+            console.log("Audio analyzer connection note:", e);
+        }
     }
 
     getWaveformata() {
         if (!this.isInitialized || !this.analyser) {
-            // Fallback simulated data if audio context hasn't started yet
             return new Uint8Array(0);
         }
         const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
