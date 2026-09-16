@@ -3,8 +3,10 @@ export class AudioAnalyzer {
         this.audioCtx = null;
         this.analyser = null;
         this.source = null;
+        this.filters = [];
         this.isInitialized = false;
         this.audioElement = audioElement;
+        this.frequencies = [60, 250, 1000, 4000, 16000];
     }
     init() {
         if (this.isInitialized) return true;
@@ -16,7 +18,18 @@ export class AudioAnalyzer {
         this.analyser.smoothingTimeConstant = 0.72;
         try {
             this.source = this.audioCtx.createMediaElementSource(this.audioElement);
-            this.source.connect(this.analyser);
+            let node = this.source;
+            this.filters = this.frequencies.map((frequency, index) => {
+                const filter = this.audioCtx.createBiquadFilter();
+                filter.type = index === 0 ? 'lowshelf' : index === this.frequencies.length - 1 ? 'highshelf' : 'peaking';
+                filter.frequency.value = frequency;
+                filter.Q.value = index === 0 || index === this.frequencies.length - 1 ? 0.7 : 1;
+                filter.gain.value = 0;
+                node.connect(filter);
+                node = filter;
+                return filter;
+            });
+            node.connect(this.analyser);
             this.analyser.connect(this.audioCtx.destination);
             this.isInitialized = true;
             return true;
@@ -26,6 +39,8 @@ export class AudioAnalyzer {
         }
     }
     resume() { if (this.audioCtx?.state === 'suspended') this.audioCtx.resume(); }
+    setBand(index, value) { if (this.filters[index]) this.filters[index].gain.value = Number(value); }
+    reset() { this.filters.forEach(filter => { filter.gain.value = 0; }); }
     getWaveformData() {
         if (!this.isInitialized || !this.analyser) return new Uint8Array(0);
         const data = new Uint8Array(this.analyser.fftSize);
