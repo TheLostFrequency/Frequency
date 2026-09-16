@@ -1,29 +1,36 @@
-.eq-room-card{width:min(1180px,94vw);max-height:86vh;padding:30px;background:linear-gradient(145deg,rgba(18,18,18,.96),rgba(2,2,2,.985));border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 110px rgba(0,0,0,.9),inset 0 1px rgba(255,255,255,.06),0 0 80px rgba(120,20,16,.08)}
-.eq-room-card:before{inset:9px;border-color:rgba(255,255,255,.035)}
+.eq-room-card{width:min(1180px,94vw);max-height:86vh;padding:30px;background:linear-gradient(145deg,rgba(15,16,17,.985),rgba(1,2,3,.995));border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 110px rgba(0,0,0,.94),inset 0 1px rgba(255,255,255,.08),inset 0 -1px rgba(0,0,0,.9),0 0 90px rgba(110,20,16,.1);position:relative;overflow:auto}
+.eq-room-card:before{inset:8px;border:1px solid rgba(255,255,255,.045);box-shadow:inset 0 0 30px rgba(0,0,0,.7);pointer-events:none}
 .eq-room-card .panel-heading{margin-bottom:18px}
-.eq-instrument{position:relative;padding:18px 20px 20px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.24));box-shadow:inset 0 0 55px rgba(0,0,0,.85),0 12px 30px rgba(0,0,0,.4)}
-.eq-instrument:before{content:"";position:absolute;inset:6px;border:1px solid rgba(255,255,255,.025);pointer-events:none}
-.eq-visual{height:155px;margin:0 0 24px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(0,0,0,.38));position:relative;overflow:hidden;box-shadow:inset 0 0 45px #000}
-.eq-visual:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 8.32%,rgba(255,255,255,.035) 8.36%,transparent 8.4%),repeating-linear-gradient(180deg,transparent 0 24%,rgba(255,255,255,.025) 24.2%,transparent 24.5%);pointer-events:none}
-.eq-visual:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(196,42,32,.3);box-shadow:0 0 12px rgba(196,42,32,.16);pointer-events:none}
-#eq-spectrum{position:absolute;inset:0;width:100%;height:100%;display:block}
-.eq-frequency-scale{display:flex;justify-content:space-between;margin:-18px 3px 19px;color:rgba(255,255,255,.27);font-size:7px;letter-spacing:.15em;pointer-events:none}
+.eq-room-card .panel-heading h2{letter-spacing:.18em;text-shadow:0 0 18px rgba(255,255,255,.08)}
+.eq-instrument{position:relative;padding:20px 20px 22px;border:1px solid rgba(255,255,255,.13);background:linear-gradient(135deg,rgba(31,33,35,.72),rgba(4,5,6,.98) 42%,rgba(13,14,15,.96));box-shadow:inset 0 0 70px rgba(0,0,0,.92),inset 0 1px rgba(255,255,255,.07),0 18px 40px rgba(0,0,0,.5);overflow:hidden}
+.eq-instrument:before{content:"";position:absolute;inset:7px;border:1px solid rgba(255,255,255,.035);box-shadow:inset 0 0 25px rgba(0,0,0,.7);pointer-events:none}
+.eq-instrument:after{content:"SIGNAL PROCESSING // FREQUENCY LAB";position:absolute;right:18px;top:8px;font-size:6px;letter-spacing:.22em;color:rgba(255,255,255,.16);pointer-events:none}
+.eq-visual{height:155px;margin:0 0 24px;border:1px solid rgba(255,255,255,.11);background:radial-gradient(ellipse at 50% 100%,rgba(120,22,18,.12),transparent 55%),linear-gradient(180deg,rgba(0,0,0,.55),rgba(7,8,9,.96));position:relative;overflow:hidden;box-shadow:inset 0 0 55px #000,0 1px rgba(255,255,255,.04)}
+.eq-visual:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 8.32%,rgba(255,255,255,.045) 8.36%,transparent 8.4%),repeating-linear-gradient(180deg,transparent 0 24%,rgba(255,255,255,.035) 24.2%,transparent 24.5%);pointer-events:none}
+.eq-visual:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(196,42,32,.42);box-shadow:0 0 16px rgba(196,42,32,.22);pointer-events:none}
+#eq-spectrum{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 0 5px rgba(190,40,30,.2))}
+.eq-frequency-scale{display:flex;justify-content:space-between;margin:-18px 3px 19px;padding:0 4px;color:rgba(255,255,255,.3);font-size:7px;letter-spacing:.18em;pointer-events:none;text-transform:uppercase}
 .eq-bands{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px;height:245px;padding:0 4px}
-.eq-bands label{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;color:rgba(255,255,255,.55);font-size:8px;letter-spacing:.10em;min-width:0}
-.eq-bands label:before{content:"";position:absolute;top:32px;bottom:28px;width:30px;border:1px solid rgba(255,255,255,.045);background:linear-gradient(90deg,rgba(0,0,0,.5),rgba(255,255,255,.025),rgba(0,0,0,.55));box-shadow:inset 0 0 15px #000;pointer-events:none}
-.eq-bands label>span{position:relative;z-index:2;color:rgba(255,255,255,.62);font-size:9px}
-.eq-bands input{position:relative;z-index:2;margin:0;writing-mode:vertical-lr;direction:rtl;appearance:slider-vertical;width:30px;height:180px;accent-color:#a52520;cursor:ns-resize;opacity:.96}
-.eq-bands small{font-size:7px;color:rgba(255,255,255,.24)}
-.eq-band-value{position:absolute;top:10px;font-size:7px;letter-spacing:.08em;color:rgba(255,255,255,.45);min-width:34px;text-align:center}
-.eq-preset-section{margin-top:20px;border-top:1px solid rgba(255,255,255,.07);padding-top:14px}
-.eq-section-label{font-size:7px;letter-spacing:.22em;color:rgba(255,255,255,.3);margin-bottom:10px}
+.eq-bands label{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;color:rgba(255,255,255,.58);font-size:8px;letter-spacing:.1em;min-width:0}
+.eq-bands label:before{content:"";position:absolute;top:32px;bottom:28px;width:34px;border:1px solid rgba(255,255,255,.065);background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(255,255,255,.035),rgba(0,0,0,.72));box-shadow:inset 0 0 18px #000,0 1px rgba(255,255,255,.025)}
+.eq-bands label:after{content:"";position:absolute;top:47px;bottom:43px;width:1px;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.13) 0 1px,transparent 1px 10px);opacity:.5;pointer-events:none}
+.eq-bands label>span{position:relative;z-index:2;color:rgba(255,255,255,.68);font-size:9px;letter-spacing:.12em;text-shadow:0 1px 2px #000}
+.eq-bands input{position:relative;z-index:3;margin:0;writing-mode:vertical-lr;direction:rtl;appearance:slider-vertical;width:34px;height:180px;accent-color:#a52520;cursor:ns-resize;opacity:.98;filter:drop-shadow(0 2px 3px #000)}
+.eq-bands input::-webkit-slider-runnable-track{background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.08);border-radius:0}
+.eq-bands input::-webkit-slider-thumb{border-radius:1px;box-shadow:0 2px 7px #000,0 0 9px rgba(170,35,28,.28)}
+.eq-bands input::-moz-range-track{background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.18),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.08)}
+.eq-bands input::-moz-range-thumb{border-radius:1px;box-shadow:0 2px 7px #000,0 0 9px rgba(170,35,28,.28)}
+.eq-bands small{font-size:7px;color:rgba(255,255,255,.25);letter-spacing:.12em}
+.eq-band-value{position:absolute;top:10px;font-size:7px;letter-spacing:.08em;color:rgba(255,255,255,.5);min-width:38px;text-align:center;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.035);padding:3px 2px}
+.eq-preset-section{margin-top:20px;border-top:1px solid rgba(255,255,255,.08);padding-top:15px;position:relative}
+.eq-section-label{font-size:7px;letter-spacing:.24em;color:rgba(255,255,255,.34);margin-bottom:10px}
 .eq-presets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-.eq-presets button{min-height:42px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.3));color:rgba(255,255,255,.58);font:inherit;font-size:7px;letter-spacing:.12em;padding:7px 5px;cursor:pointer;transition:.18s ease}
-.eq-presets button:hover{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff}
-.eq-presets button.active{border-color:rgba(196,42,32,.65);background:linear-gradient(180deg,rgba(150,24,20,.28),rgba(0,0,0,.42));color:rgba(255,255,255,.9);box-shadow:inset 0 -2px rgba(196,42,32,.5),0 0 18px rgba(196,42,32,.08)}
+.eq-presets button{min-height:42px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(0,0,0,.38));color:rgba(255,255,255,.6);font:inherit;font-size:7px;letter-spacing:.12em;padding:7px 5px;cursor:pointer;transition:.18s ease;box-shadow:inset 0 1px rgba(255,255,255,.035),0 2px 7px rgba(0,0,0,.3)}
+.eq-presets button:hover{border-color:rgba(255,255,255,.24);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.32));color:#fff;transform:translateY(-1px)}
+.eq-presets button.active{border-color:rgba(196,42,32,.72);background:linear-gradient(180deg,rgba(150,24,20,.34),rgba(0,0,0,.48));color:rgba(255,255,255,.94);box-shadow:inset 0 -2px rgba(196,42,32,.58),inset 0 1px rgba(255,255,255,.06),0 0 20px rgba(196,42,32,.1)}
 .eq-controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-.eq-control{min-height:48px;border:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:rgba(255,255,255,.42);font-size:8px;letter-spacing:.18em}
-.eq-control strong{font-weight:400;color:rgba(255,255,255,.75)}
+.eq-control{min-height:48px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.38));display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:rgba(255,255,255,.43);font-size:8px;letter-spacing:.18em;box-shadow:inset 0 1px rgba(255,255,255,.03)}
+.eq-control strong{font-weight:400;color:rgba(255,255,255,.8);letter-spacing:.12em}
 .eq-reset-wrap{display:flex;justify-content:flex-end;margin-top:12px}
 @media(max-width:900px){.eq-room-card{max-height:88vh;padding:20px}.eq-bands{gap:4px}.eq-presets{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.eq-room-card{padding:14px}.eq-instrument{padding:12px}.eq-visual{height:110px}.eq-bands{height:205px}.eq-bands input{height:150px;width:25px}.eq-bands label:before{width:25px}.eq-presets{grid-template-columns:repeat(2,minmax(0,1fr))}.eq-controls{grid-template-columns:1fr}.eq-frequency-scale{font-size:6px}}
