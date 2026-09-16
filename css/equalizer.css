@@ -5,10 +5,10 @@
 .eq-instrument{position:relative;padding:20px 20px 22px;border:1px solid rgba(255,255,255,.13);background:linear-gradient(135deg,rgba(31,33,35,.72),rgba(4,5,6,.98) 42%,rgba(13,14,15,.96));box-shadow:inset 0 0 70px rgba(0,0,0,.92),inset 0 1px rgba(255,255,255,.07),0 18px 40px rgba(0,0,0,.5);overflow:hidden}
 .eq-instrument:before{content:"";position:absolute;inset:7px;border:1px solid rgba(255,255,255,.035);box-shadow:inset 0 0 25px rgba(0,0,0,.7);pointer-events:none}
 .eq-instrument:after{content:"SIGNAL PROCESSING // FREQUENCY LAB";position:absolute;right:18px;top:8px;font-size:6px;letter-spacing:.22em;color:rgba(255,255,255,.16);pointer-events:none}
-.eq-visual{height:155px;margin:0 0 24px;border:1px solid rgba(255,255,255,.11);background:radial-gradient(ellipse at 50% 100%,rgba(120,22,18,.12),transparent 55%),linear-gradient(180deg,rgba(0,0,0,.55),rgba(7,8,9,.96));position:relative;overflow:hidden;box-shadow:inset 0 0 55px #000,0 1px rgba(255,255,255,.04)}
-.eq-visual:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 8.32%,rgba(255,255,255,.045) 8.36%,transparent 8.4%),repeating-linear-gradient(180deg,transparent 0 24%,rgba(255,255,255,.035) 24.2%,transparent 24.5%);pointer-events:none}
-.eq-visual:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(196,42,32,.42);box-shadow:0 0 16px rgba(196,42,32,.22);pointer-events:none}
-#eq-spectrum{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 0 5px rgba(190,40,30,.2))}
+.eq-visual{height:155px;margin:0 0 24px;border:1px solid rgba(255,255,255,.11);background:radial-gradient(ellipse at 50% 100%,rgba(170,32,24,.18),transparent 58%),radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.035),transparent 62%),linear-gradient(180deg,rgba(1,2,3,.7),rgba(7,8,9,.97));position:relative;overflow:hidden;box-shadow:inset 0 0 55px #000,0 1px rgba(255,255,255,.04),0 0 35px rgba(160,30,24,.06)}
+.eq-visual:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 8.32%,rgba(255,255,255,.065) 8.36%,transparent 8.4%),repeating-linear-gradient(180deg,transparent 0 24%,rgba(255,255,255,.045) 24.2%,transparent 24.5%);pointer-events:none;mask-image:linear-gradient(to bottom,transparent,black 18%,black 82%,transparent)}
+.eq-visual:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(196,42,32,.7);box-shadow:0 0 12px rgba(196,42,32,.45),0 0 28px rgba(196,42,32,.18);pointer-events:none}
+#eq-spectrum{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 0 7px rgba(196,42,32,.32));mix-blend-mode:screen}
 .eq-frequency-scale{display:flex;justify-content:space-between;margin:-18px 3px 19px;padding:0 4px;color:rgba(255,255,255,.3);font-size:7px;letter-spacing:.18em;pointer-events:none;text-transform:uppercase}
 .eq-bands{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px;height:245px;padding:0 4px}
 .eq-bands label{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;color:rgba(255,255,255,.58);font-size:8px;letter-spacing:.1em;min-width:0}
@@ -35,3 +35,25 @@
 @media(max-width:900px){.eq-room-card{max-height:88vh;padding:20px}.eq-bands{gap:4px}.eq-presets{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.eq-room-card{padding:14px}.eq-instrument{padding:12px}.eq-visual{height:110px}.eq-bands{height:205px}.eq-bands input{height:150px;width:25px}.eq-bands label:before{width:25px}.eq-presets{grid-template-columns:repeat(2,minmax(0,1fr))}.eq-controls{grid-template-columns:1fr}.eq-frequency-scale{font-size:6px}}
 #room-equalizer.active-room{display:flex;align-items:center;justify-content:center}
+
+/* Visual-only instrument treatment: same layout, much richer physical depth. */
+.eq-instrument{border-color:rgba(220,220,220,.18);background:linear-gradient(120deg,rgba(255,255,255,.055),transparent 17%,rgba(255,255,255,.018) 47%,rgba(0,0,0,.28) 80%),linear-gradient(180deg,#111315 0%,#050607 55%,#0b0c0d 100%);box-shadow:inset 0 1px rgba(255,255,255,.13),inset 0 -18px 45px rgba(0,0,0,.72),inset 18px 0 35px rgba(255,255,255,.018),0 22px 55px rgba(0,0,0,.7)}
+.eq-instrument:before{inset:5px;border-color:rgba(255,255,255,.065);box-shadow:inset 0 0 45px rgba(0,0,0,.88),0 0 0 1px rgba(0,0,0,.7)}
+.eq-instrument:after{content:"FREQUENCY / SIGNAL LAB / LIVE SPECTRUM";top:11px;right:16px;color:rgba(255,255,255,.24);font-size:6px;letter-spacing:.28em}
+.eq-visual{border-color:rgba(255,255,255,.16);background:radial-gradient(ellipse at 50% 58%,rgba(196,42,32,.12),transparent 28%),radial-gradient(ellipse at 50% 100%,rgba(196,42,32,.16),transparent 63%),linear-gradient(180deg,#020304,#090a0b 55%,#030405);box-shadow:inset 0 0 70px rgba(0,0,0,.98),inset 0 0 20px rgba(255,255,255,.025),0 0 25px rgba(196,42,32,.07)}
+.eq-visual:before{background:repeating-linear-gradient(90deg,transparent 0 8.32%,rgba(255,255,255,.075) 8.36%,transparent 8.4%),repeating-linear-gradient(180deg,transparent 0 24%,rgba(255,255,255,.055) 24.2%,transparent 24.5%);opacity:.8}
+.eq-visual:after{background:rgba(196,42,32,.72);box-shadow:0 0 14px rgba(196,42,32,.55),0 0 34px rgba(196,42,32,.2)}
+.eq-frequency-scale{color:rgba(255,255,255,.42);text-shadow:0 0 8px rgba(255,255,255,.08)}
+.eq-bands label:before{border-color:rgba(255,255,255,.11);background:linear-gradient(90deg,#020303 0%,rgba(255,255,255,.045) 48%,#020303 100%);box-shadow:inset 0 0 20px #000,0 0 0 1px rgba(255,255,255,.015),0 8px 20px rgba(0,0,0,.35)}
+.eq-bands label:after{background:repeating-linear-gradient(to bottom,rgba(255,255,255,.19) 0 1px,transparent 1px 10px);opacity:.72}
+.eq-bands label>span{color:rgba(255,255,255,.82);text-shadow:0 0 8px rgba(255,255,255,.1),0 1px 2px #000}
+.eq-band-value{color:rgba(255,255,255,.72);border-color:rgba(255,255,255,.08);background:rgba(0,0,0,.58);box-shadow:inset 0 1px rgba(255,255,255,.04),0 3px 8px rgba(0,0,0,.4)}
+.eq-bands input{filter:drop-shadow(0 3px 5px #000) drop-shadow(0 0 6px rgba(170,35,28,.22))}
+.eq-bands input::-webkit-slider-runnable-track{background:linear-gradient(90deg,rgba(255,255,255,.045),rgba(255,255,255,.25),rgba(255,255,255,.045));border-color:rgba(255,255,255,.13)}
+.eq-bands input::-webkit-slider-thumb{box-shadow:0 3px 9px #000,0 0 14px rgba(196,42,32,.45),inset 0 1px rgba(255,255,255,.5)}
+.eq-bands input::-moz-range-track{background:linear-gradient(90deg,rgba(255,255,255,.045),rgba(255,255,255,.25),rgba(255,255,255,.045));border-color:rgba(255,255,255,.13)}
+.eq-bands input::-moz-range-thumb{box-shadow:0 3px 9px #000,0 0 14px rgba(196,42,32,.45),inset 0 1px rgba(255,255,255,.5)}
+.eq-presets button{border-color:rgba(255,255,255,.13);background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(0,0,0,.5));box-shadow:inset 0 1px rgba(255,255,255,.07),inset 0 -1px rgba(0,0,0,.7),0 4px 10px rgba(0,0,0,.4)}
+.eq-presets button:hover{border-color:rgba(255,255,255,.34);box-shadow:inset 0 1px rgba(255,255,255,.11),0 0 18px rgba(255,255,255,.045)}
+.eq-presets button.active{box-shadow:inset 0 -2px rgba(196,42,32,.78),inset 0 1px rgba(255,255,255,.1),0 0 26px rgba(196,42,32,.18)}
+.eq-control{border-color:rgba(255,255,255,.11);background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(0,0,0,.48));box-shadow:inset 0 1px rgba(255,255,255,.05),inset 0 -8px 18px rgba(0,0,0,.2),0 4px 12px rgba(0,0,0,.3)}
