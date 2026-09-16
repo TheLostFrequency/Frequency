@@ -12,7 +12,9 @@ class SpatialVault {
         this.startX = 0;
         this.dragOffset = 0;
 
-        this.initEventListeners();
+        if (this.container) {
+            this.initEventListeners();
+        }
     }
 
     setSongs(songs) {
@@ -22,20 +24,16 @@ class SpatialVault {
     }
 
     render() {
+        if (!this.container) return;
         this.container.innerHTML = '';
-        if (!this.songs || this.songs.length === 0) {
-            document.getElementById('activeArtist').textContent = 'VAULT EMPTY';
-            document.getElementById('activeTitle').textContent = 'No Tracks Found';
-            document.getElementById('activeMeta').textContent = '—';
-            return;
-        }
+        if (!this.songs || this.songs.length === 0) return;
 
         this.songs.forEach((song, index) => {
             const el = document.createElement('div');
             el.className = 'record-object';
             el.dataset.index = index;
 
-            const coverUrl = song.cover_url || 'assets/default-cover.jpg';
+            const coverUrl = song.cover_url || 'assets/default-art.jpg';
             
             el.innerHTML = `
                 <div class="album-sleeve" style="background-image: url('${coverUrl}')"></div>
@@ -54,6 +52,7 @@ class SpatialVault {
     }
 
     updatePositions() {
+        if (!this.container) return;
         const elements = this.container.querySelectorAll('.record-object');
         if (elements.length === 0) return;
 
@@ -64,14 +63,12 @@ class SpatialVault {
             const absOffset = Math.abs(offset);
 
             if (offset === 0) {
-                // Active Center Card
                 el.classList.add('active');
                 const scale = isMobile ? 'scale(1.05)' : 'scale(1.15)';
                 el.style.transform = `translate3d(0px, -15px, 220px) rotateY(0deg) ${scale}`;
                 el.style.zIndex = 200;
                 el.style.opacity = '1';
             } else {
-                // Fanned Cards to Left and Right
                 el.classList.remove('active');
                 const direction = offset < 0 ? -1 : 1;
                 const spacing = isMobile ? 120 : 180;
@@ -85,14 +82,6 @@ class SpatialVault {
                 el.style.opacity = Math.max(0.2, 1 - absOffset * 0.25).toString();
             }
         });
-
-        // Update active metadata on pedestal
-        const activeSong = this.songs[this.currentIndex];
-        if (activeSong) {
-            document.getElementById('activeArtist').textContent = activeSong.artist || 'ARTIST NAME';
-            document.getElementById('activeTitle').textContent = activeSong.title || 'Track Title';
-            document.getElementById('activeMeta').textContent = `${activeSong.genre || 'Vault Track'} • ${activeSong.album || 'Single'}`;
-        }
     }
 
     selectRecord(index) {
@@ -103,13 +92,7 @@ class SpatialVault {
         }
     }
 
-    selectRecordSilently(index) {
-        this.currentIndex = index;
-        this.updatePositions();
-    }
-
     initEventListeners() {
-        // Desktop Pointer Dragging
         this.container.addEventListener('mousedown', (e) => {
             this.isDragging = true;
             this.startX = e.clientX;
@@ -126,7 +109,6 @@ class SpatialVault {
             this.evaluateDragThreshold();
         });
 
-        // Mobile Touch Gestures
         this.container.addEventListener('touchstart', (e) => {
             this.isDragging = true;
             this.startX = e.touches[0].clientX;
