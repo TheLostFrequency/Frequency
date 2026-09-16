@@ -1,415 +1,306 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FREQUENCY — Personal Music Vault</title>
-    <link rel="stylesheet" href="css/main.css">
-    <!-- Supabase JS Client Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FREQUENCY — Futuristic Personal Music Library</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sciDark: '#08090c',
+                        sciPanel: '#0e1015',
+                        sciBorder: '#1f242d',
+                    }
+                }
+            }
+        }
+    >
+    <style>
+        /* Custom scrollbars and specialized dark sci-fi styles */
+        body {
+            background-color: #050608;
+            color: #d1d5db;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+        /* Realistic arched glass perspective */
+        .curved-track {
+            transform: perspective(1000px) rotateY(-12deg);
+        }
+        /* Carved stone emblem effect */
+        .carved-emblem {
+            background: linear-gradient(135deg, #111318 0%, #050608 100%);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+    </style>
 </head>
-<body>
+<body class="w-screen h-screen relative flex flex-col justify-between p-6">
 
-    <!-- AUTHENTICATION OVERLAY -->
-    <div id="authModal" class="overlay-modal active">
-        <div class="auth-box">
-            <div class="brand-monolith">
-                <span class="pedestal-engraving">FREQUENCY</span>
+    <!-- TOP NAVIGATION & HEADER -->
+    <header class="flex justify-between items-center z-30 select-none">
+        <div class="flex items-center space-x-3">
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span class="tracking-[0.25em] font-light text-sm text-white">FREQUENCY</span>
+        </div>
+        
+        <nav class="flex space-x-8 text-xs tracking-[0.2em]">
+            <a href="#" class="text-white border-b border-white pb-1 font-medium">COLLECTION</a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition">TRANSMISSIONS</a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition">SIGNALS</a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition">PROFILE</a>
+        </nav>
+
+        <div class="text-gray-500 hover:text-white cursor-pointer transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+    </header>
+
+    <!-- MAIN ARCHITECTURAL VIEWPORT -->
+    <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+        
+        <!-- Centerpiece: Listening Pedestal & Current Artwork -->
+        <div class="absolute flex flex-col items-center bottom-[28%] pointer-events-auto">
+            <!-- Active Album Artwork Display -->
+            <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black shadow-2xl p-2 relative mb-6 transition-all duration-500">
+                <img id="current-album-art" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover opacity-90 filter contrast-125" alt="Current Album">
+                <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
             </div>
-            <p class="auth-subtitle">ENTER YOUR PRIVATE FREQUENCY VAULT</p>
-            <form id="authForm">
-                <input type="email" id="authEmail" placeholder="EMAIL ADDRESS" required />
-                <input type="password" id="authPassword" placeholder="PASSWORD" required />
-                <div class="auth-actions">
-                    <button type="submit" id="btnLogin" class="btn-primary">ENTER VAULT</button>
-                    <button type="button" id="btnSignUp" class="btn-secondary">INITIALIZE ACCOUNT</button>
+
+            <!-- Signal Indicator Line -->
+            <div class="flex items-center space-x-3 mb-2 opacity-60">
+                <div class="h-[1px] w-12 bg-white/40"></div>
+                <span class="text-[9px] tracking-[0.3em] text-white">NOW PLAYING</span>
+                <div class="h-[1px] w-12 bg-white/40"></div>
+            </div>
+
+            <!-- Monolithic Pedestal with Carved Logo -->
+            <div class="w-48 h-32 bg-[#090a0e] border border-white/10 flex flex-col items-center justify-center relative shadow-2xl">
+                <!-- Carved Logo -->
+                <div class="carved-emblem w-20 h-10 rounded flex items-center justify-center text-white/40">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                 </div>
-            </form>
-            <div id="authError" class="error-msg"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT-SIDE CURVED SONG SELECTOR (Crescent Interactive List) -->
+        <div class="absolute right-[-140px] top-1/2 -translate-y-1/2 h-[600px] w-[400px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
+            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-4 text-right pr-32" id="song-list">
+                <!-- Dynamically populated via JS for smooth scroll/swipe interaction -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTTOM-CENTER MEDIA PLAYER -->
+    <footer class="w-full flex justify-center z-30 pointer-events-auto pb-2">
+        <div class="w-[720px] bg-[#090a0e]/95 backdrop-blur-md border border-white/15 px-6 py-4 shadow-2xl relative">
+            
+            <!-- Technical readouts on top corners of player -->
+            <div class="flex justify-between items-center text-[9px] tracking-[0.25em] text-gray-500 mb-3">
+                <span>SIGNAL ACTIVE</span>
+                <span>TRANSMISSIONS // 44.1kHz</span>
+            </div>
+
+            <!-- Dynamic Wavelength / Oscilloscope Instrument -->
+            <div class="relative w-full h-12 mb-3 flex items-center cursor-pointer" id="waveform-container">
+                <canvas id="waveform-canvas" class="w-full h-full"></canvas>
+            </div>
+
+            <!-- Controls & Track Data Bar -->
+            <div class="flex items-center justify-between">
+                <!-- Current Track Meta -->
+                <div class="flex items-center space-x-3 w-1/4">
+                    <div class="w-10 h-10 bg-black border border-white/20 overflow-hidden flex-shrink-0">
+                        <img id="player-thumb" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover">
+                    </div>
+                    <div class="overflow-hidden">
+                        <h4 id="player-title" class="text-xs text-white tracking-wider truncate font-medium">Song Ration</h4>
+                        <p id="player-artist" class="text-[10px] text-gray-400 tracking-wide truncate">Artists</p>
+                    </div>
+                </div>
+
+                <!-- Playback Control Center -->
+                <div class="flex items-center space-x-6">
+                    <button id="prev-btn" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 20L9 12l10-8v16zM5 19V5"/></svg>
+                    </button>
+                    <button id="play-pause-btn" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition">
+                        <svg id="play-icon" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                    </button>
+                    <button id="next-btn" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4zM19 5v14"/></svg>
+                    </button>
+                </div>
+
+                <!-- Time and Volume Indicators -->
+                <div class="flex items-center space-x-4 text-[10px] text-gray-400 tracking-widest w-1/4 justify-end">
+                    <span id="current-time">02:15</span>
+                    <span class="text-gray-600">/</span>
+                    <span id="total-time">03:45</span>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- BACKGROUND ATMOSPHERE (Simulated Archival Fortress Environment) -->
+    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+        <div class="absolute inset-0 bg-gradient-to-t from-[#050608] via-transparent to-[#050608]"></div>
+        <!-- Pillars and architectural lighting structure (White sci-fi highlights) -->
+        <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[600px] h-full border-x border-white/5 flex justify-between">
+            <div class="w-12 h-full bg-gradient-to-r from-white/[0.02] to-transparent"></div>
+            <div class="w-12 h-full bg-gradient-to-l from-white/[0.02] to-transparent"></div>
         </div>
     </div>
 
-    <!-- MAIN APP WRAPPER -->
-    <div id="app" class="app-container hidden">
+    <!-- JAVASCRIPT INTERACTION LOGIC -->
+    <script>
+        const playlist = [
+            { title: "Now Amberian", artist: "Atumsa", duration: "03:12", art: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" },
+            { title: "The Concelebrles", artist: "Artsts", duration: "04:05", art: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=400&auto=format&fit=crop" },
+            { title: "Thapeels", artist: "Artless", duration: "02:50", art: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=400&auto=format&fit=crop" },
+            { title: "Los Gingdtom", artist: "Archon Vitama", duration: "03:40", art: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=400&auto=format&fit=crop" },
+            { title: "Keep Dance", artist: "Sbartoe", duration: "03:15", art: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=400&auto=format&fit=crop" },
+            { title: "Song Ration", artist: "Artists", duration: "03:45", art: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" },
+            { title: "Wast Chame", artist: "Pomere Ihasnist", duration: "04:20", art: "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?q=80&w=400&auto=format&fit=crop" },
+            { title: "Lile Aerything", artist: "Ktoror", duration: "02:30", art: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop" },
+            { title: "What Is The Bassion", artist: "Sonoks Shanes", duration: "05-10", art: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=400&auto=format&fit=crop" },
+            { title: "Blends", artist: "Honaminos", duration: "03:10", art: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=400&auto=format&fit=crop" }
+        ];
 
-        <!-- TOP NAVIGATION BAR -->
-        <header class="top-bar">
-            <div class="nav-pill-group">
-                <div class="brand-emblem"><img src="assets/logo.png" alt="Frequency"></div>
-                <button class="nav-btn active" data-view="collection">Library</button>
-                <button class="nav-btn" data-view="search">Search</button>
-                <button class="nav-btn" data-view="albums">Albums</button>
-                <button class="nav-btn" data-view="playlists">Playlists</button>
-                <button class="nav-btn" data-view="eq">Equalizer</button>
-                <button class="nav-btn" data-view="transmissions">Transmissions</button>
-            </div>
+        let currentIndex = 5; // Default focused on "Song Ration"
 
-            <div class="top-right-group">
-                <button id="btnOpenAddSong" class="btn-add-pill">+ ADD TRACKS</button>
-                <button id="btnLogout" class="btn-exit-pill">EXIT</button>
-                <div class="view-toggle-pill">
-                    <button class="toggle-btn active" id="btnModeCollection">COLLECTION</button>
-                    <span class="divider">/</span>
-                    <button class="toggle-btn" id="btnModeList">LIST</button>
-                </div>
-            </div>
-        </header>
+        const songListEl = document.getElementById('song-list');
+        const titleEl = document.getElementById('player-title');
+        const artistEl = document.getElementById('player-artist');
+        const thumbEl = document.getElementById('player-thumb');
+        const currentArtEl = document.getElementById('current-album-art');
 
-        <!-- VIEW CONTAINER: SEARCH -->
-        <main id="viewSearch" class="view-panel hidden">
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="SEARCH VAULT BY TITLE, ARTIST, OR ALBUM..." />
-            </div>
-        </main>
-
-        <!-- VIEW CONTAINER: SPATIAL COLLECTION VIEW -->
-        <main id="viewCollection" class="view-panel active">
-            <div class="architectural-stage">
-                <div class="room-wall-back"></div>
-                <div class="ambient-spotlight"></div>
+        function renderSelector() {
+            songListEl.innerHTML = '';
+            
+            playlist.forEach((song, idx) => {
+                const distance = idx - currentIndex;
+                const absDist = Math.abs(distance);
                 
-                <div class="pillar pillar-left"></div>
-                <div class="pillar pillar-right"></div>
+                // Calculate curved scaling & opacity effect along crescent path
+                const opacity = Math.max(0.15, 1 - (absDist * 0.22));
+                const scale = Math.max(0.75, 1 - (absDist * 0.05));
+                const translatePr = absDist * 8; // Curve displacement offset
 
-                <!-- Dynamic 3D Fanning Album Vault -->
-                <div id="physicalVault" class="physical-vault-container"></div>
+                const item = document.createElement('div');
+                item.className = `cursor-pointer transition-all duration-300 flex flex-col items-end`;
+                item.style.transform = `translateX(${translatePr}px) scale(${scale})`;
+                item.style.opacity = opacity;
 
-                <!-- Center Pedestal Monolith with Metallic Logo -->
-                <div class="center-monolith">
-                    <div class="monolith-top">
-                        <img src="assets/logo.png" class="physical-emblem-3d" alt="FREQUENCY Emblem">
-                    </div>
-                    <div class="monolith-front">
-                        <div id="activeArtist" class="active-artist-text">ARTIST NAME</div>
-                        <div id="activeTitle" class="active-title-text">Album Title</div>
-                        <div id="activeMeta" class="active-meta-text">2026 • 12 tracks</div>
-                    </div>
-                </div>
-            </div>
-        </main>
+                if (distance === 0) {
+                    item.innerHTML = `
+                        <span class="text-sm font-semibold text-white tracking-wider">${song.title}</span>
+                        <span class="text-[11px] text-gray-300 tracking-wide">${song.artist}</span>
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <span class="text-xs text-gray-400 tracking-wider">${song.title}</span>
+                        <span class="text-[9px] text-gray-600 tracking-wide">${song.artist}</span>
+                    `;
+                }
 
-        <!-- VIEW CONTAINER: LIST VIEW -->
-        <main id="viewList" class="view-panel hidden">
-            <div class="list-wrapper">
-                <table class="frequency-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>COVER</th>
-                            <th>TITLE</th>
-                            <th>ARTIST</th>
-                            <th>ALBUM</th>
-                            <th>ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody id="songListBody">
-                        <!-- Dynamic Song Rows -->
-                    </tbody>
-                </table>
-            </div>
-        </main>
+                item.onclick = () => {
+                    currentIndex = idx;
+                    updateActiveSong();
+                };
 
-        <!-- VIEW CONTAINER: ALBUMS VIEW -->
-        <main id="viewAlbums" class="view-panel hidden">
-            <div id="albumsGrid" class="albums-grid">
-                <!-- Dynamic Album Cards -->
-            </div>
-        </main>
+                songListEl.appendChild(item);
+            });
+        }
 
-        <!-- VIEW CONTAINER: PLAYLISTS VIEW -->
-        <main id="viewPlaylists" class="view-panel hidden">
-            <div class="playlists-wrapper">
-                <div class="playlist-bar-header">
-                    <h2 class="view-section-title">YOUR PLAYLISTS</h2>
-                    <button id="btnOpenCreatePlaylist" class="btn-action">+ CREATE PLAYLIST</button>
-                </div>
-                <div id="playlistsGrid" class="playlists-grid">
-                    <!-- Dynamic Playlists -->
-                </div>
-            </div>
-        </main>
+        function updateActiveSong() {
+            const current = playlist[currentIndex];
+            titleEl.textContent = current.title;
+            artistEl.textContent = current.artist;
+            thumbEl.src = current.art;
+            currentArtEl.src = current.art;
+            renderSelector();
+        }
 
-        <!-- VIEW CONTAINER: EQUALIZER VIEW (GLASS BLOCK HARDWARE RACK) -->
-        <main id="viewEq" class="view-panel hidden">
-            <div class="eq-overlay">
-                <div class="eq-glass-panel">
-                    
-                    <!-- EQ Panel Header -->
-                    <div class="eq-header">
-                        <div class="eq-title-group">
-                            <h2 class="eq-brand-title">DIGITAL EQUALIZER</h2>
-                        </div>
-                        <div class="eq-brand-logo">FREQUENCY</div>
-                    </div>
+        // Swipe & Scroll Wheel Navigation Handling
+        const selectorContainer = document.getElementById('song-selector-container');
+        selectorContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY > 0) {
+                currentIndex = Math.min(playlist.length - 1, currentIndex + 1);
+            } else {
+                currentIndex = Math.max(0, currentIndex - 1);
+            }
+            updateActiveSong();
+        }, { passive: false });
 
-                    <!-- Spectrum Visualizer Canvas -->
-                    <div class="eq-visualizer-container">
-                        <canvas id="eq-canvas" width="800" height="80"></canvas>
-                    </div>
+        // Scientific Oscilloscope / Wavelength Canvas Animation
+        const canvas = document.getElementById('waveform-canvas');
+        const ctx = canvas.getContext('2d');
 
-                    <!-- 10-Band Glass Slider Rack -->
-                    <div class="eq-sliders-grid">
-                        <!-- 32 Hz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-32">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-32" data-freq="32" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">32Hz</label>
-                        </div>
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-                        <!-- 64 Hz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-64">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-64" data-freq="64" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">64Hz</label>
-                        </div>
+        let phase = 0;
+        function drawWaveform() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.beginPath();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
 
-                        <!-- 128 Hz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-128">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-128" data-freq="128" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">128Hz</label>
-                        </div>
+            const sliceWidth = canvas.width / 150;
+            let x = 0;
 
-                        <!-- 250 Hz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-250">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-250" data-freq="250" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">250Hz</label>
-                        </div>
+            for (let i = 0; i < 150; i++) {
+                // Combine multi-frequency sine waves for organic scientific instrument output
+                const v = Math.sin(i * 0.08 + phase) * Math.cos(i * 0.03 + phase * 0.5) * 16 + 
+                          Math.sin(i * 0.2 - phase * 1.5) * 6;
+                const y = (canvas.height / 2) + v;
 
-                        <!-- 500 Hz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-500">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-500" data-freq="500" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">500Hz</label>
-                        </div>
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
 
-                        <!-- 1 kHz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-1000">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-1000" data-freq="1000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">1kHz</label>
-                        </div>
+            ctx.stroke();
 
-                        <!-- 2 kHz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-2000">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-2000" data-freq="2000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">2kHz</label>
-                        </div>
+            // Secondary subtle grid tracking line inside waveform
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(canvas.width * 0.62, 0, 1, canvas.height); // Playback head position marker
 
-                        <!-- 4 kHz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-4000">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-4000" data-freq="4000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">4kHz</label>
-                        </div>
+            phase += 0.04;
+            requestAnimationFrame(drawWaveform);
+        }
 
-                        <!-- 8 kHz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-8000">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-8000" data-freq="8000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">8kHz</label>
-                        </div>
+        // Initialize state
+        renderSelector();
+        drawWaveform();
 
-                        <!-- 16 kHz -->
-                        <div class="eq-band">
-                            <span class="eq-val" id="val-16000">0dB</span>
-                            <div class="slider-track-wrap">
-                                <input type="range" class="eq-slider" id="eq-16000" data-freq="16000" min="-12" max="12" value="0" step="0.5" orient="vertical">
-                            </div>
-                            <label class="eq-freq">16kHz</label>
-                        </div>
-                    </div>
-
-                    <!-- Bottom Hardware Controls & Acoustic Presets Grid -->
-                    <div class="eq-hardware-controls">
-                        <!-- Left Block: Master Vol & Carved Emblem Block -->
-                        <div class="eq-left-controls">
-                            <div class="ctrl-block">
-                                <label class="ctrl-label">MASTER VOL</label>
-                                <input type="range" id="master-vol" min="0" max="100" value="80" class="mini-slider">
-                            </div>
-                            <div class="eq-carved-logo">
-                                <img src="assets/logo.png" alt="Frequency Emblem" class="carved-emblem">
-                            </div>
-                        </div>
-
-                        <!-- Right Block: Tactile Acoustic Preset Buttons -->
-                        <div class="eq-preset-grid">
-                            <button class="preset-btn active" data-preset="flat">FLAT / NEUTRAL</button>
-                            <button class="preset-btn" data-preset="bass-booster">BASS BOOSTER</button>
-                            <button class="preset-btn" data-preset="bass-reducer">BASS REDUCER</button>
-                            <button class="preset-btn" data-preset="rock">ROCK</button>
-                            <button class="preset-btn" data-preset="hard">HARD</button>
-                            <button class="preset-btn" data-preset="hip-hop">HIP-HOP / RAP</button>
-                            <button class="preset-btn" data-preset="dance">ELECTRONIC / DANCE (EDM)</button>
-                            <button class="preset-btn" data-preset="pop">POP</button>
-                            <button class="preset-btn" data-preset="vocal">VOCAL BOOSTER</button>
-                            <button class="preset-btn" data-preset="acoustic">ACOUSTIC / FOLK</button>
-                            <button class="preset-btn" data-preset="loudness">LOUDNESS</button>
-                            <button class="preset-btn" data-preset="piano">PIANO</button>
-                            <button class="preset-btn" data-preset="rnb">R&B</button>
-                            <button class="preset-btn" data-preset="soul">R&B / SOUL</button>
-                            <button class="preset-btn" data-preset="spoken">SMALL SPEAKERS / SPOKEN WORD</button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </main>
-
-        <!-- VIEW CONTAINER: TRANSMISSIONS VIEW -->
-        <main id="viewTransmissions" class="view-panel hidden">
-            <div class="transmissions-stage">
-                <div class="transmission-asset-wrapper">
-                    <picture>
-                        <!-- Mobile Asset Override -->
-                        <source media="(max-width: 768px)" srcset="assets/mobile-transmission.png">
-                        <!-- Desktop Fallback Asset -->
-                        <img id="transGraphic" src="assets/transmission.png" class="transmission-graphic" alt="Transmissions Visual">
-                    </picture>
-                </div>
-            </div>
-        </main>
-
-        <!-- FLOATING CAPSULE PLAYER -->
-        <footer id="musicPlayer" class="floating-player">
-            <div class="player-left">
-                <div id="playerCover" class="player-cover-art"></div>
-                <div class="player-meta">
-                    <div id="playerTitle" class="track-title">NO TRACK SELECTED</div>
-                    <div id="playerArtist" class="track-artist">—</div>
-                </div>
-            </div>
-            <div class="player-center">
-                <div class="player-controls">
-                    <button class="ctrl-btn ctrl-shuffle" id="btnShuffle">🔀</button>
-                    <button class="ctrl-btn ctrl-prev" id="btnPrev">⏮</button>
-                    <button class="ctrl-btn main-play" id="btnPlay">▶</button>
-                    <button class="ctrl-btn ctrl-next" id="btnNext">⏭</button>
-                </div>
-                <div class="progress-bar-container">
-                    <span id="currentTime" class="time-current">0:00</span>
-                    <input type="range" id="seekSlider" value="0" min="0" max="100" step="0.1">
-                    <span id="durationTime" class="time-total">0:00</span>
-                </div>
-            </div>
-            <div class="player-right">
-                <div class="volume-container">
-                    <span class="vol-icon">🔊</span>
-                    <input type="range" id="volumeSlider" class="volume-slider" value="80" min="0" max="100">
-                </div>
-            </div>
-        </footer>
-
-    </div>
-
-    <!-- MODAL: ADD / MASS UPLOAD SONGS -->
-    <div id="songModal" class="overlay-modal hidden">
-        <div class="modal-card modal-card-wide">
-            <h2 id="songModalTitle">MASS UPLOAD TRACKS TO VAULT</h2>
-            <form id="songForm">
-                <div class="form-group">
-                    <label>SELECT AUDIO FILES (MP3 / WAV — CHOOSE MULTIPLE)</label>
-                    <input type="file" id="inputAudioFiles" accept="audio/*" multiple required />
-                </div>
-                
-                <!-- Dynamic Batch Processing Container -->
-                <div id="batchContainer" class="batch-tracks-wrapper">
-                    <p class="batch-placeholder-text">SELECT ONE OR MORE AUDIO FILES ABOVE TO CUSTOMIZE TRACK METADATA</p>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" id="btnCloseSongModal" class="btn-secondary">CANCEL</button>
-                    <button type="submit" id="btnSubmitSong" class="btn-primary">SAVE ALL TO VAULT</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: EDIT TRACK METADATA & COVER ART -->
-    <div id="editSongModal" class="overlay-modal hidden">
-        <div class="modal-card">
-            <h2>EDIT TRACK DETAILS</h2>
-            <form id="editSongForm">
-                <input type="hidden" id="editSongId">
-                <div class="form-group">
-                    <label>SONG TITLE</label>
-                    <input type="text" id="editInputTitle" required />
-                </div>
-                <div class="form-group">
-                    <label>ARTIST</label>
-                    <input type="text" id="editInputArtist" required />
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>ALBUM</label>
-                        <input type="text" id="editInputAlbum" />
-                    </div>
-                    <div class="form-group">
-                        <label>GENRE</label>
-                        <input type="text" id="editInputGenre" />
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>UPDATE COVER ARTWORK (NEW IMAGE)</label>
-                    <input type="file" id="editInputCoverFile" accept="image/*" />
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="btnCloseEditSongModal" class="btn-secondary">CANCEL</button>
-                    <button type="submit" id="btnSubmitEditSong" class="btn-primary">UPDATE TRACK</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: CREATE PLAYLIST -->
-    <div id="playlistModal" class="overlay-modal hidden">
-        <div class="modal-card">
-            <h2>CREATE NEW PLAYLIST</h2>
-            <form id="playlistForm">
-                <div class="form-group">
-                    <label>PLAYLIST NAME</label>
-                    <input type="text" id="inputPlaylistTitle" required placeholder="e.g. UNRELEASED VAULT" />
-                </div>
-                <div class="form-group">
-                    <label>DESCRIPTION</label>
-                    <input type="text" id="inputPlaylistDesc" placeholder="e.g. Rare studio sessions and remixes" />
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="btnClosePlaylistModal" class="btn-secondary">CANCEL</button>
-                    <button type="submit" id="btnSubmitPlaylist" class="btn-primary">CREATE PLAYLIST</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <audio id="audioElement" preload="metadata" crossorigin="anonymous"></audio>
-
-    <!-- JS MODULES -->
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/audioPlayer.js"></script>
-    <script src="js/eq.js"></script>
-    <script src="js/spatialView.js"></script>
-    <script src="js/app.js"></script>
+        // Control button bindings
+        document.getElementById('next-btn').onclick = () => {
+            currentIndex = (currentIndex + 1) % playlist.length;
+            updateActiveSong();
+        };
+        document.getElementById('prev-btn').onclick = () => {
+            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+            updateActiveSong();
+        };
+    </script>
 </body>
 </html>
