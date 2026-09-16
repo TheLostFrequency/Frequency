@@ -2,6 +2,8 @@ export class AudioPlayer {
     constructor() {
         this.audio = new Audio();
         this.audio.preload = 'metadata';
+        this.audio.crossOrigin = 'anonymous';
+        this.audio.volume = 1;
         this.isPlaying = false;
         this.currentTime = 0;
         this.duration = 0;
@@ -25,6 +27,9 @@ export class AudioPlayer {
             this.setPlaying(false);
             if (this.onEnded) this.onEnded();
         });
+        this.audio.addEventListener('error', () => {
+            console.warn('Audio element error:', this.audio.error);
+        });
     }
     setPlaying(value) {
         this.isPlaying = value;
@@ -39,7 +44,11 @@ export class AudioPlayer {
         this.duration = 0;
     }
     async play() {
-        try { await this.audio.play(); } catch (error) { console.warn('Playback prevented:', error); }
+        try {
+            await this.audio.play();
+        } catch (error) {
+            console.warn('Playback prevented:', error);
+        }
     }
     pause() { this.audio.pause(); }
     togglePlay() { return this.isPlaying ? this.pause() : this.play(); }
