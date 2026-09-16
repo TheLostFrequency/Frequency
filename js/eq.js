@@ -6,8 +6,9 @@ export class AudioAnalyzer {
         this.filters = [];
         this.isInitialized = false;
         this.audioElement = audioElement;
-        this.frequencies = [60, 250, 1000, 4000, 16000];
+        this.frequencies = [32, 64, 128, 250, 500, 1000, 2000, 4000, 16000];
     }
+
     init() {
         if (this.isInitialized) return true;
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -39,15 +40,26 @@ export class AudioAnalyzer {
             return false;
         }
     }
-    resume() { if (this.audioCtx?.state === 'suspended') this.audioCtx.resume(); }
-    setBand(index, value) { if (this.filters[index]) this.filters[index].gain.value = Number(value); }
-    reset() { this.filters.forEach(filter => { filter.gain.value = 0; }); }
+
+    resume() {
+        if (this.audioCtx?.state === 'suspended') this.audioCtx.resume();
+    }
+
+    setBand(index, value) {
+        if (this.filters[index]) this.filters[index].gain.value = Number(value);
+    }
+
+    reset() {
+        this.filters.forEach(filter => { filter.gain.value = 0; });
+    }
+
     getWaveformData() {
         if (!this.isInitialized || !this.analyser) return new Uint8Array(0);
         const data = new Uint8Array(this.analyser.fftSize);
         this.analyser.getByteTimeDomainData(data);
         return data;
     }
+
     getFrequencyData() {
         if (!this.isInitialized || !this.analyser) return new Uint8Array(0);
         const data = new Uint8Array(this.analyser.frequencyBinCount);
