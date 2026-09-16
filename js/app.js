@@ -2,7 +2,7 @@ import { AudioPlayer } from './audioPlayer.js';
 import { AudioAnalyzer } from './eq.js';
 import { supabase } from './supabaseClient.js';
 
-let playlist = []; // Clean empty state by default unless Supabase has records
+let playlist = [];
 let currentIndex = 0; 
 
 const player = new AudioPlayer();
@@ -10,6 +10,8 @@ const analyzer = new AudioAnalyzer(player.audio);
 
 // DOM Elements
 const songListEl = document.getElementById('song-list');
+const listContainerEl = document.getElementById('list-container');
+const listCountEl = document.getElementById('list-count');
 const titleEl = document.getElementById('player-title');
 const artistEl = document.getElementById('player-artist');
 const thumbEl = document.getElementById('player-thumb');
@@ -20,27 +22,42 @@ const currentTimeEl = document.getElementById('current-time');
 const totalTimeEl = document.getElementById('total-time');
 const statusLabel = document.getElementById('player-status-label');
 
-// Navigation Tab Elements
-const navCollection = document.getElementById('nav-collection');
-const navTransmissions = document.getElementById('nav-transmissions');
-const transmissionsView = document.getElementById('transmissions-view');
-const closeTransmissions = document.getElementById('close-transmissions');
-
-navTransmissions.onclick = (e) => {
-    e.preventDefault();
-    transmissionsView.classList.remove('hidden');
-    navTransmissions.classList.add('text-white', 'border-b', 'border-white', 'pb-1');
-    navCollection.classList.remove('text-white', 'border-b', 'border-white', 'pb-1');
-    navCollection.classList.add('text-gray-500');
+// Tab Switching Elements
+const tabs = {
+    collection: document.getElementById('view-collection'),
+    listview: document.getElementById('view-listview'),
+    equalizer: document.getElementById('view-equalizer'),
+    transmission: document.getElementById('view-transmission'),
+    profile: document.getElementById('view-profile')
 };
 
-closeTransmissions.onclick = () => {
-    transmissionsView.classList.add('hidden');
-    navCollection.classList.add('text-white', 'border-b', 'border-white', 'pb-1');
-    navCollection.classList.remove('text-gray-500');
-    navTransmissions.classList.remove('text-white', 'border-b', 'border-white', 'pb-1');
-    navTransmissions.classList.add('text-gray-500');
+const navLinks = {
+    collection: document.getElementById('nav-collection'),
+    listview: document.getElementById('nav-listview'),
+    equalizer: document.getElementById('nav-equalizer'),
+    transmission: document.getElementById('nav-transmission'),
+    profile: document.getElementById('nav-profile')
 };
+
+function switchTab(activeKey) {
+    Object.keys(tabs).forEach(key => {
+        if (key === activeKey) {
+            tabs[key].classList.remove('hidden');
+            navLinks[key].classList.add('text-white', 'border-b', 'border-white', 'pb-1', 'font-medium');
+            navLinks[key].classList.remove('text-gray-400');
+        } else {
+            tabs[key].classList.add('hidden');
+            navLinks[key].classList.remove('text-white', 'border-b', 'border-white', 'pb-1', 'font-medium');
+            navLinks[key].classList.add('text-gray-400');
+        }
+    });
+}
+
+navLinks.collection.onclick = (e) => { e.preventDefault(); switchTab('collection'); };
+navLinks.listview.onclick = (e) => { e.preventDefault(); switchTab('listview'); renderListView(); };
+navLinks.equalizer.onclick = (e) => { e.preventDefault(); switchTab('equalizer'); };
+navLinks.transmission.onclick = (e) => { e.preventDefault(); switchTab('transmission'); };
+navLinks.profile.onclick = (e) => { e.preventDefault(); switchTab('profile'); };
 
 function formatTime(seconds) {
     if (isNaN(seconds)) return "00:00";
@@ -69,7 +86,7 @@ async function loadLibrary() {
             renderEmptyState();
         }
     } catch (err) {
-        console.warn('Supabase not fully configured or empty state active:', err);
+        console.warn('Supabase not connected or empty state active:', err);
         renderEmptyState();
     }
 }
@@ -82,8 +99,10 @@ function renderEmptyState() {
             <span class="text-[9px] text-gray-500 tracking-wider">NO REAL SIGNALS FOUND</span>
         </div>
     `;
+    listContainerEl.innerHTML = `<div class="text-xs text-gray-500 tracking-wider text-center py-6">NO SIGNALS IN VAULT</div>`;
+    listCountEl.textContent = "0 SIGNALS";
     titleEl.textContent = "Vault Empty";
-    artistEl.textContent = "Awaiting Real Supabase Data";
+    artistEl.textContent = "Upload via Supabase";
     thumbEl.src = "assets/default-art.jpg";
     currentArtEl.src = "assets/default-art.jpg";
     statusLabel.textContent = "STAND BY // VAULT EMPTY";
@@ -91,11 +110,7 @@ function renderEmptyState() {
 
 function renderSelector() {
     songListEl.innerHTML = '';
-    
-    if (playlist.length === 0) {
-        renderEmptyState();
-        return;
-    }
+    if (playlist.length === 0) return;
 
     playlist.forEach((song, idx) => {
         const distance = idx - currentIndex;
@@ -128,6 +143,42 @@ function renderSelector() {
         };
 
         songListEl.appendChild(item);
+    });
+}
+
+function renderListView() {
+    listContainerEl.innerHTML = '';
+    listCountEl.textContent = `${playlist.length} SIGNALS`;
+
+    if (playlist.length === 0) {
+        listContainerEl.innerHTML = `<div class="text-xs text-gray-500 tracking-wider text-center py-6">NO SIGNALS IN VAULT</div>`;
+        return;
+    }
+
+    playlist.forEach((song, idx) => {
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between p-3 border border-white/5 hover:border-white/20 bg-black/40 cursor-pointer transition ${idx === currentIndex ? 'border-white/40 bg-white/5' : ''}`;
+        
+        const artUrl = song.cover_path ? supabase.storage.from('covers').getPublicUrl(song.cover_path).data.publicUrl : 'assets/default-art.jpg';
+
+        row.innerHTML = `
+            <div class="flex items-center space-x-4">
+                <img src="${artUrl}" class="w-8 h-8 object-cover border border-white/10">
+                <div>
+                    <h4 class="text-xs text-white tracking-wider font-medium">${song.title || 'Untitled'}</h4>
+                    <p class="text-[10px] text-gray-400 tracking-wide">${song.artist || 'Unknown Artist'}</p>
+                </div>
+            </div>
+            <span class="text-[10px] text-gray-500 tracking-widest">${song.genre || 'Vault Track'}</span>
+        `;
+
+        row.onclick = () => {
+            currentIndex = idx;
+            updateActiveSong(true);
+            switchTab('collection');
+        };
+
+        listContainerEl.appendChild(row);
     });
 }
 
