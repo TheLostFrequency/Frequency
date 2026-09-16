@@ -10,19 +10,35 @@ export class AudioAnalyzer {
     }
 
     init() {
-        if (this.isInitialized) return true;
+        if (this.isInitialized) {
+            this.resume();
+            return true;
+        }
+
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return false;
-        this.audioCtx = new AudioContext();
-        this.analyser = this.audioCtx.createAnalyser();
-        this.analyser.fftSize = 256;
-        this.analyser.smoothingTimeConstant = 0.72;
+        if (!AudioContext || !this.audioElement) return false;
+
         try {
-            this.source = this.audioCtx.createMediaElementSource(this.audioElement);
+            if (!this.audioCtx) this.audioCtx = new AudioContext();
+            if (!this.analyser) {
+                this.analyser = this.audioCtx.createAnalyser();
+                this.analyser.fftSize = 512;
+                this.analyser.minDecibels = -90;
+                this.analyser.maxDecibels = -10;
+                this.analyser.smoothingTimeConstant = 0.68;
+            }
+
+            // A MediaElementSource can only be created once for a given audio element.
+            if (!this.source) this.source = this.audioCtx.createMediaElementSource(this.audioElement);
+
             let node = this.source;
             this.filters = this.frequencies.map((frequency, index) => {
                 const filter = this.audioCtx.createBiquadFilter();
-                filter.type = index === 0 ? 'lowshelf' : index === this.frequencies.length - 1 ? 'highshelf' : 'peaking';
+                filter.type = index === 0
+                    ? 'lowshelf'
+                    : index === this.frequencies.length - 1
+                        ? 'highshelf'
+                        : 'peaking';
                 filter.frequency.value = frequency;
                 filter.Q.value = index === 0 || index === this.frequencies.length - 1 ? 0.7 : 1;
                 filter.gain.value = 0;
@@ -30,19 +46,25 @@ export class AudioAnalyzer {
                 node = filter;
                 return filter;
             });
+
             node.connect(this.analyser);
             this.analyser.connect(this.audioCtx.destination);
             this.isInitialized = true;
             window.frequencyAnalyzer = this;
+            this.resume();
             return true;
         } catch (error) {
-            console.warn('Audio analyzer connection note:', error);
+            console.warn('Frequency EQ analyzer could not connect:', error);
+            this.isInitialized = false;
+            window.frequencyAnalyzer = this;
             return false;
         }
     }
 
     resume() {
-        if (this.audioCtx?.state === 'suspended') this.audioCtx.resume();
+        if (this.audioCtx?.state === 'suspended') {
+            this.audioCtx.resume().catch(() => {});
+        }
     }
 
     setBand(index, value) {
