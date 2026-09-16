@@ -27,3 +27,4 @@
 .eq-reset-wrap{display:flex;justify-content:flex-end;margin-top:12px}
 @media(max-width:900px){.eq-room-card{max-height:88vh;padding:20px}.eq-bands{gap:4px}.eq-presets{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.eq-room-card{padding:14px}.eq-instrument{padding:12px}.eq-visual{height:110px}.eq-bands{height:205px}.eq-bands input{height:150px;width:25px}.eq-bands label:before{width:25px}.eq-presets{grid-template-columns:repeat(2,minmax(0,1fr))}.eq-controls{grid-template-columns:1fr}.eq-frequency-scale{font-size:6px}}
+#room-equalizer.active-room{display:flex;align-items:center;justify-content:center}
