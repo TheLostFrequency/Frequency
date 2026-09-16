@@ -2,7 +2,7 @@ import { AudioPlayer } from './audioPlayer.js';
 import { AudioAnalyzer } from './eq.js';
 import { supabase } from './supabaseClient.js';
 
-let playlist = []; // Starts completely empty
+let playlist = []; // Clean empty state by default unless Supabase has records
 let currentIndex = 0; 
 
 const player = new AudioPlayer();
@@ -18,6 +18,29 @@ const playPauseBtn = document.getElementById('play-pause-btn');
 const playIcon = document.getElementById('play-icon');
 const currentTimeEl = document.getElementById('current-time');
 const totalTimeEl = document.getElementById('total-time');
+const statusLabel = document.getElementById('player-status-label');
+
+// Navigation Tab Elements
+const navCollection = document.getElementById('nav-collection');
+const navTransmissions = document.getElementById('nav-transmissions');
+const transmissionsView = document.getElementById('transmissions-view');
+const closeTransmissions = document.getElementById('close-transmissions');
+
+navTransmissions.onclick = (e) => {
+    e.preventDefault();
+    transmissionsView.classList.remove('hidden');
+    navTransmissions.classList.add('text-white', 'border-b', 'border-white', 'pb-1');
+    navCollection.classList.remove('text-white', 'border-b', 'border-white', 'pb-1');
+    navCollection.classList.add('text-gray-500');
+};
+
+closeTransmissions.onclick = () => {
+    transmissionsView.classList.add('hidden');
+    navCollection.classList.add('text-white', 'border-b', 'border-white', 'pb-1');
+    navCollection.classList.remove('text-gray-500');
+    navTransmissions.classList.remove('text-white', 'border-b', 'border-white', 'pb-1');
+    navTransmissions.classList.add('text-gray-500');
+};
 
 function formatTime(seconds) {
     if (isNaN(seconds)) return "00:00";
@@ -26,27 +49,51 @@ function formatTime(seconds) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Fetch your actual music library from Supabase
+// Fetch real user track library from Supabase
 async function loadLibrary() {
-    const { data, error } = await supabase.from('songs').select('*'); // Change 'songs' to your table name if different
-    
-    if (error) {
-        console.error('Error fetching transmissions from database:', error);
-        return;
+    try {
+        const { data, error } = await supabase.from('tracks').select('*');
+        
+        if (error) {
+            console.error('Error fetching tracks from Supabase:', error);
+            renderEmptyState();
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            playlist = data;
+            currentIndex = 0;
+            statusLabel.textContent = "SIGNAL ACTIVE";
+            updateActiveSong(false);
+        } else {
+            renderEmptyState();
+        }
+    } catch (err) {
+        console.warn('Supabase not fully configured or empty state active:', err);
+        renderEmptyState();
     }
-    
-    if (data && data.length > 0) {
-        playlist = data;
-        currentIndex = 0;
-        updateActiveSong(false);
-    }
+}
+
+function renderEmptyState() {
+    playlist = [];
+    songListEl.innerHTML = `
+        <div class="text-right flex flex-col items-end py-10">
+            <span class="text-xs text-white tracking-[0.2em] font-medium mb-1">VAULT EMPTY</span>
+            <span class="text-[9px] text-gray-500 tracking-wider">NO REAL SIGNALS FOUND</span>
+        </div>
+    `;
+    titleEl.textContent = "Vault Empty";
+    artistEl.textContent = "Awaiting Real Supabase Data";
+    thumbEl.src = "assets/default-art.jpg";
+    currentArtEl.src = "assets/default-art.jpg";
+    statusLabel.textContent = "STAND BY // VAULT EMPTY";
 }
 
 function renderSelector() {
     songListEl.innerHTML = '';
     
     if (playlist.length === 0) {
-        songListEl.innerHTML = `<div class="text-xs text-gray-600 tracking-wider">NO SIGNALS FOUND</div>`;
+        renderEmptyState();
         return;
     }
 
@@ -54,9 +101,9 @@ function renderSelector() {
         const distance = idx - currentIndex;
         const absDist = Math.abs(distance);
         
-        const opacity = Math.max(0.15, 1 - (absDist * 0.22));
+        const opacity = Math.max(0.2, 1 - (absDist * 0.2));
         const scale = Math.max(0.75, 1 - (absDist * 0.05));
-        const translatePr = absDist * 8;
+        const translatePr = absDist * 6;
 
         const item = document.createElement('div');
         item.className = `cursor-pointer transition-all duration-300 flex flex-col items-end`;
@@ -65,13 +112,13 @@ function renderSelector() {
 
         if (distance === 0) {
             item.innerHTML = `
-                <span class="text-sm font-semibold text-white tracking-wider">${song.title}</span>
-                <span class="text-[11px] text-gray-300 tracking-wide">${song.artist}</span>
+                <span class="text-sm font-medium text-white tracking-wider">${song.title || 'Untitled'}</span>
+                <span class="text-[11px] text-gray-300 tracking-wide">${song.artist || 'Unknown Artist'}</span>
             `;
         } else {
             item.innerHTML = `
-                <span class="text-xs text-gray-400 tracking-wider">${song.title}</span>
-                <span class="text-[9px] text-gray-600 tracking-wide">${song.artist}</span>
+                <span class="text-xs text-gray-400 tracking-wider">${song.title || 'Untitled'}</span>
+                <span class="text-[9px] text-gray-600 tracking-wide">${song.artist || 'Unknown Artist'}</span>
             `;
         }
 
@@ -88,12 +135,18 @@ function updateActiveSong(autoPlay = false) {
     if (playlist.length === 0) return;
     const current = playlist[currentIndex];
     
-    titleEl.textContent = current.title;
-    artistEl.textContent = current.artist;
-    thumbEl.src = current.art || 'assets/default-art.jpg';
-    currentArtEl.src = current.art || 'assets/default-art.jpg';
+    titleEl.textContent = current.title || 'Untitled';
+    artistEl.textContent = current.artist || 'Unknown Artist';
     
-    player.load(current);
+    const artUrl = current.cover_path ? supabase.storage.from('covers').getPublicUrl(current.cover_path).data.publicUrl : 'assets/default-art.jpg';
+    thumbEl.src = artUrl;
+    currentArtEl.src = artUrl;
+    
+    if (current.audio_path) {
+        const audioUrl = supabase.storage.from('audio').getPublicUrl(current.audio_path).data.publicUrl;
+        player.load({ audioUrl });
+    }
+
     if (autoPlay) {
         analyzer.init();
         player.play();
@@ -101,7 +154,7 @@ function updateActiveSong(autoPlay = false) {
     renderSelector();
 }
 
-// Swipe / Wheel scroll handling on the right-side crescent selector
+// Wheel scroll navigation on the right-side curved selector
 const selectorContainer = document.getElementById('song-selector-container');
 selectorContainer.addEventListener('wheel', (e) => {
     e.preventDefault();
