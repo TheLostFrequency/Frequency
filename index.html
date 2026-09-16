@@ -19,32 +19,13 @@
                 }
             }
         }
-    >
-    <style>
-        /* Custom scrollbars and specialized dark sci-fi styles */
-        body {
-            background-color: #050608;
-            color: #d1d5db;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
-            user-select: none;
-        }
-        /* Realistic arched glass perspective */
-        .curved-track {
-            transform: perspective(1000px) rotateY(-12deg);
-        }
-        /* Carved stone emblem effect */
-        .carved-emblem {
-            background: linear-gradient(135deg, #111318 0%, #050608 100%);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.9), 0 1px 2px rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-    </style>
+    </script>
+    <link rel="stylesheet" href="main.css">
 </head>
 <body class="w-screen h-screen relative flex flex-col justify-between p-6">
 
-    <!-- TOP NAVIGATION & HEADER -->
-    <header class="flex justify-between items-center z-30 select-none">
+    <!-- TOP NAVIGATION -->
+    <header class="flex justify-between items-center z-35 select-none">
         <div class="flex items-center space-x-3">
             <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             <span class="tracking-[0.25em] font-light text-sm text-white">FREQUENCY</span>
@@ -62,38 +43,32 @@
         </div>
     </header>
 
-    <!-- MAIN ARCHITECTURAL VIEWPORT -->
+    <!-- ARCHITECTURAL VIEWPORT -->
     <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
         
-        <!-- Centerpiece: Listening Pedestal & Current Artwork -->
+        <!-- Centerpiece Pedestal & Active Artwork -->
         <div class="absolute flex flex-col items-center bottom-[28%] pointer-events-auto">
-            <!-- Active Album Artwork Display -->
             <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black shadow-2xl p-2 relative mb-6 transition-all duration-500">
-                <img id="current-album-art" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" class="w-full h-full object-cover opacity-90 filter contrast-125" alt="Current Album">
+                <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-90 filter contrast-125" alt="Current Album">
                 <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
             </div>
 
-            <!-- Signal Indicator Line -->
             <div class="flex items-center space-x-3 mb-2 opacity-60">
                 <div class="h-[1px] w-12 bg-white/40"></div>
                 <span class="text-[9px] tracking-[0.3em] text-white">NOW PLAYING</span>
                 <div class="h-[1px] w-12 bg-white/40"></div>
             </div>
 
-            <!-- Monolithic Pedestal with Carved Logo -->
             <div class="w-48 h-32 bg-[#090a0e] border border-white/10 flex flex-col items-center justify-center relative shadow-2xl">
-                <!-- Carved Logo -->
                 <div class="carved-emblem w-20 h-10 rounded flex items-center justify-center text-white/40">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT-SIDE CURVED SONG SELECTOR (Crescent Interactive List) -->
+        <!-- RIGHT-SIDE CURVED SONG SELECTOR -->
         <div class="absolute right-[-140px] top-1/2 -translate-y-1/2 h-[600px] w-[400px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
-            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-4 text-right pr-32" id="song-list">
-                <!-- Dynamically populated via JS for smooth scroll/swipe interaction -->
-            </div>
+            <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-4 text-right pr-32" id="song-list"></div>
         </div>
 
     </main>
@@ -102,23 +77,19 @@
     <footer class="w-full flex justify-center z-30 pointer-events-auto pb-2">
         <div class="w-[720px] bg-[#090a0e]/95 backdrop-blur-md border border-white/15 px-6 py-4 shadow-2xl relative">
             
-            <!-- Technical readouts on top corners of player -->
             <div class="flex justify-between items-center text-[9px] tracking-[0.25em] text-gray-500 mb-3">
                 <span>SIGNAL ACTIVE</span>
                 <span>TRANSMISSIONS // 44.1kHz</span>
             </div>
 
-            <!-- Dynamic Wavelength / Oscilloscope Instrument -->
             <div class="relative w-full h-12 mb-3 flex items-center cursor-pointer" id="waveform-container">
                 <canvas id="waveform-canvas" class="w-full h-full"></canvas>
             </div>
 
-            <!-- Controls & Track Data Bar -->
             <div class="flex items-center justify-between">
-                <!-- Current Track Meta -->
                 <div class="flex items-center space-x-3 w-1/4">
                     <div class="w-10 h-10 bg-black border border-white/20 overflow-hidden flex-shrink-0">
-                        <img id="player-thumb" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover">
+                        <img id="player-thumb" src="assets/default-art.jpg" class="w-full h-full object-cover">
                     </div>
                     <div class="overflow-hidden">
                         <h4 id="player-title" class="text-xs text-white tracking-wider truncate font-medium">Song Ration</h4>
@@ -126,7 +97,6 @@
                     </div>
                 </div>
 
-                <!-- Playback Control Center -->
                 <div class="flex items-center space-x-6">
                     <button id="prev-btn" class="text-gray-400 hover:text-white transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 20L9 12l10-8v16zM5 19V5"/></svg>
@@ -139,7 +109,6 @@
                     </button>
                 </div>
 
-                <!-- Time and Volume Indicators -->
                 <div class="flex items-center space-x-4 text-[10px] text-gray-400 tracking-widest w-1/4 justify-end">
                     <span id="current-time">02:15</span>
                     <span class="text-gray-600">/</span>
@@ -150,157 +119,16 @@
         </div>
     </footer>
 
-    <!-- BACKGROUND ATMOSPHERE (Simulated Archival Fortress Environment) -->
+    <!-- BACKGROUND ATMOSPHERE -->
     <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
         <div class="absolute inset-0 bg-gradient-to-t from-[#050608] via-transparent to-[#050608]"></div>
-        <!-- Pillars and architectural lighting structure (White sci-fi highlights) -->
         <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[600px] h-full border-x border-white/5 flex justify-between">
             <div class="w-12 h-full bg-gradient-to-r from-white/[0.02] to-transparent"></div>
             <div class="w-12 h-full bg-gradient-to-l from-white/[0.02] to-transparent"></div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT INTERACTION LOGIC -->
-    <script>
-        const playlist = [
-            { title: "Now Amberian", artist: "Atumsa", duration: "03:12", art: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" },
-            { title: "The Concelebrles", artist: "Artsts", duration: "04:05", art: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=400&auto=format&fit=crop" },
-            { title: "Thapeels", artist: "Artless", duration: "02:50", art: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=400&auto=format&fit=crop" },
-            { title: "Los Gingdtom", artist: "Archon Vitama", duration: "03:40", art: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=400&auto=format&fit=crop" },
-            { title: "Keep Dance", artist: "Sbartoe", duration: "03:15", art: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=400&auto=format&fit=crop" },
-            { title: "Song Ration", artist: "Artists", duration: "03:45", art: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" },
-            { title: "Wast Chame", artist: "Pomere Ihasnist", duration: "04:20", art: "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?q=80&w=400&auto=format&fit=crop" },
-            { title: "Lile Aerything", artist: "Ktoror", duration: "02:30", art: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop" },
-            { title: "What Is The Bassion", artist: "Sonoks Shanes", duration: "05-10", art: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=400&auto=format&fit=crop" },
-            { title: "Blends", artist: "Honaminos", duration: "03:10", art: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=400&auto=format&fit=crop" }
-        ];
-
-        let currentIndex = 5; // Default focused on "Song Ration"
-
-        const songListEl = document.getElementById('song-list');
-        const titleEl = document.getElementById('player-title');
-        const artistEl = document.getElementById('player-artist');
-        const thumbEl = document.getElementById('player-thumb');
-        const currentArtEl = document.getElementById('current-album-art');
-
-        function renderSelector() {
-            songListEl.innerHTML = '';
-            
-            playlist.forEach((song, idx) => {
-                const distance = idx - currentIndex;
-                const absDist = Math.abs(distance);
-                
-                // Calculate curved scaling & opacity effect along crescent path
-                const opacity = Math.max(0.15, 1 - (absDist * 0.22));
-                const scale = Math.max(0.75, 1 - (absDist * 0.05));
-                const translatePr = absDist * 8; // Curve displacement offset
-
-                const item = document.createElement('div');
-                item.className = `cursor-pointer transition-all duration-300 flex flex-col items-end`;
-                item.style.transform = `translateX(${translatePr}px) scale(${scale})`;
-                item.style.opacity = opacity;
-
-                if (distance === 0) {
-                    item.innerHTML = `
-                        <span class="text-sm font-semibold text-white tracking-wider">${song.title}</span>
-                        <span class="text-[11px] text-gray-300 tracking-wide">${song.artist}</span>
-                    `;
-                } else {
-                    item.innerHTML = `
-                        <span class="text-xs text-gray-400 tracking-wider">${song.title}</span>
-                        <span class="text-[9px] text-gray-600 tracking-wide">${song.artist}</span>
-                    `;
-                }
-
-                item.onclick = () => {
-                    currentIndex = idx;
-                    updateActiveSong();
-                };
-
-                songListEl.appendChild(item);
-            });
-        }
-
-        function updateActiveSong() {
-            const current = playlist[currentIndex];
-            titleEl.textContent = current.title;
-            artistEl.textContent = current.artist;
-            thumbEl.src = current.art;
-            currentArtEl.src = current.art;
-            renderSelector();
-        }
-
-        // Swipe & Scroll Wheel Navigation Handling
-        const selectorContainer = document.getElementById('song-selector-container');
-        selectorContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            if (e.deltaY > 0) {
-                currentIndex = Math.min(playlist.length - 1, currentIndex + 1);
-            } else {
-                currentIndex = Math.max(0, currentIndex - 1);
-            }
-            updateActiveSong();
-        }, { passive: false });
-
-        // Scientific Oscilloscope / Wavelength Canvas Animation
-        const canvas = document.getElementById('waveform-canvas');
-        const ctx = canvas.getContext('2d');
-
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        let phase = 0;
-        function drawWaveform() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.beginPath();
-            ctx.lineWidth = 1.5;
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-
-            const sliceWidth = canvas.width / 150;
-            let x = 0;
-
-            for (let i = 0; i < 150; i++) {
-                // Combine multi-frequency sine waves for organic scientific instrument output
-                const v = Math.sin(i * 0.08 + phase) * Math.cos(i * 0.03 + phase * 0.5) * 16 + 
-                          Math.sin(i * 0.2 - phase * 1.5) * 6;
-                const y = (canvas.height / 2) + v;
-
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-                x += sliceWidth;
-            }
-
-            ctx.stroke();
-
-            // Secondary subtle grid tracking line inside waveform
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.fillRect(canvas.width * 0.62, 0, 1, canvas.height); // Playback head position marker
-
-            phase += 0.04;
-            requestAnimationFrame(drawWaveform);
-        }
-
-        // Initialize state
-        renderSelector();
-        drawWaveform();
-
-        // Control button bindings
-        document.getElementById('next-btn').onclick = () => {
-            currentIndex = (currentIndex + 1) % playlist.length;
-            updateActiveSong();
-        };
-        document.getElementById('prev-btn').onclick = () => {
-            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-            updateActiveSong();
-        };
-    </script>
+    <!-- Script Entrypoints -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
