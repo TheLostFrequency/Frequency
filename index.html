@@ -2,198 +2,172 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FREQUENCY — Futuristic Personal Music Library</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
+    <title>FREQUENCY — Find Your Frequency</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        sciDark: '#050608',
-                        sciPanel: '#090a0e',
-                        sciBorder: '#1f242d',
-                    }
-                }
-            }
-        }
-    </script>
-    <link rel="stylesheet" href="main.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/main.css">
 </head>
-<body class="w-screen h-screen relative flex flex-col justify-between p-6 select-none overflow-hidden vault-container">
-
-    <!-- ARCHITECTURAL ENVIRONMENT BACKGROUND -->
-    <div class="absolute inset-0 z-0 pointer-events-none architectural-bg">
-        <div class="absolute inset-0 bg-gradient-to-b from-[#080a0f] via-[#050608] to-[#030406]"></div>
-        <div class="absolute left-1/2 -translate-x-1/2 top-0 w-[900px] h-full border-x border-white/[0.03] flex justify-between">
-            <div class="w-24 h-full bg-gradient-to-r from-white/[0.01] to-transparent"></div>
-            <div class="w-24 h-full bg-gradient-to-l from-white/[0.01] to-transparent"></div>
-        </div>
+<body>
+    <div class="facility-bg" aria-hidden="true">
+        <div class="facility-light facility-light-a"></div>
+        <div class="facility-light facility-light-b"></div>
+        <div class="facility-column column-left"></div>
+        <div class="facility-column column-right"></div>
+        <div class="facility-floor"></div>
+        <div class="facility-grid"></div>
     </div>
 
-    <!-- TOP NAVIGATION -->
-    <header class="flex justify-between items-center z-35 select-none relative">
-        <div class="flex items-center space-x-3">
-            <img src="assets/logo.png" class="w-7 h-7 object-contain opacity-95" alt="FREQUENCY Logo">
-            <span class="tracking-[0.25em] font-light text-sm text-white">FREQUENCY</span>
-        </div>
-        
-        <nav class="flex space-x-6 text-[11px] tracking-[0.18em]">
-            <a href="#" class="text-white border-b border-white pb-1 font-medium transition" id="nav-collection">COLLECTION</a>
-            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-listview">LIST VIEW</a>
-            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-equalizer">EQUALIZER</a>
-            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-transmission">TRANSMISSION</a>
-            <a href="#" class="text-gray-400 hover:text-white transition" id="nav-profile">PROFILE</a>
-        </nav>
+    <div id="toast" class="toast" role="status"></div>
 
-        <div class="text-gray-400 hover:text-white cursor-pointer transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        </div>
+    <header class="facility-header">
+        <button class="brand-mark" id="brand-button" aria-label="Return to Collection">
+            <img src="assets/logo.png" alt="Frequency">
+            <span>FREQUENCY</span>
+        </button>
+        <nav class="facility-nav" aria-label="Frequency rooms">
+            <button data-tab="collection" class="nav-tab active">COLLECTION</button>
+            <button data-tab="list" class="nav-tab">LIST</button>
+            <button data-tab="equalizer" class="nav-tab">EQUALIZER</button>
+            <button data-tab="transmission" class="nav-tab">TRANSMISSION</button>
+            <button data-tab="profile" class="nav-tab">PROFILE</button>
+        </nav>
+        <button id="upload-button" class="upload-button">+ UPLOAD</button>
     </header>
 
-    <!-- INTERACTIVE VIEWPORT OVERLAY -->
-    <main class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-        
-        <!-- COLLECTION VIEW (Default Architectural Pedestal View) -->
-        <div id="view-collection" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <!-- Centerpiece Altar Artifact -->
-            <div class="absolute flex flex-col items-center top-[38%] pointer-events-auto">
-                <div id="active-artwork-container" class="w-36 h-36 border border-white/20 bg-black/90 shadow-2xl p-2 relative mb-4 transition-all duration-500">
-                    <img id="current-album-art" src="assets/default-art.jpg" class="w-full h-full object-cover opacity-95 filter contrast-125" alt="Vault Artifact">
-                    <div class="absolute inset-0 border border-white/10 pointer-events-none"></div>
-                </div>
-
-                <div class="flex items-center space-x-3 mb-2 opacity-60">
-                    <div class="h-[1px] w-12 bg-white/40"></div>
-                    <span class="text-[9px] tracking-[0.3em] text-white">NOW PLAYING</span>
-                    <div class="h-[1px] w-12 bg-white/40"></div>
-                </div>
-            </div>
-
-            <!-- RIGHT-SIDE CURVED SIGNAL SELECTOR -->
-            <div class="absolute right-[8%] top-1/2 -translate-y-1/2 h-[550px] w-[340px] pointer-events-auto flex items-center overflow-hidden" id="song-selector-container">
-                <div class="relative w-full h-full curved-track flex flex-col justify-center space-y-3 text-right pr-16" id="song-list">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- LIST VIEW (Alternative tabular library view) -->
-        <div id="view-listview" class="absolute inset-0 bg-[#050608]/90 backdrop-blur-md z-30 hidden flex flex-col items-center justify-center pointer-events-auto p-12">
-            <div class="w-full max-w-3xl bg-[#090a0e] border border-white/15 p-6 shadow-2xl max-h-[70vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h2 class="text-sm tracking-[0.25em] text-white font-medium">VAULT LIST VIEW</h2>
-                    <span class="text-[10px] text-gray-400 tracking-widest" id="list-count">0 SIGNALS</span>
-                </div>
-                <div id="list-container" class="space-y-2">
-                    <!-- Dynamic list items -->
-                </div>
-            </div>
-        </div>
-
-        <!-- EQUALIZER VIEW -->
-        <div id="view-equalizer" class="absolute inset-0 bg-[#050608]/90 backdrop-blur-md z-30 hidden flex flex-col items-center justify-center pointer-events-auto">
-            <div class="w-full max-w-xl bg-[#090a0e] border border-white/15 p-8 shadow-2xl text-center">
-                <h2 class="text-sm tracking-[0.25em] text-white font-medium mb-2">SIGNAL EQUALIZER ARCHITECTURE</h2>
-                <p class="text-xs text-gray-400 tracking-wider mb-8">Fine-tune frequency response and gain parameters.</p>
-                <div class="grid grid-cols-5 gap-6 mb-8">
-                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">60Hz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
-                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">250Hz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
-                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">1kHz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
-                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">4kHz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
-                    <div class="flex flex-col items-center space-y-3"><span class="text-[10px] text-gray-400">16kHz</span><input type="range" min="-20" max="20" value="0" class="h-32 accent-white cursor-pointer" orient="vertical"></div>
-                </div>
-                <div class="text-[10px] tracking-[0.2em] text-white/50">SYSTEM FREQUENCY MATRIX ACTIVE</div>
-            </div>
-        </div>
-
-        <!-- TRANSMISSION VIEW -->
-        <div id="view-transmission" class="absolute inset-0 bg-[#050608]/95 backdrop-blur-xl z-30 hidden flex items-center justify-center pointer-events-auto">
-            <div class="max-w-xl p-8 border border-white/10 bg-[#090a0e] text-left relative shadow-2xl">
-                <h2 class="text-2xl font-light tracking-[0.25em] text-white mb-2">TRANSMISSION</h2>
-                <h3 class="text-xs tracking-[0.2em] text-gray-400 mb-6">THE SIGNAL IS NOT YET ACTIVE.</h3>
-                <p class="text-sm text-gray-400 font-light leading-relaxed mb-4">
-                    Something is being prepared.<br>
-                    A new way to discover, share, and experience music is coming to Frequency.
-                </p>
-                <div class="text-[10px] tracking-[0.3em] text-white/60 mt-8">STAND BY.</div>
-            </div>
-        </div>
-
-        <!-- PROFILE VIEW -->
-        <div id="view-profile" class="absolute inset-0 bg-[#050608]/90 backdrop-blur-md z-30 hidden flex flex-col items-center justify-center pointer-events-auto">
-            <div class="w-full max-w-md bg-[#090a0e] border border-white/15 p-8 shadow-2xl text-left">
-                <div class="flex items-center space-x-4 mb-6 border-b border-white/10 pb-4">
-                    <img src="assets/logo.png" class="w-10 h-10 object-contain">
-                    <div>
-                        <h2 class="text-sm font-medium tracking-[0.2em] text-white">VAULT OWNER</h2>
-                        <p class="text-[10px] text-gray-400 tracking-wider">SECURE SUPABASE SESSION ACTIVE</p>
+    <main class="facility-main">
+        <section id="room-collection" class="room active-room">
+            <div class="room-label"><span>01</span> ARCHIVE CHAMBER</div>
+            <div class="collection-stage">
+                <div class="architectural-ring ring-one"></div>
+                <div class="architectural-ring ring-two"></div>
+                <div class="pedestal-shadow"></div>
+                <div class="pedestal">
+                    <div class="pedestal-slab"></div>
+                    <div class="pedestal-face">
+                        <div class="carved-logo">
+                            <img src="assets/logo.png" alt="">
+                        </div>
+                        <span>FREQUENCY // VAULT</span>
                     </div>
                 </div>
-                <div class="space-y-4 text-xs text-gray-300">
-                    <div class="flex justify-between py-2 border-b border-white/5">
-                        <span class="text-gray-500">Storage Buckets</span>
-                        <span>audio / covers</span>
+                <div id="now-playing-art" class="hero-art">
+                    <div class="art-frame">
+                        <img id="current-album-art" src="assets/default-art.jpg" alt="Current album art">
+                        <div class="art-glass"></div>
                     </div>
-                    <div class="flex justify-between py-2 border-b border-white/5">
-                        <span class="text-gray-500">Vault Protocol</span>
-                        <span>Cosmic Brutalist v2.6</span>
+                    <div class="hero-meta">
+                        <span class="micro-label">NOW PLAYING</span>
+                        <h1 id="hero-title">VAULT EMPTY</h1>
+                        <p id="hero-artist">NO SIGNAL</p>
                     </div>
                 </div>
-            </div>
-        </div>
 
+                <div id="song-selector" class="song-selector" aria-label="Song selector">
+                    <div class="selector-spine"></div>
+                    <div class="selector-head"><span>SELECT SIGNAL</span><i></i></div>
+                    <div id="song-wheel" class="song-wheel"></div>
+                    <div class="selector-foot"><span>SWIPE / SCROLL</span><i></i></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="room-list" class="room room-panel">
+            <div class="room-label"><span>02</span> ARCHIVE INDEX</div>
+            <div class="room-card list-room-card">
+                <div class="panel-heading"><div><span class="micro-label">VAULT INDEX</span><h2>COLLECTION LIST</h2></div><span id="list-count">0 SIGNALS</span></div>
+                <div id="list-container" class="list-container"></div>
+            </div>
+        </section>
+
+        <section id="room-equalizer" class="room room-panel">
+            <div class="room-label"><span>03</span> SIGNAL LABORATORY</div>
+            <div class="room-card eq-room-card">
+                <div class="panel-heading"><div><span class="micro-label">AUDIO INSTRUMENT</span><h2>EQUALIZER</h2></div><span id="eq-status">FLAT</span></div>
+                <div id="eq-visual" class="eq-visual"></div>
+                <div class="eq-bands">
+                    <label><span>60</span><input data-band="0" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                    <label><span>250</span><input data-band="1" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                    <label><span>1K</span><input data-band="2" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                    <label><span>4K</span><input data-band="3" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                    <label><span>16K</span><input data-band="4" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                </div>
+                <button id="eq-reset" class="room-action">RESET INSTRUMENT</button>
+            </div>
+        </section>
+
+        <section id="room-transmission" class="room transmission-room">
+            <div class="room-label"><span>04</span> TRANSMISSION CHAMBER</div>
+            <div class="transmission-door">
+                <div class="door-frame"><div class="door-core"><div class="signal-node"></div><div class="signal-line line-a"></div><div class="signal-line line-b"></div><div class="signal-line line-c"></div></div></div>
+                <div class="transmission-copy"><span class="micro-label">TRANSMISSION</span><h2>THE SIGNAL IS NOT YET ACTIVE.</h2><p>Something is being prepared.<br>A new way to discover, share, and experience music is coming to Frequency.</p><strong>STAND BY.</strong></div>
+            </div>
+        </section>
+
+        <section id="room-profile" class="room room-panel">
+            <div class="room-label"><span>05</span> PRIVATE CHAMBER</div>
+            <div class="room-card profile-card">
+                <div class="profile-emblem"><img src="assets/logo.png" alt="Frequency"></div>
+                <div class="panel-heading"><div><span class="micro-label">VAULT OWNER</span><h2 id="profile-title">PRIVATE SESSION</h2></div></div>
+                <p id="profile-status" class="profile-status">Sign in to unlock your private vault and uploads.</p>
+                <div id="auth-actions" class="auth-actions">
+                    <button id="auth-open" class="room-action">ENTER VAULT</button>
+                    <button id="sign-out" class="room-action hidden">SIGN OUT</button>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- BOTTOM-CENTER CONSOLE MEDIA PLAYER -->
-    <footer class="w-full flex justify-center z-30 pointer-events-auto pb-4 relative">
-        <div class="w-[720px] bg-[#090a0e]/95 backdrop-blur-md border border-white/15 px-6 py-4 shadow-2xl relative">
-            
-            <div class="flex justify-between items-center text-[9px] tracking-[0.25em] text-gray-400 mb-2">
-                <span id="player-status-label">SIGNAL ACTIVE</span>
-                <span>TRANSMISSIONS // 44.1kHz</span>
-            </div>
-
-            <div class="relative w-full h-10 mb-2 flex items-center cursor-pointer" id="waveform-container">
-                <canvas id="waveform-canvas" class="w-full h-full"></canvas>
-            </div>
-
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3 w-1/4">
-                    <div class="w-10 h-10 bg-black border border-white/20 overflow-hidden flex-shrink-0">
-                        <img id="player-thumb" src="assets/default-art.jpg" class="w-full h-full object-cover">
-                    </div>
-                    <div class="overflow-hidden">
-                        <h4 id="player-title" class="text-xs text-white tracking-wider truncate font-medium">Vault Empty</h4>
-                        <p id="player-artist" class="text-[10px] text-gray-400 tracking-wide truncate">Upload via Supabase</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center space-x-6">
-                    <button id="prev-btn" class="text-gray-400 hover:text-white transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 20L9 12l10-8v16zM5 19V5"/></svg>
-                    </button>
-                    <button id="play-pause-btn" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition">
-                        <svg id="play-icon" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
-                    </button>
-                    <button id="next-btn" class="text-gray-400 hover:text-white transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4zM19 5v14"/></svg>
-                    </button>
-                </div>
-
-                <div class="flex items-center space-x-4 text-[10px] text-gray-400 tracking-widest w-1/4 justify-end">
-                    <span id="current-time">00:00</span>
-                    <span class="text-gray-600">/</span>
-                    <span id="total-time">00:00</span>
-                </div>
-            </div>
-
+    <footer class="player-dock">
+        <div class="player-track-info">
+            <img id="player-thumb" src="assets/default-art.jpg" alt="">
+            <div><span class="micro-label">PLAYING</span><strong id="player-title">VAULT EMPTY</strong><small id="player-artist">NO SIGNAL</small></div>
         </div>
+        <div class="player-center">
+            <div class="wave-wrap" id="waveform-container"><canvas id="waveform-canvas"></canvas><div id="wave-progress" class="wave-progress"></div></div>
+            <div class="transport">
+                <span id="current-time">00:00</span>
+                <button id="prev-btn" class="transport-btn" aria-label="Previous"><span>◀</span></button>
+                <button id="play-pause-btn" class="play-btn" aria-label="Play"><span id="play-icon">▶</span></button>
+                <button id="next-btn" class="transport-btn" aria-label="Next"><span>▶</span></button>
+                <button id="shuffle-btn" class="transport-btn" aria-label="Shuffle">⤨</button>
+                <span id="total-time">00:00</span>
+            </div>
+        </div>
+        <div class="player-status"><span class="status-dot"></span><span id="player-status-label">STAND BY</span></div>
     </footer>
 
-    <!-- Script Entrypoints -->
-    <script type="module" src="app.js"></script>
+    <dialog id="upload-dialog" class="vault-dialog">
+        <form id="upload-form" method="dialog" class="dialog-card">
+            <button type="button" class="dialog-close" data-close="upload-dialog">×</button>
+            <span class="micro-label">VAULT INTAKE</span><h2>UPLOAD SIGNAL</h2>
+            <p class="dialog-note">Audio is stored privately in your Frequency vault.</p>
+            <div class="form-grid">
+                <label>TITLE<input name="title" required placeholder="Track title"></label>
+                <label>ARTIST<input name="artist" required placeholder="Artist"></label>
+                <label>ALBUM<input name="album" placeholder="Album"></label>
+                <label>GENRE<input name="genre" placeholder="Genre"></label>
+            </div>
+            <label class="file-drop">AUDIO FILE<input id="audio-file" name="audio" type="file" accept="audio/*" required><span id="audio-file-name">Choose an audio file</span></label>
+            <label class="file-drop">COVER ART<input id="cover-file" name="cover" type="file" accept="image/*"><span id="cover-file-name">Optional cover image</span></label>
+            <button id="submit-upload" class="room-action" type="submit">UPLOAD TO VAULT</button>
+            <div id="upload-progress" class="upload-progress"></div>
+        </form>
+    </dialog>
+
+    <dialog id="auth-dialog" class="vault-dialog">
+        <form id="auth-form" method="dialog" class="dialog-card">
+            <button type="button" class="dialog-close" data-close="auth-dialog">×</button>
+            <span class="micro-label">PRIVATE ACCESS</span><h2>ENTER FREQUENCY</h2>
+            <p class="dialog-note">Use an email and password to access your private vault.</p>
+            <label>EMAIL<input id="auth-email" type="email" required autocomplete="email"></label>
+            <label>PASSWORD<input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
+            <div class="auth-actions"><button id="auth-signin" class="room-action" type="submit">SIGN IN</button><button id="auth-signup" class="room-action secondary" type="button">CREATE VAULT</button></div>
+            <div id="auth-message" class="upload-progress"></div>
+        </form>
+    </dialog>
+
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
