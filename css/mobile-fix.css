@@ -16,27 +16,86 @@
         box-sizing:border-box!important;
     }
 
-    /* EQ must fit the viewport; vertical scrolling only. */
+    /* EQ is a single compact instrument on mobile. It is centered and never wider than the viewport. */
     #room-equalizer.active-room{
         width:100%!important;
         max-width:100%!important;
         left:0!important;
         right:0!important;
+        padding:38px 6px 105px!important;
         overflow-x:hidden!important;
         overflow-y:auto!important;
         box-sizing:border-box!important;
+        display:flex!important;
+        align-items:flex-start!important;
+        justify-content:center!important;
     }
-    #room-equalizer .eq-room-card,
+
+    #room-equalizer .eq-room-card{
+        position:relative!important;
+        left:auto!important;
+        top:auto!important;
+        width:92%!important;
+        max-width:560px!important;
+        min-width:0!important;
+        margin:8px auto 0!important;
+        transform:none!important;
+        box-sizing:border-box!important;
+    }
+
     #room-equalizer .eq-console-shell,
     #room-equalizer .eq-fader-deck,
     #room-equalizer .eq-command-bank,
-    #room-equalizer .eq-aux-panel{
+    #room-equalizer .eq-aux-panel,
+    #room-equalizer .eq-monitor,
+    #room-equalizer .monitor-frame,
+    #room-equalizer .eq-bands{
+        width:100%!important;
+        min-width:0!important;
         max-width:100%!important;
         box-sizing:border-box!important;
     }
+
+    /* Tighten the instrument so the entire control surface reads as one centered unit. */
+    #room-equalizer .eq-console-shell{padding:7px 6px 9px!important;}
+    #room-equalizer .console-rail{font-size:3px!important;letter-spacing:.08em!important;}
+    #room-equalizer .eq-monitor{margin:4px 0 6px!important;padding:4px!important;}
+    #room-equalizer .monitor-frame{padding:4px!important;}
+    #room-equalizer .monitor-bezel-top{height:11px!important;font-size:4px!important;}
+    #room-equalizer .eq-visual{height:78px!important;}
+    #room-equalizer .monitor-readouts{height:10px!important;font-size:4px!important;}
+    #room-equalizer .eq-fader-deck{margin:0 0 6px!important;padding:6px 4px 7px!important;}
+    #room-equalizer .fader-deck-header{font-size:3px!important;padding-bottom:4px!important;}
+    #room-equalizer .eq-scale{left:3px!important;top:30px!important;bottom:25px!important;font-size:4px!important;}
+    #room-equalizer .eq-bands{height:125px!important;gap:0!important;padding:17px 1px 10px 12px!important;}
+    #room-equalizer .eq-bands label{font-size:4px!important;}
+    #room-equalizer .eq-bands label:before{top:15px!important;bottom:17px!important;width:3px!important;}
+    #room-equalizer .eq-bands label:after{top:15px!important;bottom:17px!important;width:18px!important;}
+    #room-equalizer .eq-bands label>span{margin-bottom:3px!important;font-size:5px!important;}
+    #room-equalizer .eq-bands small{margin-top:2px!important;font-size:3px!important;}
+    #room-equalizer .eq-band-value{min-width:22px!important;padding:2px 0!important;font-size:4px!important;}
+    #room-equalizer .eq-bands input{top:15px!important;height:105px!important;width:28px!important;}
+    #room-equalizer .eq-bands input::-webkit-slider-thumb{width:24px!important;height:11px!important;}
+    #room-equalizer .eq-bands input::-moz-range-thumb{width:24px!important;height:11px!important;}
+    #room-equalizer .fader-deck-footer{font-size:3px!important;}
+    #room-equalizer .eq-command-bank{margin:0 0 6px!important;padding:6px 5px 7px!important;}
+    #room-equalizer .command-bank-title{margin-bottom:4px!important;font-size:4px!important;}
+    #room-equalizer .command-bank-title small{font-size:3px!important;}
+    #room-equalizer .eq-presets{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:3px!important;}
+    #room-equalizer .eq-presets button{min-width:0!important;min-height:21px!important;padding:0 3px 0 8px!important;font-size:3px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+    #room-equalizer .eq-presets button:before{left:3px!important;width:2px!important;height:2px!important;}
+    #room-equalizer .eq-aux-panel{grid-template-columns:1fr 1fr 1fr!important;gap:3px!important;margin:0!important;}
+    #room-equalizer .aux-module{height:23px!important;padding:0 4px!important;font-size:3px!important;min-width:0!important;}
+    #room-equalizer .aux-module strong{font-size:3px!important;}
+    #room-equalizer .eq-aux-panel .room-action{height:23px!important;font-size:4px!important;min-width:0!important;padding:0 2px!important;}
+    #room-equalizer .console-rail-bottom{margin-top:5px!important;}
 }
 
 @media (max-width:430px){
     .player-dock{height:92px!important;min-height:92px!important;}
     .facility-main{height:calc(100vh - 96px - 92px)!important;padding-bottom:0!important;}
+    #room-equalizer.active-room{padding:34px 4px 105px!important;}
+    #room-equalizer .eq-room-card{width:94%!important;margin-top:4px!important;}
+    #room-equalizer .eq-presets{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+    #room-equalizer .eq-aux-panel{grid-template-columns:1fr!important;}
 }
