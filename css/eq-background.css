@@ -1,20 +1,18 @@
 /* Equalizer room background only. The image never affects the other Frequency rooms. */
 #room-equalizer {
-    background-image:
-        linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,.58)),
-        url('../assets/eq-background.png');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
+    position: relative;
+    overflow: auto;
+    background: #020202 url('../assets/eq-background.png?v=2') center center / cover no-repeat !important;
 }
 
+/* Keep the uploaded EQ artwork visible instead of letting the global room background win. */
 #room-equalizer::before {
     content: "";
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,.28) 72%, rgba(0,0,0,.58) 100%),
-        linear-gradient(180deg, rgba(0,0,0,.12), transparent 35%, rgba(0,0,0,.34));
+        linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.38)),
+        radial-gradient(ellipse at center, transparent 16%, rgba(0,0,0,.12) 62%, rgba(0,0,0,.42) 100%);
     pointer-events: none;
     z-index: 0;
 }
@@ -22,4 +20,20 @@
 #room-equalizer > * {
     position: relative;
     z-index: 1;
+}
+
+/* True viewport centering so the console cannot drift sideways because of the scroll area. */
+#room-equalizer .eq-room-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: 0;
+    transform: translate(-50%, -50%);
+}
+
+@media (max-width: 720px) {
+    #room-equalizer .eq-room-card {
+        top: 50%;
+        width: calc(100% - 20px);
+    }
 }
