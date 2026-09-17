@@ -33,6 +33,46 @@ async function loadTracks() {
     return data || [];
 }
 
+function injectStyles() {
+    if ($('library-manager-style')) return;
+    const style = document.createElement('style');
+    style.id = 'library-manager-style';
+    style.textContent = `
+        .list-row { position: relative; padding-right: 82px !important; }
+        .signal-edit {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 52px;
+            height: 28px;
+            padding: 0 9px;
+            border: 1px solid rgba(255,255,255,.18);
+            background: rgba(0,0,0,.55);
+            color: rgba(255,255,255,.58);
+            font: 8px/1 Arial, Helvetica, sans-serif;
+            letter-spacing: .18em;
+            cursor: pointer;
+            transition: .2s ease;
+            user-select: none;
+        }
+        .signal-edit:hover,
+        .signal-edit:focus-visible {
+            color: #fff;
+            border-color: rgba(196,42,32,.75);
+            background: rgba(196,42,32,.12);
+            outline: none;
+            box-shadow: 0 0 18px rgba(196,42,32,.12);
+        }
+        #edit-dialog .dialog-card { max-height: 90vh; overflow: auto; }
+    `;
+    document.head.appendChild(style);
+}
+
 function ensureEditDialog() {
     if ($('edit-dialog')) return $('edit-dialog');
 
@@ -71,7 +111,7 @@ function ensureEditDialog() {
 
 let editingTrack = null;
 
-async function openEditor(track) {
+function openEditor(track) {
     const dialog = ensureEditDialog();
     editingTrack = track;
     $('edit-title').value = track.title || '';
@@ -86,9 +126,8 @@ async function openEditor(track) {
     dialog.showModal();
 }
 
-async function replaceStorageFile(bucket, oldPath, file, userId) {
-    if (!file?.size) return oldPath || null;
-
+async function uploadReplacement(bucket, file, userId) {
+    if (!file?.size) return null;
     const safeName = file.name.replace(/[^a-z0-9._-]/gi, '_');
     const path = `${userId}/${crypto.randomUUID()}-${safeName}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file, {
@@ -96,11 +135,6 @@ async function replaceStorageFile(bucket, oldPath, file, userId) {
         upsert: false
     });
     if (error) throw error;
-
-    if (oldPath) {
-        const { error: removeError } = await supabase.storage.from(bucket).remove([oldPath]);
-        if (removeError) console.warn(`Could not remove old ${bucket} file:`, removeError);
-    }
     return path;
 }
 
@@ -115,12 +149,18 @@ async function saveEdit(event) {
     button.disabled = true;
     $('edit-progress').textContent = 'SAVING SIGNAL...';
 
+    let newAudioPath = null;
+    let newCoverPath = null;
+
     try {
         const audioFile = $('edit-audio').files[0];
         const coverFile = $('edit-cover').files[0];
 
-        const audioPath = await replaceStorageFile('audio', editingTrack.audio_path, audioFile, user.id);
-        const coverPath = await replaceStorageFile('covers', editingTrack.cover_path, coverFile, user.id);
+        newAudioPath = await uploadReplacement('audio', audioFile, user.id);
+        newCoverPath = await uploadReplacement('covers', coverFile, user.id);
+
+        const audioPath = newAudioPath || editingTrack.audio_path || null;
+        const coverPath = coverFile?.size ? newCoverPath : (editingTrack.cover_path || null);
 
         const { error } = await supabase
             .from('tracks')
@@ -137,13 +177,34 @@ async function saveEdit(event) {
 
         if (error) throw error;
 
+        // Only remove the old files after the database update succeeds.
+        // If storage delete permissions are unavailable, the edit still remains saved.
+        const removals = [];
+        if (newAudioPath && editingTrack.audio_path) removals.push(['audio', editingTrack.audio_path]);
+        if (newCoverPath && editingTrack.cover_path) removals.push(['covers', editingTrack.cover_path]);
+        for (const [bucket, path] of removals) {
+            const { error: removeError } = await supabase.storage.from(bucket).remove([path]);
+            if (removeError) console.warn(`Could not remove old ${bucket} file:`, removeError);
+        }
+
         $('edit-progress').textContent = 'SIGNAL UPDATED.';
-        setTimeout(() => window.location.reload(), 250);
+        dialogCloseAndRefresh();
     } catch (error) {
+        // Clean up a newly uploaded replacement if the database update failed.
+        if (newAudioPath) await supabase.storage.from('audio').remove([newAudioPath]).catch(() => {});
+        if (newCoverPath) await supabase.storage.from('covers').remove([newCoverPath]).catch(() => {});
         console.error('Signal edit failed:', error);
         $('edit-progress').textContent = error.message || 'Could not update signal.';
         button.disabled = false;
     }
+}
+
+function dialogCloseAndRefresh() {
+    const dialog = $('edit-dialog');
+    setTimeout(() => {
+        dialog?.close();
+        window.location.reload();
+    }, 350);
 }
 
 function injectEditButtons() {
@@ -153,16 +214,28 @@ function injectEditButtons() {
     container.querySelectorAll('.list-row').forEach(row => {
         if (row.querySelector('.signal-edit')) return;
 
-        const edit = document.createElement('button');
-        edit.type = 'button';
+        // list-row is itself a button, so the edit control must NOT be another
+        // <button> nested inside it. A span gives us a real clickable edit target
+        // without invalid HTML or swallowed click events.
+        const edit = document.createElement('span');
         edit.className = 'signal-edit';
         edit.textContent = 'EDIT';
+        edit.setAttribute('role', 'button');
+        edit.setAttribute('tabindex', '0');
         edit.setAttribute('aria-label', 'Edit signal');
-        edit.addEventListener('click', async event => {
+
+        const launch = async event => {
+            event.preventDefault();
             event.stopPropagation();
             const tracks = await loadTracks();
-            const track = tracks[Number(row.dataset.i)];
+            const index = Number(row.dataset.i);
+            const track = tracks[index];
             if (track) openEditor(track);
+        };
+
+        edit.addEventListener('click', launch);
+        edit.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') launch(event);
         });
         row.appendChild(edit);
     });
@@ -173,6 +246,8 @@ function setupBulkUpload() {
     const input = $('audio-file');
     if (!form || !input || !supabase) return;
 
+    // No client-side song-count limit. Selecting multiple files creates one
+    // database record and one private storage object per file.
     input.multiple = true;
     const label = $('audio-file-name');
     const artistInput = form.querySelector('[name="artist"]');
@@ -190,7 +265,6 @@ function setupBulkUpload() {
     form.addEventListener('submit', async event => {
         event.preventDefault();
         event.stopImmediatePropagation();
-        if (!event.cancelable) return;
 
         const user = await getUser();
         const files = [...input.files];
@@ -267,9 +341,16 @@ function watchList() {
     injectEditButtons();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function init() {
+    injectStyles();
     ensureEditDialog();
-    $('edit-form').addEventListener('submit', saveEdit);
+    $('edit-form')?.addEventListener('submit', saveEdit);
     setupBulkUpload();
     watchList();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+    init();
+}
