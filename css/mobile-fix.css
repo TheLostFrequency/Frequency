@@ -9,10 +9,11 @@
         position:fixed!important;
         left:0!important;
         right:0!important;
-        bottom:0!important;
+        bottom:env(safe-area-inset-bottom, 0px)!important;
         width:100%!important;
         margin:0!important;
         z-index:1000!important;
+        box-sizing:border-box!important;
     }
 
     /* EQ must fit the viewport; vertical scrolling only. */
@@ -37,5 +38,5 @@
 
 @media (max-width:430px){
     .player-dock{height:92px!important;min-height:92px!important;}
-    .facility-main{height:calc(100vh - 92px - 92px)!important;}
+    .facility-main{height:calc(100vh - 96px - 92px)!important;padding-bottom:0!important;}
 }
