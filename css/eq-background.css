@@ -1,20 +1,41 @@
-/* Equalizer room background only. The image never affects the other Frequency rooms. */
+/* EQUALIZER ONLY — isolate this room from the global facility artwork. */
 #room-equalizer {
-    position: relative;
-    overflow: auto;
-    background: #020202 url('../assets/eq-background.png?v=2') center center / cover no-repeat !important;
+    position: absolute !important;
+    inset: 0 !important;
+    overflow: auto !important;
+    isolation: isolate;
+    background-color: #020202 !important;
+    background-image: url('../assets/eq-background.png?v=3') !important;
+    background-position: center center !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
 }
 
-/* Keep the uploaded EQ artwork visible instead of letting the global room background win. */
-#room-equalizer::before {
+/* The global facility background lives behind every room. Hide it completely while EQ is active. */
+body:has(#room-equalizer.active-room) .facility-bg {
+    visibility: hidden !important;
+}
+
+/* Remove the generic room-panel artwork from EQ. */
+#room-equalizer.room-panel {
+    background-color: #020202 !important;
+    background-image: url('../assets/eq-background.png?v=3') !important;
+}
+
+#room-equalizer.room-panel::before {
+    display: none !important;
+}
+
+/* Keep only a subtle cinematic treatment over the uploaded artwork. */
+#room-equalizer::after {
     content: "";
     position: absolute;
     inset: 0;
-    background:
-        linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.38)),
-        radial-gradient(ellipse at center, transparent 16%, rgba(0,0,0,.12) 62%, rgba(0,0,0,.42) 100%);
     pointer-events: none;
     z-index: 0;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,.14), rgba(0,0,0,.28)),
+        radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,.22) 78%, rgba(0,0,0,.38) 100%);
 }
 
 #room-equalizer > * {
@@ -22,7 +43,7 @@
     z-index: 1;
 }
 
-/* True viewport centering so the console cannot drift sideways because of the scroll area. */
+/* Keep the console dead-center without changing its internal layout. */
 #room-equalizer .eq-room-card {
     position: absolute;
     left: 50%;
@@ -33,7 +54,7 @@
 
 @media (max-width: 720px) {
     #room-equalizer .eq-room-card {
-        top: 50%;
+        left: 50%;
         width: calc(100% - 20px);
     }
 }
