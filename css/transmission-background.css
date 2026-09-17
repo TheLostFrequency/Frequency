@@ -26,9 +26,47 @@
     z-index: 2;
 }
 
+/* Keep the Transmission message fixed to the visual center of the chamber. */
+#room-transmission .transmission-copy {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(620px, 82vw);
+    margin: 0;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 5;
+    padding: 28px 34px;
+    background: rgba(2, 2, 2, .30);
+    border: 1px solid rgba(255,255,255,.07);
+    box-shadow: 0 20px 70px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.035);
+    backdrop-filter: blur(2px);
+}
+
+#room-transmission .transmission-copy .micro-label {
+    margin-bottom: 12px;
+}
+
+#room-transmission .transmission-copy h2 {
+    margin: 0 0 14px;
+}
+
+#room-transmission .transmission-copy p {
+    margin: 0 auto 18px;
+}
+
+#room-transmission .transmission-copy strong {
+    display: block;
+}
+
 @media (max-width: 720px) {
     #room-transmission {
         background-image: linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)), url('../assets/mobile-transmission.png');
         background-position: center center;
+    }
+
+    #room-transmission .transmission-copy {
+        width: min(92vw, 560px);
+        padding: 24px 20px;
     }
 }
