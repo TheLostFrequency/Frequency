@@ -33,14 +33,23 @@ export class AudioAnalyzer {
                 this.analyser.fftSize = 2048;
                 this.analyser.minDecibels = -100;
                 this.analyser.maxDecibels = -10;
-                this.analyser.smoothingTimeConstant = 0.45;
+                this.analyser.smoothingTimeConstant = 0.35;
             }
 
             if (!this.filters.length) {
-                let node = this.source;
+                // The analyzer sits directly after the media element so the
+                // visualizer receives the real song signal before EQ shaping.
+                // The same signal then continues through the nine EQ bands.
+                this.source.connect(this.analyser);
+
+                let node = this.analyser;
                 this.filters = this.frequencies.map((frequency, index) => {
                     const filter = this.audioCtx.createBiquadFilter();
-                    filter.type = index === 0 ? 'lowshelf' : index === this.frequencies.length - 1 ? 'highshelf' : 'peaking';
+                    filter.type = index === 0
+                        ? 'lowshelf'
+                        : index === this.frequencies.length - 1
+                            ? 'highshelf'
+                            : 'peaking';
                     filter.frequency.value = frequency;
                     filter.Q.value = index === 0 || index === this.frequencies.length - 1 ? 0.7 : 1;
                     filter.gain.value = 0;
@@ -48,8 +57,8 @@ export class AudioAnalyzer {
                     node = filter;
                     return filter;
                 });
-                node.connect(this.analyser);
-                this.analyser.connect(this.audioCtx.destination);
+
+                node.connect(this.audioCtx.destination);
             }
 
             this.isInitialized = true;
