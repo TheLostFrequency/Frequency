@@ -1,54 +1,22 @@
 /* FREQUENCY // EQUALIZER BACKGROUND ONLY */
-/* This file must contain artwork/isolation rules only. Mobile layout belongs in mobile.css/mobile-fix.css. */
-#room-equalizer {
-    position: absolute !important;
-    inset: 0 !important;
-    overflow: auto !important;
-    isolation: isolate;
-    background-color: #020202 !important;
-    background-image: url('../assets/eq-background.png?v=4') !important;
-    background-position: center center !important;
-    background-size: cover !important;
-    background-repeat: no-repeat !important;
+/* Artwork/isolation only. Layout belongs to equalizer.css/mobile.css/mobile-fix.css. */
+#room-equalizer{
+    position:absolute!important;
+    inset:0!important;
+    overflow:auto!important;
+    isolation:isolate;
+    background:#020202 url('../assets/eq-background.png?v=5') center center/cover no-repeat!important;
 }
-
-/* Hide the global facility artwork while this room is active. */
-body:has(#room-equalizer.active-room) .facility-bg {
-    visibility: hidden !important;
+body:has(#room-equalizer.active-room) .facility-bg{visibility:hidden!important;}
+#room-equalizer.room-panel{background:#020202 url('../assets/eq-background.png?v=5') center center/cover no-repeat!important;}
+#room-equalizer.room-panel:before{display:none!important;}
+#room-equalizer:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    background:linear-gradient(180deg,rgba(0,0,0,.14),rgba(0,0,0,.28)),radial-gradient(ellipse at center,transparent 20%,rgba(0,0,0,.22) 78%,rgba(0,0,0,.38) 100%);
 }
-
-/* Remove the generic room-panel artwork from EQ. */
-#room-equalizer.room-panel {
-    background-color: #020202 !important;
-    background-image: url('../assets/eq-background.png?v=4') !important;
-}
-
-#room-equalizer.room-panel::before {
-    display: none !important;
-}
-
-/* Subtle treatment over the uploaded artwork. */
-#room-equalizer::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background:
-        linear-gradient(180deg, rgba(0,0,0,.14), rgba(0,0,0,.28)),
-        radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,.22) 78%, rgba(0,0,0,.38) 100%);
-}
-
-#room-equalizer > * {
-    position: relative;
-    z-index: 1;
-}
-
-/* Desktop centering. */
-#room-equalizer .eq-room-card {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    margin: 0;
-    transform: translate(-50%, -50%);
-}
+#room-equalizer>*{position:relative;z-index:1;}
+/* Do not position the console here. The room's flex centering owns its position. */
