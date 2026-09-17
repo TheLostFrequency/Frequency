@@ -10,8 +10,14 @@ if (canvas && visual) {
 
     function resize() {
         const rect = visual.getBoundingClientRect();
-        width = Math.max(1, rect.width);
-        height = Math.max(1, rect.height);
+        // The EQ room is hidden when the page first loads, so its canvas can
+        // initially measure 0x0. Re-measuring when the room becomes visible
+        // is what makes the visualizer work without needing DevTools to force
+        // a browser resize.
+        if (rect.width <= 1 || rect.height <= 1) return;
+
+        width = rect.width;
+        height = rect.height;
         ratio = window.devicePixelRatio || 1;
         canvas.width = Math.floor(width * ratio);
         canvas.height = Math.floor(height * ratio);
@@ -43,10 +49,8 @@ if (canvas && visual) {
     }
 
     function drawWave(waveform, active) {
-        if (!waveform.length) return;
+        if (!waveform.length || width <= 1 || height <= 1) return;
 
-        // Use fewer, wider samples so the display reads as the actual shape
-        // of the signal rather than a rapidly flickering analyzer.
         const points = Math.max(180, Math.floor(width * 0.95));
         const target = new Float32Array(points);
 
@@ -60,19 +64,14 @@ if (canvas && visual) {
             smoothWave = Array.from(target);
         }
 
-        // Strong enough smoothing to give the line weight, while keeping
-        // transients and drum hits visible instead of washing them out.
         for (let i = 0; i < points; i++) {
             const current = smoothWave[i] || 0;
             smoothWave[i] = current + (target[i] - current) * (active ? 0.22 : 0.035);
         }
 
         const center = height * 0.53;
-        // Deliberately large dynamic range: loud hits can travel close to the
-        // top and bottom of the glass without clipping the trace constantly.
         const amplitude = active ? height * 0.68 : height * 0.012;
 
-        // Red energy bloom behind the trace.
         ctx.beginPath();
         for (let i = 0; i < points; i++) {
             const x = i / (points - 1) * width;
@@ -86,7 +85,6 @@ if (canvas && visual) {
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Main signal trace.
         ctx.beginPath();
         for (let i = 0; i < points; i++) {
             const x = i / (points - 1) * width;
@@ -102,6 +100,15 @@ if (canvas && visual) {
     }
 
     function draw() {
+        // If the room was hidden during startup, catch its real dimensions as
+        // soon as it becomes visible. This is intentionally checked every
+        // frame as a fallback for browsers where ResizeObserver is delayed.
+        const rect = visual.getBoundingClientRect();
+        if (rect.width > 1 && rect.height > 1 &&
+            (Math.abs(rect.width - width) > 1 || Math.abs(rect.height - height) > 1)) {
+            resize();
+        }
+
         ctx.clearRect(0, 0, width, height);
 
         const analyzer = window.frequencyAnalyzer;
@@ -111,7 +118,8 @@ if (canvas && visual) {
             audio &&
             !audio.paused &&
             !audio.ended &&
-            analyzer?.analyser
+            analyzer?.analyser &&
+            analyzer?.audioCtx?.state === 'running'
         );
 
         drawGrid();
@@ -134,6 +142,21 @@ if (canvas && visual) {
     }
 
     window.addEventListener('resize', resize);
+
+    if ('ResizeObserver' in window) {
+        const observer = new ResizeObserver(() => resize());
+        observer.observe(visual);
+    }
+
+    // The room switches between display states by changing its class. This
+    // catches that transition immediately even when its dimensions change
+    // without a conventional window resize.
+    const room = document.getElementById('room-equalizer');
+    if (room && 'MutationObserver' in window) {
+        const observer = new MutationObserver(() => resize());
+        observer.observe(room, { attributes: true, attributeFilter: ['class'] });
+    }
+
     resize();
     draw();
 }
