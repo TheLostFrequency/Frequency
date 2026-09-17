@@ -11,6 +11,7 @@ export class AudioPlayer {
         this.onTimeUpdate = null;
         this.onEnded = null;
         this.onPlayStateChange = null;
+        window.frequencyAudio = this.audio;
 
         this.audio.addEventListener('timeupdate', () => {
             this.currentTime = this.audio.currentTime || 0;
