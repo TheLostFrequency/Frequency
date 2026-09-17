@@ -10,67 +10,19 @@
     .facility-grid { background-size:55px 55px; }
 
     /* HEADER / NAV */
-    .facility-header {
-        position:relative;
-        z-index:100;
-        height:104px;
-        min-height:104px;
-        padding:0 12px;
-        display:grid;
-        grid-template-columns:1fr auto;
-        grid-template-rows:54px 50px;
-        gap:0;
-        align-items:center;
-        pointer-events:auto;
-    }
+    .facility-header { position:relative; z-index:100; height:104px; min-height:104px; padding:0 12px; display:grid; grid-template-columns:1fr auto; grid-template-rows:54px 50px; gap:0; align-items:center; pointer-events:auto; }
     .brand-mark { min-width:0; gap:8px; position:relative; z-index:101; }
     .brand-mark img { width:22px; height:22px; }
     .brand-mark span { font-size:9px; letter-spacing:.24em; }
     .upload-button { min-width:0; padding:10px 0 10px 12px; font-size:8px; letter-spacing:.16em; position:relative; z-index:101; }
 
-    .facility-nav {
-        grid-column:1 / -1;
-        grid-row:2;
-        width:100%;
-        height:50px;
-        min-width:0;
-        display:flex;
-        align-items:stretch;
-        justify-content:flex-start;
-        gap:0;
-        overflow-x:auto;
-        overflow-y:hidden;
-        scrollbar-width:none;
-        -webkit-overflow-scrolling:touch;
-        overscroll-behavior-x:contain;
-        border-top:1px solid rgba(255,255,255,.06);
-        position:relative;
-        z-index:102;
-        pointer-events:auto;
-        touch-action:pan-x;
-    }
+    .facility-nav { grid-column:1 / -1; grid-row:2; width:100%; height:50px; min-width:0; display:flex; align-items:stretch; justify-content:flex-start; gap:0; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; border-top:1px solid rgba(255,255,255,.06); position:relative; z-index:102; pointer-events:auto; touch-action:pan-x; }
     .facility-nav::-webkit-scrollbar { display:none; }
-    .nav-tab {
-        flex:0 0 auto;
-        height:50px;
-        min-width:max-content;
-        padding:0 13px;
-        font-size:8px;
-        letter-spacing:.15em;
-        position:relative;
-        z-index:103;
-        pointer-events:auto;
-        touch-action:manipulation;
-    }
+    .nav-tab { flex:0 0 auto; height:50px; min-width:max-content; padding:0 13px; font-size:8px; letter-spacing:.15em; position:relative; z-index:103; pointer-events:auto; touch-action:manipulation; }
     .nav-tab.active:after { bottom:8px; }
 
     /* ROOM AREA */
-    .facility-main {
-        position:relative;
-        z-index:2;
-        height:calc(100vh - 104px - 76px);
-        min-height:0;
-    }
+    .facility-main { position:relative; z-index:2; height:calc(100vh - 104px - 104px); min-height:0; }
     .room { overflow:hidden; }
     .room-label { top:10px; left:12px; font-size:7px; letter-spacing:.18em; }
 
@@ -101,7 +53,7 @@
     #room-collection .song-item small { font-size:6px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     /* LIST */
-    #room-list.room-panel { padding:40px 8px 10px; overflow:auto; align-items:flex-start; justify-content:flex-start; }
+    #room-list.room-panel { padding:40px 8px 12px; overflow:auto; align-items:flex-start; justify-content:flex-start; }
     #room-list.room-panel:before { inset:3% 8px; }
     #room-list .room-card { width:100%; max-width:none; max-height:none; padding:14px; margin:0; }
     #room-list .panel-heading { align-items:center; padding-bottom:10px; margin-bottom:7px; }
@@ -165,23 +117,30 @@
     .dialog-card .form-grid { gap:9px; }
     .dialog-card input, .dialog-card select, .dialog-card textarea { max-width:100%; }
 
-    /* PLAYER */
-    .player-dock { height:76px; min-height:76px; padding:7px 8px; gap:7px; z-index:30; }
-    .player-dock img { max-width:46px; max-height:46px; }
-    .player-dock button { min-width:38px; min-height:38px; }
-    #player-thumb { width:46px; height:46px; flex:0 0 46px; }
-    #waveform-container { min-width:64px; }
-    #player-title, #player-artist { max-width:25vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* PLAYER: full transport stays visible instead of being squeezed beside the waveform. */
+    .player-dock { position:relative; z-index:30; height:104px; min-height:104px; padding:7px 8px 8px; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:40px 48px; gap:2px 7px; align-items:center; overflow:hidden; }
+    .player-track-info { min-width:0; grid-column:1; grid-row:1; }
+    #player-thumb { width:38px; height:38px; flex:0 0 38px; }
+    .player-track-info > div { min-width:0; }
+    #player-title, #player-artist { max-width:43vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     #player-title { font-size:8px; }
     #player-artist { font-size:6px; }
-    #current-time, #total-time { font-size:6px; }
+    .player-status { grid-column:2; grid-row:1; white-space:nowrap; font-size:6px; }
+    .player-center { min-width:0; width:100%; grid-column:1 / -1; grid-row:2; display:flex !important; align-items:center; justify-content:space-between; gap:6px; overflow:visible; }
+    #waveform-container { min-width:0; flex:1 1 auto; height:22px; }
+    .transport { flex:0 0 auto; display:flex !important; align-items:center; justify-content:center; gap:2px; white-space:nowrap; visibility:visible !important; overflow:visible; }
+    .transport button, .transport-btn, .play-btn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; position:relative; z-index:35; align-items:center; justify-content:center; flex:0 0 auto; min-width:31px; width:31px; height:31px; min-height:31px; padding:0; }
+    .transport .play-btn { width:36px; min-width:36px; height:36px; min-height:36px; }
+    .transport #current-time, .transport #total-time { display:none; }
+    #play-icon { display:block !important; visibility:visible !important; }
+
 }
 
 @media (max-width:430px) {
     .facility-header { grid-template-rows:48px 44px; height:92px; min-height:92px; padding:0 10px; }
     .facility-nav, .nav-tab { height:44px; }
     .nav-tab { padding:0 10px; font-size:7px; letter-spacing:.13em; }
-    .facility-main { height:calc(100vh - 92px - 70px); }
+    .facility-main { height:calc(100vh - 92px - 92px); }
     .room-label { top:9px; left:10px; }
 
     #room-collection .hero-art { top:4%; }
@@ -189,14 +148,15 @@
     #room-collection .song-selector { height:24%; bottom:2%; min-height:106px; }
     #room-collection .pedestal { bottom:14%; }
 
-    #room-equalizer.active-room { padding:30px 5px 78px; }
+    #room-equalizer.active-room { padding:30px 5px 5px; }
     #room-equalizer .eq-visual { height:76px; }
     #room-equalizer .eq-bands { height:138px; padding-left:11px; }
     #room-equalizer .eq-bands input { height:116px; }
     #room-equalizer .eq-presets { grid-template-columns:repeat(3,1fr); }
 
-    .player-dock { height:70px; min-height:70px; padding:6px; gap:6px; }
-    #player-thumb { width:42px; height:42px; flex-basis:42px; }
-    #player-title, #player-artist { max-width:23vw; }
-    .player-dock button { min-width:34px; min-height:34px; }
+    .player-dock { height:92px; min-height:92px; padding:5px 6px; grid-template-rows:36px 44px; }
+    #player-thumb { width:34px; height:34px; flex-basis:34px; }
+    #player-title, #player-artist { max-width:38vw; }
+    .transport button, .transport-btn { min-width:29px; width:29px; height:29px; min-height:29px; }
+    .transport .play-btn { width:34px; min-width:34px; height:34px; min-height:34px; }
 }
