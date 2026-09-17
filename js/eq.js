@@ -6,8 +6,24 @@ export class AudioAnalyzer {
         this.analyser = null;
         this.filters = [];
         this.isInitialized = false;
+        this.initializing = false;
         this.frequencies = [32, 64, 128, 250, 500, 1000, 2000, 4000, 16000];
         window.frequencyAnalyzer = this;
+
+        // Keep the analyzer alive with the actual media element. Previously
+        // initialization depended too heavily on which UI action happened
+        // first, which is why opening DevTools could appear to "wake" it up.
+        if (this.audioElement) {
+            const wake = () => {
+                this.init();
+                this.resume();
+            };
+
+            this.audioElement.addEventListener('play', wake);
+            this.audioElement.addEventListener('playing', wake);
+            this.audioElement.addEventListener('canplay', () => this.init());
+            this.audioElement.addEventListener('loadeddata', () => this.init());
+        }
     }
 
     init() {
@@ -16,8 +32,12 @@ export class AudioAnalyzer {
             return true;
         }
 
+        if (this.initializing) return false;
+
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextClass || !this.audioElement) return false;
+
+        this.initializing = true;
 
         try {
             if (!this.audioCtx) {
@@ -37,9 +57,8 @@ export class AudioAnalyzer {
             }
 
             if (!this.filters.length) {
-                // The analyzer sits directly after the media element so the
-                // visualizer receives the real song signal before EQ shaping.
-                // The same signal then continues through the nine EQ bands.
+                // Real song signal -> analyzer -> EQ filters -> speakers.
+                // This keeps the waveform tied to the same audio that is heard.
                 this.source.connect(this.analyser);
 
                 let node = this.analyser;
@@ -63,10 +82,12 @@ export class AudioAnalyzer {
 
             this.isInitialized = true;
             window.frequencyAnalyzer = this;
+            this.initializing = false;
             this.resume();
             return true;
         } catch (error) {
             console.error('Frequency analyzer initialization failed:', error);
+            this.initializing = false;
             this.isInitialized = false;
             window.frequencyAnalyzer = this;
             return false;
@@ -75,10 +96,18 @@ export class AudioAnalyzer {
 
     async resume() {
         if (!this.audioCtx) return false;
+
         try {
             if (this.audioCtx.state !== 'running') {
                 await this.audioCtx.resume();
             }
+
+            // If the browser suspended the context again while the track was
+            // loading, make one more attempt while audio is actually playing.
+            if (this.audioElement && !this.audioElement.paused && this.audioCtx.state !== 'running') {
+                await this.audioCtx.resume();
+            }
+
             return this.audioCtx.state === 'running';
         } catch (error) {
             console.warn('Frequency audio context could not resume:', error);
