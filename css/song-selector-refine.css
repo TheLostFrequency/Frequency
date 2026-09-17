@@ -1,0 +1,63 @@
+/* FREQUENCY // SONG SELECTOR POLISH */
+
+/* Minor visual refinement only: stronger active signal, clearer spine glow, deeper surrounding fade. */
+.song-selector .selector-spine {
+    box-shadow: 0 0 10px rgba(196,42,32,.42), 0 0 26px rgba(196,42,32,.28);
+}
+
+.song-selector .song-item {
+    position: relative;
+    opacity: .56;
+    filter: brightness(.82);
+    transition: transform .25s ease, opacity .25s ease, filter .25s ease, text-shadow .25s ease;
+}
+
+.song-selector .song-item.active {
+    opacity: 1;
+    filter: brightness(1.08);
+    border-right-color: #d43a2e;
+    box-shadow: 10px 0 24px -18px rgba(196,42,32,.95);
+    text-shadow: 0 0 10px rgba(196,42,32,.38), 0 0 24px rgba(196,42,32,.24);
+}
+
+.song-selector .song-item.active strong {
+    text-shadow: 0 0 12px rgba(255,255,255,.12), 0 0 20px rgba(196,42,32,.2);
+}
+
+.song-selector .song-item:nth-child(1),
+.song-selector .song-item:nth-last-child(1) {
+    opacity: .34;
+    filter: brightness(.68);
+}
+
+@media (hover:hover) and (pointer:fine) {
+    .song-selector .song-item:not(.active):hover {
+        opacity: .78;
+        filter: brightness(.94);
+    }
+}
+
+@media (max-width:720px) {
+    #room-collection .selector-spine {
+        box-shadow: 0 0 9px rgba(196,42,32,.5), 0 0 24px rgba(196,42,32,.32);
+    }
+
+    #room-collection .song-item {
+        opacity: .52;
+        filter: brightness(.8);
+        transition: transform .2s ease, opacity .2s ease, filter .2s ease, text-shadow .2s ease;
+    }
+
+    #room-collection .song-item.active {
+        opacity: 1;
+        filter: brightness(1.1);
+        box-shadow: 10px 0 25px -18px rgba(196,42,32,1);
+        text-shadow: 0 0 10px rgba(196,42,32,.42), 0 0 22px rgba(196,42,32,.25);
+    }
+
+    #room-collection .song-item:nth-child(1),
+    #room-collection .song-item:nth-last-child(1) {
+        opacity: .32;
+        filter: brightness(.66);
+    }
+}
