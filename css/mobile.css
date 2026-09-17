@@ -1,0 +1,351 @@
+/* FREQUENCY // MOBILE FACILITY MODE */
+
+@media (max-width: 720px) {
+    html, body { width:100%; height:100%; overflow:hidden; }
+    body { -webkit-tap-highlight-color:transparent; }
+
+    .facility-bg { position:fixed; }
+    .facility-column { width:24vw; }
+    .facility-floor { bottom:-24%; height:42%; }
+    .facility-grid { background-size:55px 55px; }
+
+    /* Compact command header: identity + upload on row one, rooms on row two. */
+    .facility-header {
+        height:104px;
+        min-height:104px;
+        padding:0 14px;
+        display:grid;
+        grid-template-columns:1fr auto;
+        grid-template-rows:54px 50px;
+        gap:0;
+        align-items:center;
+    }
+    .brand-mark { min-width:0; gap:8px; }
+    .brand-mark img { width:22px; height:22px; }
+    .brand-mark span { font-size:9px; letter-spacing:.24em; }
+    .upload-button {
+        min-width:0;
+        padding:10px 0 10px 12px;
+        font-size:8px;
+        letter-spacing:.16em;
+    }
+    .facility-nav {
+        grid-column:1 / -1;
+        grid-row:2;
+        width:100%;
+        height:50px;
+        min-width:0;
+        overflow-x:auto;
+        overflow-y:hidden;
+        justify-content:flex-start;
+        gap:0;
+        scrollbar-width:none;
+        -webkit-overflow-scrolling:touch;
+        border-top:1px solid rgba(255,255,255,.06);
+    }
+    .facility-nav::-webkit-scrollbar { display:none; }
+    .nav-tab {
+        flex:0 0 auto;
+        height:50px;
+        padding:0 14px;
+        font-size:8px;
+        letter-spacing:.16em;
+    }
+    .nav-tab.active:after { bottom:8px; }
+
+    .facility-main {
+        height:calc(100vh - 104px - 76px);
+        min-height:0;
+    }
+    .room { overflow:hidden; }
+    .room-label {
+        top:12px;
+        left:14px;
+        font-size:7px;
+        letter-spacing:.2em;
+    }
+
+    /* Collection becomes a deliberate vertical instrument instead of a shrunken desktop. */
+    #room-collection .collection-stage {
+        align-items:stretch;
+        justify-content:center;
+        overflow:hidden;
+    }
+    #room-collection .architectural-ring { opacity:.55; }
+    #room-collection .ring-one {
+        width:78vw;
+        height:78vw;
+        top:4%;
+    }
+    #room-collection .ring-two {
+        width:105vw;
+        height:105vw;
+        top:0;
+    }
+    #room-collection .hero-art {
+        top:7%;
+        left:50%;
+        width:100%;
+        transform:translateX(-50%);
+        z-index:6;
+    }
+    #room-collection .art-frame {
+        width:min(58vw,250px);
+        height:min(58vw,250px);
+        padding:7px;
+    }
+    #room-collection .art-frame:before { inset:-11px; }
+    #room-collection .hero-meta { margin-top:10px; }
+    #room-collection .micro-label { font-size:6px; }
+    #room-collection .hero-meta h1 {
+        max-width:78vw;
+        margin:5px auto 3px;
+        font-size:10px;
+        line-height:1.35;
+        letter-spacing:.15em;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    #room-collection .hero-meta p {
+        max-width:72vw;
+        margin:auto;
+        font-size:7px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+
+    #room-collection .pedestal {
+        top:auto;
+        bottom:15%;
+        width:min(58vw,270px);
+        height:90px;
+        transform:perspective(700px) rotateX(55deg);
+    }
+    #room-collection .pedestal-shadow {
+        top:auto;
+        bottom:12%;
+        width:64vw;
+        height:11vw;
+    }
+    #room-collection .pedestal-face { gap:10px; }
+    #room-collection .carved-logo { width:38px; height:38px; }
+    #room-collection .carved-logo img { width:23px; height:23px; }
+
+    #room-collection .song-selector {
+        left:8%;
+        right:8%;
+        top:auto;
+        bottom:3%;
+        width:84%;
+        height:27%;
+        min-height:120px;
+        perspective:700px;
+        z-index:8;
+    }
+    #room-collection .selector-spine {
+        right:50%;
+        top:5%;
+        bottom:5%;
+        transform:translateX(50%);
+    }
+    #room-collection .selector-head,
+    #room-collection .selector-foot {
+        right:50%;
+        width:auto;
+        transform:translateX(50%);
+        gap:8px;
+        font-size:5px;
+        letter-spacing:.18em;
+        white-space:nowrap;
+    }
+    #room-collection .selector-head i,
+    #room-collection .selector-foot i { width:16px; }
+    #room-collection .song-wheel {
+        width:100%;
+        height:76%;
+        padding:0 24px 0 0;
+        gap:6px;
+        align-items:flex-end;
+        transform:rotateY(-8deg);
+    }
+    #room-collection .song-item {
+        width:min(82vw,280px);
+        padding:5px 10px;
+    }
+    #room-collection .song-item strong {
+        font-size:8px;
+        letter-spacing:.1em;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    #room-collection .song-item small {
+        font-size:6px;
+        margin-top:2px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+
+    /* List room: use the whole phone and make every row touch-friendly. */
+    #room-list.room-panel {
+        padding:44px 10px 12px;
+        overflow:auto;
+        align-items:flex-start;
+        justify-content:flex-start;
+    }
+    #room-list.room-panel:before { inset:4% 10px; }
+    #room-list .room-card {
+        width:100%;
+        max-width:none;
+        max-height:none;
+        padding:16px;
+        margin:0;
+    }
+    #room-list .panel-heading {
+        align-items:center;
+        padding-bottom:12px;
+        margin-bottom:8px;
+    }
+    #room-list .panel-heading h2 { font-size:13px; }
+    #room-list .panel-heading > span { font-size:6px; }
+    #room-list .list-container {
+        max-height:none;
+        overflow:auto;
+        -webkit-overflow-scrolling:touch;
+    }
+    #room-list .list-row {
+        grid-template-columns:42px minmax(0,1fr);
+        min-height:62px;
+        gap:10px;
+        padding:9px 52px 9px 5px;
+    }
+    #room-list .list-row img { width:42px; height:42px; }
+    #room-list .list-row strong {
+        font-size:9px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    #room-list .list-row small {
+        font-size:7px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    #room-list .list-row em { display:none; }
+    #room-list .signal-edit {
+        right:7px;
+        min-width:42px;
+        height:30px;
+        font-size:6px;
+    }
+
+    /* Transmission becomes a vertical portal. */
+    #room-transmission {
+        overflow:auto;
+        padding:48px 16px 30px;
+    }
+    #room-transmission .transmission-door {
+        width:100%;
+        flex-direction:column;
+        gap:22px;
+        padding:10px 0 24px;
+    }
+    #room-transmission .door-frame {
+        width:min(62vw,245px);
+        padding:10px;
+        flex:0 0 auto;
+    }
+
+    /* Profile and generic cards fit the phone without horizontal clipping. */
+    #room-profile.room-panel {
+        padding:46px 12px 20px;
+        overflow:auto;
+        align-items:flex-start;
+    }
+    #room-profile.room-panel:before { inset:4% 12px; }
+    #room-profile .room-card {
+        width:100%;
+        max-width:none;
+        max-height:none;
+        padding:18px;
+    }
+    .form-grid { grid-template-columns:1fr !important; }
+
+    /* EQ keeps its dedicated artwork, but the instrument gets true phone proportions. */
+    #room-equalizer.active-room {
+        padding:52px 8px 90px;
+        overflow:auto;
+        -webkit-overflow-scrolling:touch;
+    }
+    #room-equalizer .eq-room-card {
+        left:50%;
+        top:50%;
+        width:calc(100% - 8px);
+        max-width:none;
+    }
+    #room-equalizer .eq-console-shell { width:100%; }
+    #room-equalizer .eq-bands input { touch-action:none; }
+
+    /* Upload/auth dialogs use the full usable phone width. */
+    .vault-dialog { padding:10px; }
+    .vault-dialog .dialog-card {
+        width:min(100%,420px);
+        max-height:88vh;
+        overflow:auto;
+        padding:18px;
+    }
+    .dialog-card .form-grid { gap:10px; }
+    .dialog-card input,
+    .dialog-card select,
+    .dialog-card textarea { max-width:100%; }
+
+    /* Persistent player: compact but still fully usable. */
+    .player-dock {
+        height:76px;
+        min-height:76px;
+        padding:8px 10px;
+        gap:8px;
+        z-index:30;
+    }
+    .player-dock img { max-width:48px; max-height:48px; }
+    .player-dock button { min-width:38px; min-height:38px; }
+    #player-thumb { width:48px; height:48px; flex:0 0 48px; }
+    #waveform-container { min-width:70px; }
+    #player-title,
+    #player-artist {
+        max-width:27vw;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    #player-title { font-size:8px; }
+    #player-artist { font-size:6px; }
+    #current-time,
+    #total-time { font-size:6px; }
+}
+
+@media (max-width:430px) {
+    .facility-header { grid-template-rows:50px 46px; height:96px; min-height:96px; }
+    .facility-nav, .nav-tab { height:46px; }
+    .nav-tab { padding:0 11px; font-size:7px; }
+    .facility-main { height:calc(100vh - 96px - 72px); }
+
+    #room-collection .hero-art { top:5%; }
+    #room-collection .art-frame { width:54vw; height:54vw; }
+    #room-collection .song-selector { height:25%; bottom:2%; }
+    #room-collection .pedestal { bottom:14%; }
+
+    .player-dock { height:72px; min-height:72px; padding:7px 7px; }
+    #player-thumb { width:42px; height:42px; flex-basis:42px; }
+    #player-title, #player-artist { max-width:24vw; }
+    .player-dock button { min-width:34px; min-height:34px; }
+}
+
+/* Prevent iOS/Android text autosizing from changing the architecture. */
+@media (max-width:720px) {
+    body { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+}
