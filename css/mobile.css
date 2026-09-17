@@ -9,24 +9,20 @@
     .facility-floor { bottom:-24%; height:42%; }
     .facility-grid { background-size:55px 55px; }
 
-    /* HEADER / NAV */
     .facility-header { position:relative; z-index:100; height:104px; min-height:104px; padding:0 12px; display:grid; grid-template-columns:1fr auto; grid-template-rows:54px 50px; gap:0; align-items:center; pointer-events:auto; }
     .brand-mark { min-width:0; gap:8px; position:relative; z-index:101; }
     .brand-mark img { width:22px; height:22px; }
     .brand-mark span { font-size:9px; letter-spacing:.24em; }
     .upload-button { min-width:0; padding:10px 0 10px 12px; font-size:8px; letter-spacing:.16em; position:relative; z-index:101; }
-
     .facility-nav { grid-column:1 / -1; grid-row:2; width:100%; height:50px; min-width:0; display:flex; align-items:stretch; justify-content:flex-start; gap:0; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; border-top:1px solid rgba(255,255,255,.06); position:relative; z-index:102; pointer-events:auto; touch-action:pan-x; }
     .facility-nav::-webkit-scrollbar { display:none; }
     .nav-tab { flex:0 0 auto; height:50px; min-width:max-content; padding:0 13px; font-size:8px; letter-spacing:.15em; position:relative; z-index:103; pointer-events:auto; touch-action:manipulation; }
     .nav-tab.active:after { bottom:8px; }
 
-    /* ROOM AREA */
-    .facility-main { position:relative; z-index:2; height:calc(100vh - 104px - 104px); min-height:0; }
+    .facility-main { position:relative; z-index:2; height:calc(100vh - 104px - 76px); min-height:0; }
     .room { overflow:hidden; }
     .room-label { top:10px; left:12px; font-size:7px; letter-spacing:.18em; }
 
-    /* COLLECTION */
     #room-collection .collection-stage { align-items:stretch; justify-content:center; overflow:hidden; }
     #room-collection .architectural-ring { opacity:.5; }
     #room-collection .ring-one { width:76vw; height:76vw; top:3%; }
@@ -52,7 +48,6 @@
     #room-collection .song-item strong { font-size:8px; letter-spacing:.09em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     #room-collection .song-item small { font-size:6px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    /* LIST */
     #room-list.room-panel { padding:40px 8px 12px; overflow:auto; align-items:flex-start; justify-content:flex-start; }
     #room-list.room-panel:before { inset:3% 8px; }
     #room-list .room-card { width:100%; max-width:none; max-height:none; padding:14px; margin:0; }
@@ -67,18 +62,15 @@
     #room-list .list-row em { display:none; }
     #room-list .signal-edit { right:6px; min-width:40px; height:28px; font-size:6px; }
 
-    /* TRANSMISSION */
     #room-transmission { overflow:auto; padding:44px 14px 24px; }
     #room-transmission .transmission-door { width:100%; flex-direction:column; gap:18px; padding:8px 0 20px; }
     #room-transmission .door-frame { width:min(60vw,230px); padding:9px; flex:0 0 auto; }
 
-    /* PROFILE */
     #room-profile.room-panel { padding:42px 10px 18px; overflow:auto; align-items:flex-start; }
     #room-profile.room-panel:before { inset:3% 10px; }
     #room-profile .room-card { width:100%; max-width:none; max-height:none; padding:16px; }
     .form-grid { grid-template-columns:1fr !important; }
 
-    /* EQUALIZER: compact mobile instrument */
     #room-equalizer.active-room { padding:34px 6px 82px; overflow:auto; -webkit-overflow-scrolling:touch; align-items:flex-start; }
     #room-equalizer .eq-room-card { left:50%; top:0; width:100%; max-width:100%; margin:0; transform:none; }
     #room-equalizer .eq-console-shell { width:100%; padding:7px 6px 8px; }
@@ -94,7 +86,7 @@
     #room-equalizer .eq-bands { height:154px; gap:0; padding:18px 2px 10px 12px; }
     #room-equalizer .eq-bands label:before { top:15px; bottom:18px; width:4px; }
     #room-equalizer .eq-bands label:after { top:15px; bottom:18px; width:21px; }
-    #room-equalizer .eq-bands input { left:calc(50% - 2px); top:15px; width:30px; height:132px; }
+    #room-equalizer .eq-bands input { left:50%; top:15px; width:30px; height:132px; transform:translateX(-50%); }
     #room-equalizer .eq-bands input::-webkit-slider-thumb { width:29px; height:13px; }
     #room-equalizer .eq-bands input::-moz-range-thumb { width:29px; height:13px; }
     #room-equalizer .eq-band-value { top:0; min-width:25px; padding:2px 0; font-size:5px; }
@@ -111,14 +103,13 @@
     #room-equalizer .aux-module { height:25px; padding:0 5px; font-size:4px; }
     #room-equalizer .eq-aux-panel .room-action { height:25px; font-size:5px; grid-column:1 / -1; }
 
-    /* DIALOGS */
     .vault-dialog { padding:8px; }
     .vault-dialog .dialog-card { width:min(100%,420px); max-height:88vh; overflow:auto; padding:16px; }
     .dialog-card .form-grid { gap:9px; }
     .dialog-card input, .dialog-card select, .dialog-card textarea { max-width:100%; }
 
-    /* PLAYER: full transport stays visible instead of being squeezed beside the waveform. */
-    .player-dock { position:relative; z-index:30; height:104px; min-height:104px; padding:7px 8px 8px; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:40px 48px; gap:2px 7px; align-items:center; overflow:hidden; }
+    /* MOBILE PLAYER — all four transport controls remain visible and tappable. */
+    .player-dock { position:relative; z-index:30; height:104px; min-height:104px; padding:7px 8px 8px; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:40px 48px; gap:2px 7px; align-items:center; overflow:visible; }
     .player-track-info { min-width:0; grid-column:1; grid-row:1; }
     #player-thumb { width:38px; height:38px; flex:0 0 38px; }
     .player-track-info > div { min-width:0; }
@@ -126,9 +117,9 @@
     #player-title { font-size:8px; }
     #player-artist { font-size:6px; }
     .player-status { grid-column:2; grid-row:1; white-space:nowrap; font-size:6px; }
-    .player-center { min-width:0; width:100%; grid-column:1 / -1; grid-row:2; display:flex !important; align-items:center; justify-content:space-between; gap:6px; overflow:visible; }
+    .player-center { min-width:0; width:100%; grid-column:1 / -1; grid-row:2; display:flex !important; align-items:center; justify-content:space-between; gap:6px; overflow:visible !important; }
     #waveform-container { min-width:0; flex:1 1 auto; height:22px; }
-    .transport { flex:0 0 auto; display:flex !important; align-items:center; justify-content:center; gap:2px; white-space:nowrap; visibility:visible !important; overflow:visible; }
+    .transport { flex:0 0 auto; display:flex !important; align-items:center; justify-content:center; gap:2px; white-space:nowrap; visibility:visible !important; overflow:visible !important; }
     .transport button, .transport-btn, .play-btn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; position:relative; z-index:35; align-items:center; justify-content:center; flex:0 0 auto; min-width:31px; width:31px; height:31px; min-height:31px; padding:0; }
     .transport .play-btn { width:36px; min-width:36px; height:36px; min-height:36px; }
     .transport #current-time, .transport #total-time { display:none; }
@@ -142,21 +133,27 @@
     .nav-tab { padding:0 10px; font-size:7px; letter-spacing:.13em; }
     .facility-main { height:calc(100vh - 92px - 92px); }
     .room-label { top:9px; left:10px; }
-
     #room-collection .hero-art { top:4%; }
     #room-collection .art-frame { width:52vw; height:52vw; }
-    #room-collection .song-selector { height:24%; bottom:2%; min-height:106px; }
+    #room-collection .song-selector { height:24%; bottom:2%; }
     #room-collection .pedestal { bottom:14%; }
-
     #room-equalizer.active-room { padding:30px 5px 5px; }
     #room-equalizer .eq-visual { height:76px; }
-    #room-equalizer .eq-bands { height:138px; padding-left:11px; }
+    #room-equalizer .eq-bands { height:138px; }
     #room-equalizer .eq-bands input { height:116px; }
     #room-equalizer .eq-presets { grid-template-columns:repeat(3,1fr); }
-
     .player-dock { height:92px; min-height:92px; padding:5px 6px; grid-template-rows:36px 44px; }
     #player-thumb { width:34px; height:34px; flex-basis:34px; }
     #player-title, #player-artist { max-width:38vw; }
     .transport button, .transport-btn { min-width:29px; width:29px; height:29px; min-height:29px; }
     .transport .play-btn { width:34px; min-width:34px; height:34px; min-height:34px; }
+}
+
+/* FINAL MOBILE SAFETY OVERRIDES */
+@media (max-width:720px) {
+    .player-dock { overflow:visible !important; }
+    .player-center { overflow:visible !important; }
+    .transport { display:flex !important; visibility:visible !important; opacity:1 !important; overflow:visible !important; position:relative !important; z-index:999 !important; }
+    #prev-btn, #play-pause-btn, #next-btn, #shuffle-btn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; position:relative !important; z-index:1000 !important; }
+    #room-equalizer .eq-bands input { left:50% !important; transform:translateX(-50%) !important; }
 }
