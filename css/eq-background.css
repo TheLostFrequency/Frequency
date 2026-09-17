@@ -1,32 +1,33 @@
-@import url('./mobile-fix.css');
-@import url('./mobile.css');
-
-/* EQUALIZER ONLY — isolate this room from the global facility artwork. */
+/* FREQUENCY // EQUALIZER BACKGROUND ONLY */
+/* This file must contain artwork/isolation rules only. Mobile layout belongs in mobile.css/mobile-fix.css. */
 #room-equalizer {
     position: absolute !important;
     inset: 0 !important;
     overflow: auto !important;
     isolation: isolate;
     background-color: #020202 !important;
-    background-image: url('../assets/eq-background.png?v=3') !important;
+    background-image: url('../assets/eq-background.png?v=4') !important;
     background-position: center center !important;
     background-size: cover !important;
     background-repeat: no-repeat !important;
 }
 
+/* Hide the global facility artwork while this room is active. */
 body:has(#room-equalizer.active-room) .facility-bg {
     visibility: hidden !important;
 }
 
+/* Remove the generic room-panel artwork from EQ. */
 #room-equalizer.room-panel {
     background-color: #020202 !important;
-    background-image: url('../assets/eq-background.png?v=3') !important;
+    background-image: url('../assets/eq-background.png?v=4') !important;
 }
 
 #room-equalizer.room-panel::before {
     display: none !important;
 }
 
+/* Subtle treatment over the uploaded artwork. */
 #room-equalizer::after {
     content: "";
     position: absolute;
@@ -43,23 +44,11 @@ body:has(#room-equalizer.active-room) .facility-bg {
     z-index: 1;
 }
 
-/* Desktop: centered in the EQ room. */
+/* Desktop centering. */
 #room-equalizer .eq-room-card {
     position: absolute;
     left: 50%;
     top: 50%;
     margin: 0;
     transform: translate(-50%, -50%);
-}
-
-/* Mobile: the card is already full-width. left:50% incorrectly shifted it right. */
-@media (max-width: 720px) {
-    #room-equalizer .eq-room-card {
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        transform: none !important;
-    }
 }
