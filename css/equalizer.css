@@ -52,5 +52,5 @@
 /* DESKTOP CENTERING POLISH */
 @media(min-width:721px){
     #room-equalizer.active-room{justify-content:center;align-items:center}
-    #room-equalizer .eq-room-card{margin:0 auto}
+    #room-equalizer .eq-room-card{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%)}
 }
