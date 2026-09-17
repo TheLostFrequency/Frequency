@@ -13,3 +13,91 @@
     <link rel="stylesheet" href="css/eq-background.css?v=2">
 </head>
 <body>
+    <div class="facility-bg" aria-hidden="true"><div class="facility-light facility-light-a"></div><div class="facility-light facility-light-b"></div><div class="facility-column column-left"></div><div class="facility-column column-right"></div><div class="facility-floor"></div><div class="facility-grid"></div></div>
+    <div id="toast" class="toast" role="status"></div>
+    <header class="facility-header">
+        <button class="brand-mark" id="brand-button" aria-label="Return to Collection"><img src="assets/logo.png" alt="Frequency"><span>FREQUENCY</span></button>
+        <nav class="facility-nav" aria-label="Frequency rooms"><button data-tab="collection" class="nav-tab active">COLLECTION</button><button data-tab="list" class="nav-tab">LIST</button><button data-tab="equalizer" class="nav-tab">EQUALIZER</button><button data-tab="transmission" class="nav-tab">TRANSMISSION</button><button data-tab="profile" class="nav-tab">PROFILE</button></nav>
+        <button id="upload-button" class="upload-button">+ UPLOAD</button>
+    </header>
+    <main class="facility-main">
+        <section id="room-collection" class="room active-room"><div class="room-label"><span>01</span> ARCHIVE CHAMBER</div><div class="collection-stage"><div class="architectural-ring ring-one"></div><div class="architectural-ring ring-two"></div><div class="hero-art"><div class="art-frame"><img id="current-album-art" src="assets/default-art.jpg" alt="Current album art"><div class="art-glass"></div></div><div class="hero-meta"><span class="micro-label">NOW PLAYING</span><h1 id="hero-title">VAULT EMPTY</h1><p id="hero-artist">NO SIGNAL</p></div></div><div id="song-selector" class="song-selector"><div class="selector-spine"></div><div class="selector-head"><span>SELECT SIGNAL</span><i></i></div><div id="song-wheel" class="song-wheel"></div><div class="selector-foot"><span>SWIPE / SCROLL</span><i></i></div></div></div></section>
+        <section id="room-list" class="room room-panel"><div class="room-label"><span>02</span> ARCHIVE INDEX</div><div class="room-card list-room-card"><div class="panel-heading"><div><span class="micro-label">VAULT INDEX</span><h2>COLLECTION LIST</h2></div><span id="list-count">0 SIGNALS</span></div><div id="list-container" class="list-container"></div></div></section>
+
+        <section id="room-equalizer" class="room room-panel eq-command-room">
+            <div class="room-label"><span>03</span> AUDIO COMMAND CENTER</div>
+            <div class="eq-room-card">
+                <div class="eq-console-header">
+                    <div class="eq-title-block">
+                        <span class="micro-label">FREQUENCY // SIGNAL CONTROL</span>
+                        <h2>AUDIO COMMAND STATION</h2>
+                        <p>LIVE EQUALIZATION / SPECTRAL RESPONSE / MASTER SIGNAL</p>
+                    </div>
+                    <div class="eq-master-status">
+                        <span class="status-caption">SYSTEM STATUS</span>
+                        <strong id="eq-status">FLAT</strong>
+                        <div class="status-lamps"><i></i><i></i><i></i><i></i></div>
+                    </div>
+                </div>
+
+                <div class="eq-console-shell">
+                    <div class="console-rail console-rail-top"><span>FREQUENCY AUDIO CONTROL / UNIT 03</span><span>CAUTION // HIGH GAIN</span></div>
+
+                    <div class="eq-monitor">
+                        <div class="monitor-frame">
+                            <div class="monitor-bezel-top"><span>SPECTRAL ANALYZER</span><span>FFT 512</span></div>
+                            <div id="eq-visual" class="eq-visual">
+                                <canvas id="eq-spectrum" aria-label="Live frequency spectrum"></canvas>
+                                <div class="monitor-scanline"></div>
+                                <div class="monitor-corner corner-tl"></div><div class="monitor-corner corner-tr"></div><div class="monitor-corner corner-bl"></div><div class="monitor-corner corner-br"></div>
+                            </div>
+                            <div class="monitor-readouts"><span>SUB</span><span>LOW</span><span>MID</span><span>HIGH</span><span>AIR</span><strong>LIVE SIGNAL</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="eq-fader-deck">
+                        <div class="fader-deck-header"><span>9-BAND PARAMETRIC CONTROL</span><span>GAIN RANGE −12 / +12 dB</span></div>
+                        <div class="eq-scale"><span>+12</span><span>+6</span><span>0</span><span>−6</span><span>−12</span></div>
+                        <div class="eq-bands">
+                            <label><span>32</span><em class="eq-band-value">0 dB</em><input data-band="0" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>64</span><em class="eq-band-value">0 dB</em><input data-band="1" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>128</span><em class="eq-band-value">0 dB</em><input data-band="2" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>250</span><em class="eq-band-value">0 dB</em><input data-band="3" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>500</span><em class="eq-band-value">0 dB</em><input data-band="4" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>1K</span><em class="eq-band-value">0 dB</em><input data-band="5" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>2K</span><em class="eq-band-value">0 dB</em><input data-band="6" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>4K</span><em class="eq-band-value">0 dB</em><input data-band="7" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                            <label><span>16K</span><em class="eq-band-value">0 dB</em><input data-band="8" type="range" min="-12" max="12" value="0" orient="vertical"><small>Hz</small></label>
+                        </div>
+                        <div class="fader-deck-footer"><span>LOW FREQUENCY</span><span>HIGH FREQUENCY</span></div>
+                    </div>
+
+                    <div class="eq-command-bank">
+                        <div class="command-bank-title"><span>COMMAND BANK</span><small>SIGNAL PRESETS</small></div>
+                        <div class="eq-presets">
+                            <button type="button" data-preset="flat">FLAT / NEUTRAL</button><button type="button" data-preset="bass">BASS BOOSTER</button><button type="button" data-preset="bass-reducer">BASS REDUCER</button><button type="button" data-preset="rock">ROCK</button><button type="button" data-preset="hard">HARD</button><button type="button" data-preset="hiphop">HIP-HOP / RAP</button><button type="button" data-preset="edm">ELECTRONIC / DANCE</button><button type="button" data-preset="pop">POP</button><button type="button" data-preset="vocal">VOCAL BOOSTER</button><button type="button" data-preset="acoustic">ACOUSTIC / FOLK</button><button type="button" data-preset="loudness">LOUDNESS</button><button type="button" data-preset="piano">PIANO</button><button type="button" data-preset="rnb">R&amp;B</button><button type="button" data-preset="soul">R&amp;B / SOUL</button><button type="button" data-preset="spoken">SMALL SPEAKERS / SPOKEN WORD</button>
+                        </div>
+                    </div>
+
+                    <div class="eq-aux-panel">
+                        <div class="aux-module"><span>STATE</span><strong id="eq-instrument-state">NEUTRAL</strong></div>
+                        <div class="aux-module"><span>MASTER</span><strong>0 dB</strong></div>
+                        <button id="eq-reset" class="room-action">RESET</button>
+                    </div>
+
+                    <div class="console-rail console-rail-bottom"><span>FREQUENCY AUDIO FACILITY</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="room-transmission" class="room transmission-room"><div class="room-label"><span>04</span> TRANSMISSION CHAMBER</div><div class="transmission-door"><div class="door-frame"><div class="door-core"><div class="signal-node"></div><div class="signal-line line-a"></div><div class="signal-line line-b"></div><div class="signal-line line-c"></div></div></div><div class="transmission-copy"><span class="micro-label">TRANSMISSION</span><h2>THE SIGNAL IS NOT YET ACTIVE.</h2><p>Something is being prepared.<br>A new way to discover, share, and experience music is coming to Frequency.</p><strong>STAND BY.</strong></div></div></section>
+        <section id="room-profile" class="room room-panel"><div class="room-label"><span>05</span> PRIVATE CHAMBER</div><div class="room-card profile-card"><div class="profile-emblem"><img src="assets/logo.png" alt="Frequency"></div><div class="panel-heading"><div><span class="micro-label">VAULT OWNER</span><h2 id="profile-title">PRIVATE SESSION</h2></div></div><p id="profile-status" class="profile-status">Sign in to unlock your private vault and uploads.</p><div class="auth-actions"><button id="auth-open" class="room-action">ENTER VAULT</button><button id="sign-out" class="room-action hidden">SIGN OUT</button></div></div></section>
+    </main>
+    <footer class="player-dock"><div class="player-track-info"><img id="player-thumb" src="assets/default-art.jpg" alt=""><div><span class="micro-label">PLAYING</span><strong id="player-title">VAULT EMPTY</strong><small id="player-artist">NO SIGNAL</small></div></div><div class="player-center"><div class="wave-wrap" id="waveform-container"><canvas id="waveform-canvas"></canvas><div id="wave-progress" class="wave-progress"></div></div><div class="transport"><span id="current-time">00:00</span><button id="prev-btn" class="transport-btn" aria-label="Previous">◀</button><button id="play-pause-btn" class="play-btn" aria-label="Play"><span id="play-icon">▶</span></button><button id="next-btn" class="transport-btn" aria-label="Next">▶</button><button id="shuffle-btn" class="transport-btn" aria-label="Shuffle">⤨</button><span id="total-time">00:00</span></div></div><div class="player-status"><span class="status-dot"></span><span id="player-status-label">STAND BY</span></div></footer>
+    <dialog id="upload-dialog" class="vault-dialog"><form id="upload-form" class="dialog-card"><button type="button" class="dialog-close" data-close="upload-dialog">×</button><span class="micro-label">VAULT INTAKE</span><h2>UPLOAD SIGNAL</h2><p class="dialog-note">Audio is stored privately in your Frequency vault.</p><div class="form-grid"><label>TITLE<input name="title" required placeholder="Track title"></label><label>ARTIST<input name="artist" required placeholder="Artist"></label><label>ALBUM<input name="album" placeholder="Album"></label><label>GENRE<input name="genre" placeholder="Genre"></label></div><label class="file-drop">AUDIO FILE<input id="audio-file" name="audio" type="file" accept="audio/*" required><span id="audio-file-name">Choose an audio file</span></label><label class="file-drop">COVER ART<input id="cover-file" name="cover" type="file" accept="image/*"><span id="cover-file-name">Optional cover image</span></label><button id="submit-upload" class="room-action" type="submit">UPLOAD TO VAULT</button><div id="upload-progress" class="upload-progress"></div></form></dialog>
+    <dialog id="auth-dialog" class="vault-dialog"><form id="auth-form" class="dialog-card"><button type="button" class="dialog-close" data-close="auth-dialog">×</button><span class="micro-label">PRIVATE ACCESS</span><h2>ENTER FREQUENCY</h2><p class="dialog-note">Use an email and password to access your private vault.</p><label>EMAIL<input id="auth-email" type="email" required></label><label>PASSWORD<input id="auth-password" type="password" required minlength="6"></label><div class="auth-actions"><button id="auth-signin" class="room-action" type="submit">SIGN IN</button><button id="auth-signup" class="room-action secondary" type="button">CREATE VAULT</button></div><div id="auth-message" class="upload-progress"></div></form></dialog>
+    <script type="module" src="js/frequency-app.js"></script>
+    <script type="module" src="js/eq-visualizer.js"></script>
+    <script type="module" src="js/eq-presets.js"></script>
+</body>
+</html>
