@@ -1,0 +1,34 @@
+/* FREQUENCY // TRANSMISSION CHAMBER BACKGROUND */
+
+#room-transmission {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background-color: #020202;
+    background-image: linear-gradient(rgba(0,0,0,.24), rgba(0,0,0,.24)), url('../assets/transmisson.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+#room-transmission::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.08) 42%, rgba(0,0,0,.42) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+#room-transmission .room-label,
+#room-transmission .transmission-door {
+    position: relative;
+    z-index: 2;
+}
+
+@media (max-width: 720px) {
+    #room-transmission {
+        background-image: linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)), url('../assets/mobile-transmission.png');
+        background-position: center center;
+    }
+}
