@@ -23,9 +23,8 @@
 #room-list .list-row em{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 12px 0;color:rgba(255,255,255,.25);font-style:normal;font-size:6px;letter-spacing:.18em;}
 #room-list .list-row.current:after{color:#c42a20;text-shadow:0 0 10px rgba(196,42,32,.6)}
 
-/* Desktop: the archive panel is mathematically centered in the usable room. */
+/* Desktop: center only the List room's archive card. Do not change the room itself. */
 @media (min-width:721px){
-    #room-list.room-panel{display:flex;align-items:center;justify-content:center;}
     #room-list .list-room-card{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);}
 }
 
