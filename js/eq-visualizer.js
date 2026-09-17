@@ -7,7 +7,6 @@ if (canvas && visual) {
     let height = 1;
     let ratio = 1;
     let smoothWave = [];
-    let previousWave = [];
 
     function resize() {
         const rect = visual.getBoundingClientRect();
@@ -20,7 +19,6 @@ if (canvas && visual) {
         canvas.style.height = `${height}px`;
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         smoothWave = [];
-        previousWave = [];
     }
 
     function drawGrid() {
@@ -58,50 +56,46 @@ if (canvas && visual) {
 
         if (smoothWave.length !== points) {
             smoothWave = Array.from(target);
-            previousWave = Array.from(target);
         }
 
-        // Gentle temporal smoothing keeps the real waveform reactive without
-        // making it jitter violently from frame to frame.
+        // Smooth the incoming signal so the trace has weight instead of
+        // snapping around with every tiny sample change.
         for (let i = 0; i < points; i++) {
-            const targetValue = target[i];
             const current = smoothWave[i] || 0;
-            smoothWave[i] = current + (targetValue - current) * (active ? 0.16 : 0.035);
+            smoothWave[i] = current + (target[i] - current) * (active ? 0.12 : 0.03);
         }
 
         const center = height * 0.53;
-        const amplitude = active ? height * 0.30 : height * 0.012;
+        // Give the waveform more room to breathe above and below the center.
+        const amplitude = active ? height * 0.43 : height * 0.012;
 
-        // Soft red signal aura behind the main trace.
+        // Subtle red aura.
         ctx.beginPath();
         for (let i = 0; i < points; i++) {
             const x = i / (points - 1) * width;
             const y = center + smoothWave[i] * amplitude;
             i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
         }
-        ctx.strokeStyle = active ? 'rgba(198,28,22,.22)' : 'rgba(120,20,18,.08)';
+        ctx.strokeStyle = active ? 'rgba(198,28,22,.20)' : 'rgba(120,20,18,.07)';
         ctx.lineWidth = active ? 5 : 1;
-        ctx.shadowBlur = active ? 18 : 0;
-        ctx.shadowColor = 'rgba(210,25,20,.35)';
+        ctx.shadowBlur = active ? 16 : 0;
+        ctx.shadowColor = 'rgba(210,25,20,.32)';
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Main waveform. It is intentionally slower and smoother than a
-        // spectrum display, so it reads like an oscilloscope trace.
+        // Main oscilloscope trace.
         ctx.beginPath();
         for (let i = 0; i < points; i++) {
             const x = i / (points - 1) * width;
             const y = center + smoothWave[i] * amplitude;
             i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
         }
-        ctx.strokeStyle = active ? 'rgba(255,247,241,.94)' : 'rgba(255,255,255,.13)';
-        ctx.lineWidth = active ? 1.35 : .75;
-        ctx.shadowBlur = active ? 8 : 0;
-        ctx.shadowColor = 'rgba(235,30,24,.7)';
+        ctx.strokeStyle = active ? 'rgba(255,247,241,.96)' : 'rgba(255,255,255,.13)';
+        ctx.lineWidth = active ? 1.5 : .75;
+        ctx.shadowBlur = active ? 9 : 0;
+        ctx.shadowColor = 'rgba(235,30,24,.72)';
         ctx.stroke();
         ctx.shadowBlur = 0;
-
-        previousWave = Array.from(smoothWave);
     }
 
     function draw() {
@@ -121,7 +115,7 @@ if (canvas && visual) {
         drawWave(waveform, active);
 
         const center = height * 0.53;
-        ctx.strokeStyle = active ? 'rgba(180,31,25,.34)' : 'rgba(160,25,20,.16)';
+        ctx.strokeStyle = active ? 'rgba(180,31,25,.25)' : 'rgba(160,25,20,.13)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, center + .5);
