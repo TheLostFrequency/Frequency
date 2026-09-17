@@ -1,0 +1,31 @@
+/* Frequency navigation polish */
+.facility-nav .nav-tab {
+  color: rgba(255,255,255,.42);
+  transition: color .25s ease, text-shadow .25s ease;
+}
+
+.facility-nav .nav-tab:hover {
+  color: rgba(255,255,255,.82);
+  text-shadow: 0 0 10px rgba(196,42,32,.22);
+}
+
+.facility-nav .nav-tab.active {
+  color: #fff;
+  text-shadow: 0 0 12px rgba(196,42,32,.18);
+}
+
+.facility-nav .nav-tab.active:after {
+  height: 2px;
+  background: #c42a20;
+  box-shadow: 0 0 8px rgba(196,42,32,.7), 0 0 16px rgba(196,42,32,.28);
+}
+
+@media (max-width: 760px) {
+  .facility-nav .nav-tab:hover {
+    text-shadow: none;
+  }
+
+  .facility-nav .nav-tab.active:after {
+    box-shadow: 0 0 7px rgba(196,42,32,.65);
+  }
+}
