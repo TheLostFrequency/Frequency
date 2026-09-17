@@ -1,0 +1,11 @@
+@media (max-width:720px){
+.player-dock{overflow:visible!important}
+.player-center{overflow:visible!important;min-width:0!important}
+.transport{display:flex!important;visibility:visible!important;opacity:1!important;overflow:visible!important;position:relative!important;z-index:50!important}
+.transport button,.transport-btn,.play-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:51!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important}
+#prev-btn,#play-pause-btn,#next-btn,#shuffle-btn{visibility:visible!important;opacity:1!important}
+}
+@media(max-width:430px){
+.transport button,.transport-btn{width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important}
+.transport .play-btn{width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important}
+}
