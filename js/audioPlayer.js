@@ -4,6 +4,7 @@ export class AudioPlayer {
         this.audio.id = 'frequency-audio';
         this.audio.preload = 'metadata';
         this.audio.crossOrigin = 'anonymous';
+        this.audio.playsInline = true;
         this.audio.volume = 1;
         this.isPlaying = false;
         this.currentTime = 0;
@@ -12,6 +13,11 @@ export class AudioPlayer {
         this.onEnded = null;
         this.onPlayStateChange = null;
         window.frequencyAudio = this.audio;
+
+        // Tell iOS this page is a music player. Without an explicit playback
+        // audio session, Web Audio can be treated as ambient audio and may be
+        // suspended when Safari is sent to the background.
+        this.configureAudioSession();
 
         this.audio.addEventListener('timeupdate', () => {
             this.currentTime = this.audio.currentTime || 0;
@@ -42,6 +48,16 @@ export class AudioPlayer {
         });
 
         this.setupMediaSession();
+    }
+
+    configureAudioSession() {
+        if (!('audioSession' in navigator)) return;
+
+        try {
+            navigator.audioSession.type = 'playback';
+        } catch (error) {
+            console.warn('Frequency audio session could not be configured:', error);
+        }
     }
 
     setupMediaSession() {
@@ -91,6 +107,7 @@ export class AudioPlayer {
 
     async play() {
         try {
+            this.configureAudioSession();
             await this.audio.play();
         } catch (error) {
             console.warn('Playback prevented:', error);
