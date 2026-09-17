@@ -7,11 +7,23 @@ export class AudioAnalyzer {
         this.isInitialized = false;
         this.audioElement = audioElement;
         this.frequencies = [32, 64, 128, 250, 500, 1000, 2000, 4000, 16000];
+
+        // The EQ visualizer needs the analyzer connected before playback starts.
+        // Hook the audio element directly so every real play action can wake it up.
+        if (this.audioElement) {
+            this.audioElement.addEventListener('play', () => {
+                this.init();
+                this.resume();
+            });
+        }
+
+        window.frequencyAnalyzer = this;
     }
 
     init() {
         if (this.isInitialized) {
             this.resume();
+            window.frequencyAnalyzer = this;
             return true;
         }
 
@@ -25,7 +37,7 @@ export class AudioAnalyzer {
                 this.analyser.fftSize = 512;
                 this.analyser.minDecibels = -90;
                 this.analyser.maxDecibels = -10;
-                this.analyser.smoothingTimeConstant = 0.68;
+                this.analyser.smoothingTimeConstant = 0.58;
             }
 
             // A MediaElementSource can only be created once for a given audio element.
