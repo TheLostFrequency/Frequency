@@ -1,21 +1,12 @@
 export class AudioAnalyzer {
     constructor(audioElement) {
+        this.audioElement = audioElement;
         this.audioCtx = null;
-        this.analyser = null;
         this.source = null;
+        this.analyser = null;
         this.filters = [];
         this.isInitialized = false;
-        this.audioElement = audioElement;
         this.frequencies = [32, 64, 128, 250, 500, 1000, 2000, 4000, 16000];
-        this.initPromise = null;
-
-        if (this.audioElement) {
-            this.audioElement.addEventListener('play', () => {
-                this.init();
-                this.resume();
-            });
-        }
-
         window.frequencyAnalyzer = this;
     }
 
@@ -24,32 +15,32 @@ export class AudioAnalyzer {
             this.resume();
             return true;
         }
-        if (this.initPromise) return this.initPromise;
 
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext || !this.audioElement) return false;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass || !this.audioElement) return false;
 
         try {
-            if (!this.audioCtx) this.audioCtx = new AudioContext();
-            if (!this.analyser) {
-                this.analyser = this.audioCtx.createAnalyser();
-                this.analyser.fftSize = 1024;
-                this.analyser.minDecibels = -100;
-                this.analyser.maxDecibels = -12;
-                this.analyser.smoothingTimeConstant = 0.72;
+            if (!this.audioCtx) {
+                this.audioCtx = new AudioContextClass();
             }
 
             if (!this.source) {
                 this.source = this.audioCtx.createMediaElementSource(this.audioElement);
+            }
 
+            if (!this.analyser) {
+                this.analyser = this.audioCtx.createAnalyser();
+                this.analyser.fftSize = 2048;
+                this.analyser.minDecibels = -100;
+                this.analyser.maxDecibels = -10;
+                this.analyser.smoothingTimeConstant = 0.45;
+            }
+
+            if (!this.filters.length) {
                 let node = this.source;
                 this.filters = this.frequencies.map((frequency, index) => {
                     const filter = this.audioCtx.createBiquadFilter();
-                    filter.type = index === 0
-                        ? 'lowshelf'
-                        : index === this.frequencies.length - 1
-                            ? 'highshelf'
-                            : 'peaking';
+                    filter.type = index === 0 ? 'lowshelf' : index === this.frequencies.length - 1 ? 'highshelf' : 'peaking';
                     filter.frequency.value = frequency;
                     filter.Q.value = index === 0 || index === this.frequencies.length - 1 ? 0.7 : 1;
                     filter.gain.value = 0;
@@ -57,7 +48,6 @@ export class AudioAnalyzer {
                     node = filter;
                     return filter;
                 });
-
                 node.connect(this.analyser);
                 this.analyser.connect(this.audioCtx.destination);
             }
@@ -67,25 +57,41 @@ export class AudioAnalyzer {
             this.resume();
             return true;
         } catch (error) {
-            console.warn('Frequency EQ analyzer could not connect:', error);
+            console.error('Frequency analyzer initialization failed:', error);
             this.isInitialized = false;
             window.frequencyAnalyzer = this;
             return false;
         }
     }
 
-    resume() {
-        if (this.audioCtx?.state === 'suspended') {
-            this.audioCtx.resume().catch(() => {});
+    async resume() {
+        if (!this.audioCtx) return false;
+        try {
+            if (this.audioCtx.state !== 'running') {
+                await this.audioCtx.resume();
+            }
+            return this.audioCtx.state === 'running';
+        } catch (error) {
+            console.warn('Frequency audio context could not resume:', error);
+            return false;
         }
     }
 
+    async start() {
+        if (!this.init()) return false;
+        return this.resume();
+    }
+
     setBand(index, value) {
-        if (this.filters[index]) this.filters[index].gain.value = Number(value);
+        if (this.filters[index]) {
+            this.filters[index].gain.value = Number(value);
+        }
     }
 
     reset() {
-        this.filters.forEach(filter => { filter.gain.value = 0; });
+        this.filters.forEach(filter => {
+            filter.gain.value = 0;
+        });
     }
 
     getWaveformData() {
@@ -100,5 +106,17 @@ export class AudioAnalyzer {
         const data = new Uint8Array(this.analyser.frequencyBinCount);
         this.analyser.getByteFrequencyData(data);
         return data;
+    }
+
+    getSignalLevel() {
+        if (!this.analyser) return 0;
+        const data = new Uint8Array(this.analyser.fftSize);
+        this.analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) {
+            const sample = (data[i] - 128) / 128;
+            sum += sample * sample;
+        }
+        return Math.sqrt(sum / data.length);
     }
 }
