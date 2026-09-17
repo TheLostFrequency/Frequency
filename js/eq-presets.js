@@ -47,3 +47,5 @@ inputs.forEach(input => input.addEventListener('input', () => {
 document.getElementById('eq-reset')?.addEventListener('click', () => {
     setTimeout(() => applyPreset('flat'), 0);
 });
+
+import './library-manager.js';
