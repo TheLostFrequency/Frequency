@@ -1,3 +1,5 @@
+@import url('./mobile.css');
+
 /* EQUALIZER ONLY — isolate this room from the global facility artwork. */
 #room-equalizer {
     position: absolute !important;
