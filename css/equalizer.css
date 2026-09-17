@@ -48,3 +48,9 @@
 @media(max-width:900px){.eq-room-card{width:min(900px,94vw)}.eq-monitor{margin-left:5%;margin-right:5%}.eq-bands{gap:4px}.eq-presets{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:720px){#room-equalizer.active-room{padding:60px 10px 140px}.eq-room-card{width:100%;margin-top:20px}.eq-console-shell{padding:10px 8px 12px}.console-rail{font-size:4px;letter-spacing:.12em}.eq-monitor{margin:6px 0 9px;padding:6px}.eq-visual{height:130px}.eq-fader-deck{margin:0 0 8px;padding:9px 7px 10px}.fader-deck-header{font-size:4px}.eq-bands{height:210px;gap:0;padding-left:18px}.eq-bands label:after{width:27px}.eq-bands input{height:180px;width:38px}.eq-band-value{min-width:29px;font-size:5px}.eq-presets{grid-template-columns:repeat(3,1fr)}.eq-presets button{min-height:27px;font-size:4px;padding-left:12px}.eq-aux-panel{grid-template-columns:1fr}.eq-aux-panel .room-action{grid-column:auto}.monitor-readouts strong{display:none}.monitor-readouts{grid-template-columns:repeat(5,1fr)}}
 @media(max-width:430px){.eq-visual{height:110px}.eq-bands{height:190px}.eq-bands input{height:160px}.eq-presets{grid-template-columns:repeat(2,1fr)}}
+
+/* DESKTOP CENTERING POLISH */
+@media(min-width:721px){
+    #room-equalizer.active-room{justify-content:center;align-items:center}
+    #room-equalizer .eq-room-card{margin:0 auto}
+}
