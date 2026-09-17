@@ -68,7 +68,60 @@ function injectStyles() {
             outline: none;
             box-shadow: 0 0 18px rgba(196,42,32,.12);
         }
-        #edit-dialog .dialog-card { max-height: 90vh; overflow: auto; }
+        #edit-dialog .dialog-card,
+        #upload-dialog .dialog-card { max-height: 90vh; overflow: auto; }
+        #upload-form .upload-global-fields { display: none; }
+        .upload-signal-editor {
+            display: grid;
+            gap: 12px;
+            margin: 14px 0 16px;
+        }
+        .upload-signal-card {
+            position: relative;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(0,0,0,.28);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.025);
+        }
+        .upload-signal-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(196,42,32,.72);
+        }
+        .upload-signal-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .upload-signal-number {
+            font: 9px/1 Arial, Helvetica, sans-serif;
+            letter-spacing: .2em;
+            color: rgba(255,255,255,.42);
+        }
+        .upload-signal-filename {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font: 11px/1.4 Arial, Helvetica, sans-serif;
+            color: rgba(255,255,255,.7);
+        }
+        .upload-signal-card .form-grid { margin: 0 0 10px; }
+        .upload-signal-card .file-drop { margin: 0; }
+        .upload-signal-cover-name { display: block; }
+        .upload-signal-hint {
+            margin: 0 0 10px;
+            color: rgba(255,255,255,.38);
+            font: 9px/1.5 Arial, Helvetica, sans-serif;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
     `;
     document.head.appendChild(style);
 }
@@ -177,8 +230,6 @@ async function saveEdit(event) {
 
         if (error) throw error;
 
-        // Only remove the old files after the database update succeeds.
-        // If storage delete permissions are unavailable, the edit still remains saved.
         const removals = [];
         if (newAudioPath && editingTrack.audio_path) removals.push(['audio', editingTrack.audio_path]);
         if (newCoverPath && editingTrack.cover_path) removals.push(['covers', editingTrack.cover_path]);
@@ -190,7 +241,6 @@ async function saveEdit(event) {
         $('edit-progress').textContent = 'SIGNAL UPDATED.';
         dialogCloseAndRefresh();
     } catch (error) {
-        // Clean up a newly uploaded replacement if the database update failed.
         if (newAudioPath) await supabase.storage.from('audio').remove([newAudioPath]).catch(() => {});
         if (newCoverPath) await supabase.storage.from('covers').remove([newCoverPath]).catch(() => {});
         console.error('Signal edit failed:', error);
@@ -214,9 +264,6 @@ function injectEditButtons() {
     container.querySelectorAll('.list-row').forEach(row => {
         if (row.querySelector('.signal-edit')) return;
 
-        // list-row is itself a button, so the edit control must NOT be another
-        // <button> nested inside it. A span gives us a real clickable edit target
-        // without invalid HTML or swallowed click events.
         const edit = document.createElement('span');
         edit.className = 'signal-edit';
         edit.textContent = 'EDIT';
@@ -241,25 +288,76 @@ function injectEditButtons() {
     });
 }
 
+function filenameTitle(name) {
+    return name
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function buildUploadEditor(files) {
+    const form = $('upload-form');
+    const globalFields = form.querySelector('.form-grid');
+    const audioLabel = form.querySelector('.file-drop');
+    if (!form || !globalFields || !audioLabel) return null;
+
+    globalFields.classList.add('upload-global-fields');
+
+    let editor = $('upload-signal-editor');
+    if (!editor) {
+        editor = document.createElement('div');
+        editor.id = 'upload-signal-editor';
+        editor.className = 'upload-signal-editor';
+        audioLabel.insertAdjacentElement('afterend', editor);
+    }
+
+    editor.innerHTML = '';
+
+    files.forEach((file, index) => {
+        const title = filenameTitle(file.name) || 'Untitled';
+        const card = document.createElement('div');
+        card.className = 'upload-signal-card';
+        card.dataset.index = String(index);
+        card.innerHTML = `
+            <div class="upload-signal-header">
+                <span class="upload-signal-number">SIGNAL ${String(index + 1).padStart(2, '0')}</span>
+                <span class="upload-signal-filename" title="${esc(file.name)}">${esc(file.name)}</span>
+            </div>
+            <div class="form-grid">
+                <label>TITLE<input data-field="title" required value="${esc(title)}" placeholder="Track title"></label>
+                <label>ARTIST<input data-field="artist" required placeholder="Artist"></label>
+                <label>ALBUM<input data-field="album" placeholder="Album"></label>
+                <label>GENRE<input data-field="genre" placeholder="Genre"></label>
+            </div>
+            <label class="file-drop">COVER ART<input data-field="cover" type="file" accept="image/*"><span class="upload-signal-cover-name">Choose cover art for this song</span></label>
+        `;
+        editor.appendChild(card);
+
+        const coverInput = card.querySelector('[data-field="cover"]');
+        coverInput.addEventListener('change', () => {
+            card.querySelector('.upload-signal-cover-name').textContent = coverInput.files[0]?.name || 'Choose cover art for this song';
+        });
+    });
+
+    return editor;
+}
+
 function setupBulkUpload() {
     const form = $('upload-form');
     const input = $('audio-file');
     if (!form || !input || !supabase) return;
 
-    // No client-side song-count limit. Selecting multiple files creates one
-    // database record and one private storage object per file.
     input.multiple = true;
     const label = $('audio-file-name');
-    const artistInput = form.querySelector('[name="artist"]');
-    const titleInput = form.querySelector('[name="title"]');
-    artistInput.required = false;
-    titleInput.required = false;
 
     input.addEventListener('change', () => {
         const files = [...input.files];
         label.textContent = files.length
             ? `${files.length} signal${files.length === 1 ? '' : 's'} selected`
             : 'Choose one or more audio files';
+        buildUploadEditor(files);
+        $('upload-progress').textContent = '';
     });
 
     form.addEventListener('submit', async event => {
@@ -268,24 +366,35 @@ function setupBulkUpload() {
 
         const user = await getUser();
         const files = [...input.files];
-        if (!user || !files.length) {
+        const editor = $('upload-signal-editor');
+        if (!user || !files.length || !editor) {
             $('upload-progress').textContent = 'Select one or more audio files.';
             return;
         }
 
-        const artist = artistInput.value.trim() || 'Unknown Artist';
-        const album = form.querySelector('[name="album"]').value.trim() || null;
-        const genre = form.querySelector('[name="genre"]').value.trim() || null;
-        const coverFile = $('cover-file').files[0] || null;
-        const title = titleInput.value.trim();
-        const button = $('submit-upload');
+        const cards = [...editor.querySelectorAll('.upload-signal-card')];
+        if (cards.length !== files.length) {
+            $('upload-progress').textContent = 'Please select the audio files again.';
+            return;
+        }
 
+        const metadata = cards.map(card => ({
+            title: card.querySelector('[data-field="title"]').value.trim() || 'Untitled',
+            artist: card.querySelector('[data-field="artist"]').value.trim() || 'Unknown Artist',
+            album: card.querySelector('[data-field="album"]').value.trim() || null,
+            genre: card.querySelector('[data-field="genre"]').value.trim() || null,
+            coverFile: card.querySelector('[data-field="cover"]').files[0] || null
+        }));
+
+        const button = $('submit-upload');
         button.disabled = true;
         $('upload-progress').textContent = `UPLOADING 0 / ${files.length} SIGNALS...`;
 
         let completed = 0;
         try {
-            for (const audioFile of files) {
+            for (let index = 0; index < files.length; index += 1) {
+                const audioFile = files[index];
+                const info = metadata[index];
                 const base = `${user.id}/${crypto.randomUUID()}`;
                 const safeName = audioFile.name.replace(/[^a-z0-9._-]/gi, '_');
                 const audioPath = `${base}-${safeName}`;
@@ -297,23 +406,22 @@ function setupBulkUpload() {
                 if (result.error) throw result.error;
 
                 let coverPath = null;
-                if (coverFile?.size) {
-                    const coverName = coverFile.name.replace(/[^a-z0-9._-]/gi, '_');
+                if (info.coverFile?.size) {
+                    const coverName = info.coverFile.name.replace(/[^a-z0-9._-]/gi, '_');
                     coverPath = `${base}-${coverName}`;
-                    result = await supabase.storage.from('covers').upload(coverPath, coverFile, {
-                        contentType: coverFile.type || 'image/jpeg',
+                    result = await supabase.storage.from('covers').upload(coverPath, info.coverFile, {
+                        contentType: info.coverFile.type || 'image/jpeg',
                         upsert: false
                     });
                     if (result.error) throw result.error;
                 }
 
-                const filenameTitle = audioFile.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').trim();
                 const { error } = await supabase.from('tracks').insert({
                     user_id: user.id,
-                    title: files.length === 1 && title ? title : (filenameTitle || 'Untitled'),
-                    artist,
-                    album,
-                    genre,
+                    title: info.title,
+                    artist: info.artist,
+                    album: info.album,
+                    genre: info.genre,
                     audio_path: audioPath,
                     cover_path: coverPath
                 });
