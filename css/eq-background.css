@@ -14,12 +14,10 @@
     background-repeat: no-repeat !important;
 }
 
-/* The global facility background lives behind every room. Hide it completely while EQ is active. */
 body:has(#room-equalizer.active-room) .facility-bg {
     visibility: hidden !important;
 }
 
-/* Remove the generic room-panel artwork from EQ. */
 #room-equalizer.room-panel {
     background-color: #020202 !important;
     background-image: url('../assets/eq-background.png?v=3') !important;
@@ -29,7 +27,6 @@ body:has(#room-equalizer.active-room) .facility-bg {
     display: none !important;
 }
 
-/* Keep only a subtle cinematic treatment over the uploaded artwork. */
 #room-equalizer::after {
     content: "";
     position: absolute;
@@ -46,7 +43,7 @@ body:has(#room-equalizer.active-room) .facility-bg {
     z-index: 1;
 }
 
-/* Keep the console dead-center without changing its internal layout. */
+/* Desktop: centered in the EQ room. */
 #room-equalizer .eq-room-card {
     position: absolute;
     left: 50%;
@@ -55,9 +52,14 @@ body:has(#room-equalizer.active-room) .facility-bg {
     transform: translate(-50%, -50%);
 }
 
+/* Mobile: the card is already full-width. left:50% incorrectly shifted it right. */
 @media (max-width: 720px) {
     #room-equalizer .eq-room-card {
-        left: 50%;
-        width: calc(100% - 20px);
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        transform: none !important;
     }
 }
