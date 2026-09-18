@@ -30,7 +30,7 @@
 #room-transmission .transmission-copy {
     position: absolute;
     left: 50%;
-    top: 50%;
+    top: 55%;
     width: min(620px, 82vw);
     margin: 0;
     transform: translate(-50%, -50%);
@@ -68,5 +68,6 @@
     #room-transmission .transmission-copy {
         width: min(92vw, 560px);
         padding: 24px 20px;
+        top: 58%;
     }
 }
