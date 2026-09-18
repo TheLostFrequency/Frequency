@@ -26,21 +26,43 @@
     z-index: 2;
 }
 
-/* Keep the Transmission message fixed to the visual center of the chamber. */
-#room-transmission .transmission-copy {
-    position: absolute;
-    left: 50%;
-    top: 55%;
-    width: min(620px, 82vw);
-    margin: 0;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    z-index: 5;
-    padding: 28px 34px;
-    background: rgba(2, 2, 2, .30);
-    border: 1px solid rgba(255,255,255,.07);
-    box-shadow: 0 20px 70px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.035);
-    backdrop-filter: blur(2px);
+/* Desktop: stack the Transmission emblem and message in the true center. */
+@media (min-width: 721px) {
+    #room-transmission .transmission-door {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: min(760px, 88vw);
+        margin: 0;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+    }
+
+    #room-transmission .door-frame {
+        width: min(300px, 34vw);
+        max-height: 43vh;
+        flex: 0 0 auto;
+    }
+
+    #room-transmission .transmission-copy {
+        position: relative;
+        left: auto;
+        top: auto;
+        width: min(620px, 82vw);
+        margin: 0;
+        transform: none;
+        text-align: center;
+        z-index: 5;
+        padding: 22px 30px;
+        background: rgba(2, 2, 2, .34);
+        border: 1px solid rgba(255,255,255,.07);
+        box-shadow: 0 20px 70px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.035);
+        backdrop-filter: blur(2px);
+    }
 }
 
 #room-transmission .transmission-copy .micro-label {
