@@ -22,6 +22,16 @@
         padding-bottom:0!important;
     }
 
+    /* MOBILE UPLOAD: keep the existing header action reachable on small screens. */
+    .facility-header .upload-button{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        flex:0 0 auto!important;
+        visibility:visible!important;
+        opacity:1!important;
+    }
+
     /* MOBILE EQ: center the instrument against the full room width, not its content flow. */
     #room-equalizer.active-room{
         width:100%!important;
@@ -38,36 +48,8 @@
         align-content:start!important;
     }
 
-    #room-equalizer .eq-room-card{
-        position:relative!important;
-        grid-column:1!important;
-        left:auto!important;
-        right:auto!important;
-        top:auto!important;
-        bottom:auto!important;
-        width:min(560px, calc(100% - 12px))!important;
-        max-width:560px!important;
-        min-width:0!important;
-        margin:8px 0 0!important;
-        transform:none!important;
-        justify-self:center!important;
-        align-self:start!important;
-        box-sizing:border-box!important;
-    }
-
-    #room-equalizer .eq-console-shell,
-    #room-equalizer .eq-fader-deck,
-    #room-equalizer .eq-command-bank,
-    #room-equalizer .eq-aux-panel,
-    #room-equalizer .eq-monitor,
-    #room-equalizer .monitor-frame,
-    #room-equalizer .eq-bands{
-        width:100%!important;
-        min-width:0!important;
-        max-width:100%!important;
-        box-sizing:border-box!important;
-    }
-
+    #room-equalizer .eq-room-card{position:relative!important;grid-column:1!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:min(560px, calc(100% - 12px))!important;max-width:560px!important;min-width:0!important;margin:8px 0 0!important;transform:none!important;justify-self:center!important;align-self:start!important;box-sizing:border-box!important;}
+    #room-equalizer .eq-console-shell,#room-equalizer .eq-fader-deck,#room-equalizer .eq-command-bank,#room-equalizer .eq-aux-panel,#room-equalizer .eq-monitor,#room-equalizer .monitor-frame,#room-equalizer .eq-bands{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
     #room-equalizer .eq-console-shell{padding:7px 6px 9px!important;}
     #room-equalizer .console-rail{font-size:7px!important;letter-spacing:.08em!important;}
     #room-equalizer .eq-monitor{margin:4px 0 6px!important;padding:4px!important;}
@@ -105,9 +87,7 @@
 @media (max-width:430px){
     .player-dock{height:92px!important;min-height:92px!important;}
     .facility-main{height:calc(100vh - 96px - 92px)!important;padding-bottom:0!important;}
-    body:not(:has(#room-collection.active-room)) .facility-main{
-        height:calc(100vh - 92px)!important;
-    }
+    body:not(:has(#room-collection.active-room)) .facility-main{height:calc(100vh - 92px)!important;}
     #room-equalizer.active-room{padding:34px 0 105px!important;}
     #room-equalizer .eq-room-card{width:calc(100% - 8px)!important;margin-top:4px!important;}
     #room-equalizer .eq-presets{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
