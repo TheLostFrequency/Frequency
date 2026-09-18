@@ -52,15 +52,20 @@ export class AudioPlayer {
 
     setupMediaSession() {
         if (!('mediaSession' in navigator)) return;
+
         const action = (name, handler) => {
             try { navigator.mediaSession.setActionHandler(name, handler); } catch (_) {}
         };
+
         action('play', () => this.play());
         action('pause', () => this.pause());
         action('previoustrack', () => this.onPreviousTrack?.());
         action('nexttrack', () => this.onNextTrack?.());
-        // Intentionally leave seekbackward/seekforward unset so iOS exposes
-        // previous/next track controls rather than 10-second seek controls.
+
+        // Explicitly remove seek commands. Some iOS versions expose the
+        // default 10-second controls when these actions are merely absent.
+        action('seekbackward', null);
+        action('seekforward', null);
     }
 
     updateMediaSessionPlaybackState() {
