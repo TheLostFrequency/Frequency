@@ -58,13 +58,52 @@ function toast(message) {
     toast.timer = setTimeout(() => element.classList.remove('show'), 2500);
 }
 
+let roomTransitionBusy = false;
+
 function room(name) {
-    rooms.forEach(roomName => {
-        const section = $(`room-${roomName}`);
-        if (section) section.classList.toggle('active-room', roomName === name);
-    });
-    nav.forEach(button => button.classList.toggle('active', button.dataset.tab === name));
-    if (name === 'list') renderList();
+    if (!rooms.includes(name)) return;
+    const current = rooms.find(roomName => $(\`room-${roomName}\`)?.classList.contains('active-room'));
+    if (current === name || roomTransitionBusy) return;
+
+    const transition = $('room-transition');
+    const transitionIndex = transition?.querySelector('.room-transition-index');
+    const transitionName = transition?.querySelector('.room-transition-name');
+    const destination = $(\`room-${name}\`);
+
+    if (!transition || !destination) {
+        rooms.forEach(roomName => {
+            const section = $(\`room-${roomName}\`);
+            if (section) section.classList.toggle('active-room', roomName === name);
+        });
+        nav.forEach(button => button.classList.toggle('active', button.dataset.tab === name));
+        if (name === 'list') renderList();
+        return;
+    }
+
+    roomTransitionBusy = true;
+    const index = String(rooms.indexOf(name) + 1).padStart(2, '0');
+    const labels = { collection:'ARCHIVE CHAMBER', list:'ARCHIVE INDEX', equalizer:'AUDIO COMMAND CENTER', transmission:'TRANSMISSION CHAMBER', profile:'PRIVATE CHAMBER' };
+    transitionIndex.textContent = `ROOM ${index}`;
+    transitionName.textContent = labels[name] || name.toUpperCase();
+    document.body.classList.remove('room-arriving');
+    document.body.classList.add('room-entering');
+
+    window.setTimeout(() => {
+        rooms.forEach(roomName => {
+            const section = $(\`room-${roomName}\`);
+            if (section) section.classList.toggle('active-room', roomName === name);
+        });
+        nav.forEach(button => button.classList.toggle('active', button.dataset.tab === name));
+        if (name === 'list') renderList();
+
+        document.body.classList.remove('room-entering');
+        document.body.classList.add('room-arriving');
+
+        window.setTimeout(() => {
+            document.body.classList.remove('room-arriving');
+            roomTransitionBusy = false;
+        }, 400);
+    }, 300);
 }
 
 nav.forEach(button => {
