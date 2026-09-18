@@ -62,17 +62,17 @@ let roomTransitionBusy = false;
 
 function room(name) {
     if (!rooms.includes(name)) return;
-    const current = rooms.find(roomName => $(\`room-${roomName}\`)?.classList.contains('active-room'));
+    const current = rooms.find(roomName => $(`room-${roomName}`)?.classList.contains('active-room'));
     if (current === name || roomTransitionBusy) return;
 
     const transition = $('room-transition');
     const transitionIndex = transition?.querySelector('.room-transition-index');
     const transitionName = transition?.querySelector('.room-transition-name');
-    const destination = $(\`room-${name}\`);
+    const destination = $(`room-${name}`);
 
     if (!transition || !destination) {
         rooms.forEach(roomName => {
-            const section = $(\`room-${roomName}\`);
+            const section = $(`room-${roomName}`);
             if (section) section.classList.toggle('active-room', roomName === name);
         });
         nav.forEach(button => button.classList.toggle('active', button.dataset.tab === name));
@@ -90,7 +90,7 @@ function room(name) {
 
     window.setTimeout(() => {
         rooms.forEach(roomName => {
-            const section = $(\`room-${roomName}\`);
+            const section = $(`room-${roomName}`);
             if (section) section.classList.toggle('active-room', roomName === name);
         });
         nav.forEach(button => button.classList.toggle('active', button.dataset.tab === name));
