@@ -41,10 +41,23 @@ function installMobileMediaSession() {
         try { navigator.mediaSession.setActionHandler(name, handler); } catch (_) {}
     };
 
-    setAction('play', () => audio.play());
-    setAction('pause', () => audio.pause());
-    setAction('previoustrack', () => document.getElementById('prev-btn')?.click());
-    setAction('nexttrack', () => document.getElementById('next-btn')?.click());
+    const registerTrackControls = () => {
+        setAction('play', () => audio.play());
+        setAction('pause', () => audio.pause());
+        setAction('previoustrack', () => document.getElementById('prev-btn')?.click());
+        setAction('nexttrack', () => document.getElementById('next-btn')?.click());
+
+        // Do not let iOS fall back to the 10-second seek controls.
+        setAction('seekbackward', null);
+        setAction('seekforward', null);
+    };
+
+    registerTrackControls();
+
+    // Re-register after playback starts because iOS can build the Now Playing
+    // command set from the active media session rather than the initial page state.
+    audio.addEventListener('play', registerTrackControls);
+    audio.addEventListener('loadedmetadata', registerTrackControls);
 
     const syncMetadata = () => {
         if (!('MediaMetadata' in window)) return;
