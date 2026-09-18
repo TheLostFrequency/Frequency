@@ -81,9 +81,22 @@ function installMobileMediaSession() {
     syncMetadata();
 }
 
+function installAudioFilePickerCompatibility() {
+    const input = document.getElementById('audio-files');
+    if (!input) return;
+
+    // iOS Safari can mis-handle the broad audio/* filter and show audio files as unavailable.
+    // Explicit extensions keep MP3/M4A/WAV/FLAC/OGG/AAC files selectable in the Files picker.
+    input.setAttribute(
+        'accept',
+        '.mp3,.m4a,.aac,.wav,.flac,.ogg,.oga,.aiff,.aif,audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/flac,audio/ogg,audio/aiff'
+    );
+}
+
 function boot() {
     installCollectionSwipe();
     installMobileMediaSession();
+    installAudioFilePickerCompatibility();
 }
 
 if (document.readyState === 'loading') {
