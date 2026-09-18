@@ -43,14 +43,8 @@ function installMobileMediaSession() {
 
     setAction('play', () => audio.play());
     setAction('pause', () => audio.pause());
-    setAction('seekbackward', details => {
-        const offset = details.seekOffset || 10;
-        audio.currentTime = Math.max(0, audio.currentTime - offset);
-    });
-    setAction('seekforward', details => {
-        const offset = details.seekOffset || 10;
-        audio.currentTime = Math.min(audio.duration || audio.currentTime + offset, audio.currentTime + offset);
-    });
+    // Do not register seek actions here. iOS uses these handlers to decide
+    // whether the lock-screen should show 10-second seek controls.
     setAction('previoustrack', () => document.getElementById('prev-btn')?.click());
     setAction('nexttrack', () => document.getElementById('next-btn')?.click());
 
