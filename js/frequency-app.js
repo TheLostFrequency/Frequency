@@ -406,6 +406,28 @@ $('prev-btn').addEventListener('click', () => move(-1, true));
 // Connect browser lock-screen / headset track controls to the same player controls.
 player.onNextTrack = () => move(1, true);
 player.onPreviousTrack = () => move(-1, true);
+
+function registerMediaSessionTrackControls() {
+    if (!('mediaSession' in navigator)) return;
+    const register = (name, handler) => {
+        try { navigator.mediaSession.setActionHandler(name, handler); } catch (_) {}
+    };
+
+    register('nexttrack', () => {
+        console.log('[Frequency] nexttrack received');
+        move(1, true);
+    });
+    register('previoustrack', () => {
+        console.log('[Frequency] previoustrack received');
+        move(-1, true);
+    });
+    register('seekbackward', null);
+    register('seekforward', null);
+}
+
+registerMediaSessionTrackControls();
+player.audio.addEventListener('play', registerMediaSessionTrackControls);
+player.audio.addEventListener('loadedmetadata', registerMediaSessionTrackControls);
 $('shuffle-btn').addEventListener('click', () => {
     shuffle = !shuffle;
     $('shuffle-btn').classList.toggle('active', shuffle);
