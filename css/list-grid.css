@@ -31,14 +31,14 @@
 
 @media (max-width:1100px){#room-list .list-container{grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}#room-list .list-room-card{width:min(1050px,92vw)}}
 @media (max-width:720px){
-    #room-list.room-panel{padding:40px 8px 105px;overflow:auto;align-items:flex-start;justify-content:flex-start;background-position:center center;background-attachment:scroll}
+    #room-list.room-panel{padding:40px 8px 180px;overflow:auto;align-items:flex-start;justify-content:flex-start;background-position:center center;background-attachment:scroll}
     #room-list.room-panel:before{display:none}
     #room-list.room-panel:after{display:none}
     #room-list .room-card{width:100%;max-width:none;max-height:none;padding:14px;margin:0}
     #room-list .panel-heading{align-items:center;padding-bottom:10px;margin-bottom:9px}
     #room-list .panel-heading h2{font-size:12px;letter-spacing:.2em}
     #room-list .panel-heading > span{font-size:6px}
-    #room-list .list-container{max-height:none;overflow:auto;padding:3px 2px 105px;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;-webkit-overflow-scrolling:touch}
+    #room-list .list-container{max-height:none;overflow:auto;padding:3px 2px 180px;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;-webkit-overflow-scrolling:touch}
     #room-list .list-row{padding-bottom:10px;box-shadow:inset 0 1px rgba(255,255,255,.045),0 12px 22px rgba(0,0,0,.42)}
     #room-list .list-row:hover{transform:none}
     #room-list .list-row.current{transform:translateY(-2px)}
@@ -48,4 +48,4 @@
     #room-list .list-row em{padding:6px 8px 0;font-size:5px}
     #room-list .list-row:after{top:7px;right:7px;font-size:4.5px}
 }
-@media (max-width:430px){#room-list.room-panel{padding:34px 6px 105px}#room-list .room-card{padding:11px}#room-list .list-container{gap:8px;padding-bottom:105px}#room-list .list-row > div{padding:8px 7px 0}#room-list .list-row em{padding:5px 7px 0}}
+@media (max-width:430px){#room-list.room-panel{padding:34px 6px 180px}#room-list .room-card{padding:11px}#room-list .list-container{gap:8px;padding-bottom:180px}#room-list .list-row > div{padding:8px 7px 0}#room-list .list-row em{padding:5px 7px 0}}
