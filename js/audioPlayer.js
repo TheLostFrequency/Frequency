@@ -13,12 +13,7 @@ export class AudioPlayer {
         this.onEnded = null;
         this.onPlayStateChange = null;
         window.frequencyAudio = this.audio;
-
-        // Tell iOS this page is a music player. Without an explicit playback
-        // audio session, Web Audio can be treated as ambient audio and may be
-        // suspended when Safari is sent to the background.
         this.configureAudioSession();
-
         this.audio.addEventListener('timeupdate', () => {
             this.currentTime = this.audio.currentTime || 0;
             if (this.onTimeUpdate) this.onTimeUpdate(this.currentTime, this.duration);
@@ -46,39 +41,30 @@ export class AudioPlayer {
         this.audio.addEventListener('error', () => {
             console.warn('Audio element error:', this.audio.error);
         });
-
         this.setupMediaSession();
     }
 
     configureAudioSession() {
         if (!('audioSession' in navigator)) return;
-
-        try {
-            navigator.audioSession.type = 'playback';
-        } catch (error) {
-            console.warn('Frequency audio session could not be configured:', error);
-        }
+        try { navigator.audioSession.type = 'playback'; }
+        catch (error) { console.warn('Frequency audio session could not be configured:', error); }
     }
 
     setupMediaSession() {
         if (!('mediaSession' in navigator)) return;
-
         const action = (name, handler) => {
             try { navigator.mediaSession.setActionHandler(name, handler); } catch (_) {}
         };
-
         action('play', () => this.play());
         action('pause', () => this.pause());
-        action('seekbackward', () => this.seek(Math.max(0, this.audio.currentTime - 10)));
-        action('seekforward', () => this.seek(Math.min(this.audio.duration || 0, this.audio.currentTime + 10)));
         action('previoustrack', () => this.onPreviousTrack?.());
         action('nexttrack', () => this.onNextTrack?.());
+        // Intentionally leave seekbackward/seekforward unset so iOS exposes
+        // previous/next track controls rather than 10-second seek controls.
     }
 
     updateMediaSessionPlaybackState() {
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
-        }
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
     }
 
     setMediaSessionTrack({ title, artist, album, artwork } = {}) {
@@ -109,9 +95,7 @@ export class AudioPlayer {
         try {
             this.configureAudioSession();
             await this.audio.play();
-        } catch (error) {
-            console.warn('Playback prevented:', error);
-        }
+        } catch (error) { console.warn('Playback prevented:', error); }
     }
 
     pause() { this.audio.pause(); }
