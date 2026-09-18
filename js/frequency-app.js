@@ -381,6 +381,11 @@ $('eq-reset').addEventListener('click', () => {
 eqDraw();
 
 function drawWaveform() {
+    const collectionActive = $('room-collection')?.classList.contains('active-room');
+    if (!collectionActive || document.hidden) {
+        setTimeout(() => requestAnimationFrame(drawWaveform), 250);
+        return;
+    }
     const canvas = $('waveform-canvas');
     const context = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
