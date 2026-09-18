@@ -93,7 +93,7 @@
     #room-equalizer .command-bank-title{margin-bottom:4px!important;font-size:4px!important;}
     #room-equalizer .command-bank-title small{font-size:7px!important;}
     #room-equalizer .eq-presets{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:3px!important;}
-    #room-equalizer .eq-presets button{min-width:0!important;min-height:21px!important;padding:0 3px 0 8px!important;font-size:7px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+    #room-equalizer .eq-presets button{min-width:0!important;min-height:21px!important;padding:0 3px 0 8px!important;font-size:10px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
     #room-equalizer .eq-presets button:before{left:3px!important;width:2px!important;height:2px!important;}
     #room-equalizer .eq-aux-panel{grid-template-columns:1fr 1fr 1fr!important;gap:3px!important;margin:0!important;}
     #room-equalizer .aux-module{height:23px!important;padding:0 4px!important;font-size:7px!important;min-width:0!important;}
