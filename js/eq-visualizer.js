@@ -100,6 +100,13 @@ if (canvas && visual) {
     }
 
     function draw() {
+        const roomActive = room?.classList.contains('active-room');
+        if (!roomActive || document.hidden) {
+            ctx.clearRect(0, 0, width, height);
+            setTimeout(() => requestAnimationFrame(draw), 250);
+            return;
+        }
+
         // If the room was hidden during startup, catch its real dimensions as
         // soon as it becomes visible. This is intentionally checked every
         // frame as a fallback for browsers where ResizeObserver is delayed.
