@@ -16,5 +16,5 @@ body.room-arriving #room-transition{visibility:visible;opacity:1;transform:scale
 body.room-arriving #room-transition:before,body.room-arriving #room-transition:after{opacity:0}
 body.room-arriving #room-transition .room-transition-line{transform:scaleY(.04);opacity:0}
 body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:translateY(-5px)}
-@media(max-width:720px){#room-transition:before,#room-transition:after{width:30vw}#room-transition .room-transition-name{font-size:9px;letter-spacing:.22em}#room-transition .room-transition-index{font-size:6px;letter-spacing:.28em}body.room-entering #room-transition{transition-duration:.55s}body.room-arriving #room-transition{transition-duration:.55s}}
+@media(max-width:720px){#room-transition:before,#room-transition:after{width:30vw}#room-transition .room-transition-name{font-size:9px;letter-spacing:.22em}#room-transition .room-transition-index{font-size:6px;letter-spacing:.28em}body.room-entering #room-transition{transition-duration:2s}body.room-arriving #room-transition{transition-duration:2s}}
 @media(prefers-reduced-motion:reduce){#room-transition{transition-duration:.12s!important}body.room-arriving #room-transition{transition-duration:.12s!important}}
