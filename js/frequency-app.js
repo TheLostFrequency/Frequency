@@ -397,74 +397,127 @@ function drawWaveform() {
 
 drawWaveform();
 
-function fileName(labelId, inputId, emptyText) {
-    $(inputId).addEventListener('change', () => {
-        $(labelId).textContent = $(inputId).files[0]?.name || emptyText;
-    });
+const uploadQueue = [];
+
+function resetUploadQueue() {
+    uploadQueue.forEach(item => { URL.revokeObjectURL(item.objectUrl); if (item.coverUrl) URL.revokeObjectURL(item.coverUrl); });
+    uploadQueue.length = 0;
+    renderUploadQueue();
+    $('upload-progress').textContent = '';
+    $('submit-upload').disabled = true;
+    $('audio-files').value = '';
 }
 
-fileName('audio-file-name', 'audio-file', 'Choose an audio file');
-fileName('cover-file-name', 'cover-file', 'Optional cover image');
+function formatFileSize(bytes) {
+    if (!bytes) return '0 KB';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return (bytes / Math.pow(1024, index)).toFixed(index ? 1 : 0) + ' ' + units[index];
+}
+
+function createUploadItem(file) {
+    return { id: crypto.randomUUID(), audioFile: file, title: file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').trim(), artist: '', album: '', genre: '', coverFile: null, coverUrl: '', objectUrl: URL.createObjectURL(file) };
+}
+
+function renderUploadQueue() {
+    const queue = $('upload-queue');
+    $('upload-count').textContent = uploadQueue.length + ' SIGNAL' + (uploadQueue.length === 1 ? '' : 'S');
+    $('submit-upload').disabled = !uploadQueue.length;
+    queue.innerHTML = uploadQueue.length ? uploadQueue.map(item => {
+        return '<article class="upload-item" data-upload-id="' + item.id + '">' +
+            '<div class="upload-art-wrap"><img class="upload-art" src="' + esc(item.coverUrl || 'assets/default-art.jpg') + '" alt=""><label class="cover-change" title="Change cover"><span>ART</span><input class="cover-input" type="file" accept="image/*" data-upload-id="' + item.id + '"></label></div>' +
+            '<div class="upload-file-meta"><strong>' + esc(item.audioFile.name) + '</strong><small>' + formatFileSize(item.audioFile.size) + '</small></div>' +
+            '<div class="upload-fields">' +
+                '<label>TITLE<input data-field="title" data-upload-id="' + item.id + '" value="' + esc(item.title) + '" required></label>' +
+                '<label>ARTIST<input data-field="artist" data-upload-id="' + item.id + '" value="' + esc(item.artist) + '" placeholder="Artist" required></label>' +
+                '<label>ALBUM<input data-field="album" data-upload-id="' + item.id + '" value="' + esc(item.album) + '" placeholder="Album"></label>' +
+                '<label>GENRE<input data-field="genre" data-upload-id="' + item.id + '" value="' + esc(item.genre) + '" placeholder="Genre"></label>' +
+            '</div><button type="button" class="upload-remove" data-remove-upload="' + item.id + '" aria-label="Remove signal">×</button></article>';
+    }).join('') : '<div class="upload-empty">Your upload queue is empty.</div>';
+
+    queue.querySelectorAll('[data-field]').forEach(input => input.addEventListener('input', event => {
+        const item = uploadQueue.find(entry => entry.id === event.currentTarget.dataset.uploadId);
+        if (item) item[event.currentTarget.dataset.field] = event.currentTarget.value;
+    }));
+    queue.querySelectorAll('.cover-input').forEach(input => input.addEventListener('change', event => {
+        const item = uploadQueue.find(entry => entry.id === event.currentTarget.dataset.uploadId);
+        const file = event.currentTarget.files?.[0];
+        if (!item || !file) return;
+        if (item.coverUrl) URL.revokeObjectURL(item.coverUrl);
+        item.coverFile = file; item.coverUrl = URL.createObjectURL(file); renderUploadQueue();
+    }));
+    queue.querySelectorAll('[data-remove-upload]').forEach(button => button.addEventListener('click', () => {
+        const index = uploadQueue.findIndex(item => item.id === button.dataset.removeUpload);
+        if (index === -1) return;
+        const removed = uploadQueue.splice(index, 1)[0];
+        URL.revokeObjectURL(removed.objectUrl); if (removed.coverUrl) URL.revokeObjectURL(removed.coverUrl);
+        renderUploadQueue();
+    }));
+}
+
+function addAudioFiles(files) {
+    [...files].filter(file => file.type.startsWith('audio/')).forEach(file => {
+        const duplicate = uploadQueue.some(item => item.audioFile.name === file.name && item.audioFile.size === file.size && item.audioFile.lastModified === file.lastModified);
+        if (!duplicate) uploadQueue.push(createUploadItem(file));
+    });
+    renderUploadQueue();
+}
+
+const audioDropZone = $('audio-drop-zone');
+const audioFiles = $('audio-files');
+audioDropZone.addEventListener('dragover', event => { event.preventDefault(); audioDropZone.classList.add('dragging'); });
+audioDropZone.addEventListener('dragleave', event => { if (!audioDropZone.contains(event.relatedTarget)) audioDropZone.classList.remove('dragging'); });
+audioDropZone.addEventListener('drop', event => { event.preventDefault(); audioDropZone.classList.remove('dragging'); addAudioFiles(event.dataTransfer.files); });
+audioFiles.addEventListener('change', event => addAudioFiles(event.currentTarget.files));
+
+$('upload-button').addEventListener('click', () => {
+    if (!authUser) return;
+    resetUploadQueue();
+});
 
 $('upload-form').addEventListener('submit', async event => {
     event.preventDefault();
-    if (!authUser || !supabase) return;
-
-    const form = new FormData(event.currentTarget);
-    const audioFile = form.get('audio');
-    const coverFile = form.get('cover');
-
-    if (!audioFile?.size) {
-        $('upload-progress').textContent = 'Select an audio file.';
+    if (!authUser || !supabase || !uploadQueue.length) return;
+    const invalid = uploadQueue.find(item => !item.title.trim() || !item.artist.trim());
+    if (invalid) {
+        $('upload-progress').textContent = 'Every signal needs a title and artist.';
+        document.querySelector('[data-upload-id="' + invalid.id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
-
     $('submit-upload').disabled = true;
-    $('upload-progress').textContent = 'UPLOADING SIGNAL...';
-
+    const total = uploadQueue.length;
     try {
-        const base = `${authUser.id}/${crypto.randomUUID()}`;
-        const audioPath = `${base}-${audioFile.name.replace(/[^a-z0-9._-]/gi, '_')}`;
-        let result = await supabase.storage.from('audio').upload(audioPath, audioFile, {
-            contentType: audioFile.type || 'audio/mpeg',
-            upsert: false
-        });
-        if (result.error) throw result.error;
-
-        let coverPath = null;
-        if (coverFile?.size) {
-            coverPath = `${base}-${coverFile.name.replace(/[^a-z0-9._-]/gi, '_')}`;
-            result = await supabase.storage.from('covers').upload(coverPath, coverFile, {
-                contentType: coverFile.type || 'image/jpeg',
-                upsert: false
-            });
+        for (let index = 0; index < total; index += 1) {
+            const item = uploadQueue[index];
+            $('upload-progress').textContent = 'UPLOADING ' + (index + 1) + ' / ' + total + ' — ' + item.title;
+            const base = authUser.id + '/' + crypto.randomUUID();
+            const audioPath = base + '-' + item.audioFile.name.replace(/[^a-z0-9._-]/gi, '_');
+            let result = await supabase.storage.from('audio').upload(audioPath, item.audioFile, { contentType: item.audioFile.type || 'audio/mpeg', upsert: false });
             if (result.error) throw result.error;
+            let coverPath = null;
+            if (item.coverFile?.size) {
+                coverPath = base + '-' + item.coverFile.name.replace(/[^a-z0-9._-]/gi, '_');
+                result = await supabase.storage.from('covers').upload(coverPath, item.coverFile, { contentType: item.coverFile.type || 'image/jpeg', upsert: false });
+                if (result.error) throw result.error;
+            }
+            const { error } = await supabase.from('tracks').insert({ user_id: authUser.id, title: item.title.trim(), artist: item.artist.trim(), album: item.album.trim() || null, genre: item.genre.trim() || null, audio_path: audioPath, cover_path: coverPath });
+            if (error) throw error;
         }
-
-        const { error } = await supabase.from('tracks').insert({
-            user_id: authUser.id,
-            title: form.get('title'),
-            artist: form.get('artist'),
-            album: form.get('album') || null,
-            genre: form.get('genre') || null,
-            audio_path: audioPath,
-            cover_path: coverPath
-        });
-        if (error) throw error;
-
         $('upload-dialog').close();
-        event.currentTarget.reset();
-        $('audio-file-name').textContent = 'Choose an audio file';
-        $('cover-file-name').textContent = 'Optional cover image';
+        uploadQueue.forEach(item => { URL.revokeObjectURL(item.objectUrl); if (item.coverUrl) URL.revokeObjectURL(item.coverUrl); });
+        uploadQueue.length = 0; renderUploadQueue(); $('upload-progress').textContent = '';
         await load();
-        toast('Signal added to the vault.');
+        toast(total + ' ' + (total === 1 ? 'signal' : 'signals') + ' added to the vault.');
     } catch (error) {
         console.error('Signal upload failed:', error);
-        $('upload-progress').textContent = error.message || 'Upload failed.';
+        $('upload-progress').textContent = error.message || 'Upload failed. The remaining signals are still in the queue.';
+        renderUploadQueue();
     } finally {
-        $('submit-upload').disabled = false;
+        $('submit-upload').disabled = !uploadQueue.length;
     }
 });
+
+renderUploadQueue();
 
 supabase?.auth.onAuthStateChange((_event, sessionData) => {
     authUser = sessionData?.user || null;
