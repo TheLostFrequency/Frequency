@@ -61,7 +61,7 @@
 
 @media (max-width: 720px) {
     #room-transmission {
-        background-image: linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)), url('../assets/mobile-transmission.png');
+        background-image: linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)), url('../assets/transmisson.png');
         background-position: center center;
     }
 
