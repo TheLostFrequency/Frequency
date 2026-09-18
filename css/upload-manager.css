@@ -1,0 +1,68 @@
+/* FREQUENCY // MULTI-SIGNAL INTAKE */
+
+.upload-manager{
+    width:min(1080px,94vw);
+    min-width:0;
+    max-height:min(88vh,900px);
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+.upload-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:20px;padding-right:34px}
+.upload-header h2{margin:4px 0 7px;font-size:24px;letter-spacing:.12em}
+.upload-header .dialog-note{margin:0;max-width:620px}
+.upload-count{font-size:8px;letter-spacing:.2em;color:rgba(255,255,255,.48);white-space:nowrap}
+.audio-drop-zone{display:flex!important;flex-direction:column!important;align-items:center;justify-content:center;gap:8px;min-height:125px;margin:0 0 18px;padding:24px;border:1px dashed rgba(255,255,255,.2);background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(0,0,0,.18));cursor:pointer;transition:border-color .2s,background .2s,box-shadow .2s;position:relative;overflow:hidden}
+.audio-drop-zone:before{content:"";position:absolute;inset:8px;border:1px solid rgba(255,255,255,.025);pointer-events:none}
+.audio-drop-zone:hover,.audio-drop-zone.dragging{border-color:rgba(196,42,32,.72);background:rgba(196,42,32,.055);box-shadow:inset 0 0 35px rgba(196,42,32,.06),0 0 30px rgba(196,42,32,.08)}
+.audio-drop-zone input{display:none!important}
+.drop-icon{font-size:25px;line-height:1;color:rgba(255,255,255,.5)}
+.audio-drop-zone strong{font-size:10px;letter-spacing:.2em;color:#fff}
+.audio-drop-zone small{font-size:8px;letter-spacing:.08em;color:rgba(255,255,255,.38)}
+.upload-queue{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:2px 5px 5px 0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+.upload-empty{padding:30px;text-align:center;border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.3);font-size:8px;letter-spacing:.16em}
+.upload-item{display:grid;grid-template-columns:78px minmax(130px,.7fr) minmax(320px,1.8fr) 28px;gap:15px;align-items:center;padding:12px 12px 12px 10px;background:linear-gradient(100deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid rgba(255,255,255,.09);position:relative}
+.upload-item:hover{border-color:rgba(255,255,255,.17);background:linear-gradient(100deg,rgba(255,255,255,.06),rgba(255,255,255,.018))}
+.upload-art-wrap{width:78px;height:78px;position:relative;flex:0 0 78px;background:#090909;border:1px solid rgba(255,255,255,.12);overflow:hidden}
+.upload-art{width:100%;height:100%;display:block;object-fit:cover}
+.cover-change{position:absolute;inset:auto 4px 4px 4px!important;height:22px!important;display:flex!important;align-items:center;justify-content:center;background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.14);font-size:6px!important;letter-spacing:.14em!important;color:#fff!important;cursor:pointer;opacity:0;transition:opacity .2s}
+.upload-item:hover .cover-change,.cover-change:focus-within{opacity:1}
+.cover-change input{display:none!important}
+.upload-file-meta{min-width:0;display:flex;flex-direction:column;gap:6px}
+.upload-file-meta strong{font-size:9px;line-height:1.45;letter-spacing:.06em;color:rgba(255,255,255,.8);word-break:break-word}
+.upload-file-meta small{font-size:7px;letter-spacing:.1em;color:rgba(255,255,255,.3)}
+.upload-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.upload-fields label{font-size:6px!important;letter-spacing:.16em!important;color:rgba(255,255,255,.38)!important}
+.upload-fields input{width:100%;box-sizing:border-box;padding:9px 10px!important;font-size:9px;color:#fff;background:#070707;border:1px solid rgba(255,255,255,.1)}
+.upload-fields input::placeholder{color:rgba(255,255,255,.2)}
+.upload-fields input:focus{border-color:rgba(196,42,32,.6);box-shadow:0 0 14px rgba(196,42,32,.07)}
+.upload-remove{width:26px;height:26px;border:1px solid rgba(255,255,255,.1);font-size:17px;line-height:1;color:rgba(255,255,255,.35);transition:.2s}
+.upload-remove:hover{color:#fff;border-color:rgba(196,42,32,.55);background:rgba(196,42,32,.1)}
+.upload-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-top:16px;margin-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.upload-footer .upload-progress{margin:0;min-height:12px;flex:1}
+.upload-footer .room-action{min-width:190px}
+@media(max-width:800px){
+ .upload-manager{width:min(94vw,620px);padding:20px;max-height:90vh}
+ .upload-header{align-items:flex-start;flex-direction:column;gap:8px;padding-right:28px;margin-bottom:14px}
+ .upload-header h2{font-size:18px}
+ .audio-drop-zone{min-height:105px}
+ .upload-item{grid-template-columns:62px minmax(0,1fr) 28px;gap:11px}
+ .upload-art-wrap{width:62px;height:62px}
+ .upload-file-meta{grid-column:2;grid-row:1}
+ .upload-fields{grid-column:1 / -1;grid-row:2;grid-template-columns:1fr 1fr}
+ .upload-remove{grid-column:3;grid-row:1}
+ .cover-change{opacity:1}
+ .upload-footer{align-items:stretch;flex-direction:column}
+ .upload-footer .room-action{width:100%}
+}
+@media(max-width:480px){
+ .upload-manager{padding:16px}
+ .upload-header h2{font-size:15px}
+ .audio-drop-zone strong{font-size:8px;text-align:center}
+ .upload-item{grid-template-columns:54px minmax(0,1fr) 25px;padding:9px;gap:9px}
+ .upload-art-wrap{width:54px;height:54px}
+ .upload-fields{grid-template-columns:1fr}
+ .upload-fields label:nth-child(3),.upload-fields label:nth-child(4){display:none}
+ .upload-fields:after{content:'Album and genre can be added later from the track editor.';grid-column:1;font-size:6px;line-height:1.5;letter-spacing:.08em;color:rgba(255,255,255,.22);padding-top:2px}
+}
