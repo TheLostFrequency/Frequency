@@ -561,7 +561,8 @@ function renderUploadQueue() {
 }
 
 function addAudioFiles(files) {
-    [...files].filter(file => file.type.startsWith('audio/')).forEach(file => {
+    const audioExtensions = /\.(mp3|m4a|aac|wav|flac|ogg|oga|aiff|aif)$/i;
+    [...files].filter(file => file.type.startsWith('audio/') || audioExtensions.test(file.name)).forEach(file => {
         const duplicate = uploadQueue.some(item => item.audioFile.name === file.name && item.audioFile.size === file.size && item.audioFile.lastModified === file.lastModified);
         if (!duplicate) uploadQueue.push(createUploadItem(file));
     });
