@@ -157,7 +157,7 @@ nav.forEach(button => {
                 document.body.classList.remove('room-arriving');
                 roomTransitionBusy = false;
             }, 2000);
-        }, 650);
+        }, 2000);
     });
 });
 
