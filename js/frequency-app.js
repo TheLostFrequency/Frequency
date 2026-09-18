@@ -236,6 +236,12 @@ async function select(auto = false) {
     }
 
     player.load({ audioUrl });
+    player.setMediaSessionTrack({
+        title: track.title || 'Untitled',
+        artist: track.artist || 'Unknown Artist',
+        album: track.album || 'Frequency',
+        artwork: art
+    });
     renderWheel();
 
     if (analyzer.isInitialized) {
@@ -306,6 +312,10 @@ $('play-pause-btn').addEventListener('click', async () => {
 
 $('next-btn').addEventListener('click', () => move(1, true));
 $('prev-btn').addEventListener('click', () => move(-1, true));
+
+// Connect browser lock-screen / headset track controls to the same player controls.
+player.onNextTrack = () => move(1, true);
+player.onPreviousTrack = () => move(-1, true);
 $('shuffle-btn').addEventListener('click', () => {
     shuffle = !shuffle;
     $('shuffle-btn').classList.toggle('active', shuffle);
