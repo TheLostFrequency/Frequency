@@ -72,7 +72,6 @@ with check (
   )
 );
 
-
 -- ============================================================
 -- 2. PRIVATE STORAGE
 -- ============================================================
@@ -109,7 +108,6 @@ with check (
   and (storage.foldername(name))[1] = auth.uid()::text
 );
 
-
 -- ============================================================
 -- 3. FREQUENCY USERNAMES
 -- ============================================================
@@ -141,11 +139,11 @@ for update to authenticated
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
-
 -- ============================================================
 -- 4. PRIVATE PERSON-TO-PERSON TRANSMISSIONS
 -- ============================================================
 
+-- Create the table for a new database.
 create table if not exists public.transmissions (
   id uuid primary key default gen_random_uuid(),
   sender_id uuid not null references auth.users(id) on delete cascade,
@@ -160,6 +158,31 @@ create table if not exists public.transmissions (
   created_at timestamptz not null default now(),
   read_at timestamptz
 );
+
+-- Migration for an existing transmissions table created by an
+-- earlier version of Frequency. CREATE TABLE IF NOT EXISTS does
+-- not add columns to an existing table, so explicitly add the
+-- Transmission track reference when it is missing.
+alter table public.transmissions
+  add column if not exists track_id uuid;
+
+-- Add the foreign key only when the existing database does not
+-- already have one for transmissions.track_id.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.transmissions'::regclass
+      and conname = 'transmissions_track_id_fkey'
+  ) then
+    alter table public.transmissions
+      add constraint transmissions_track_id_fkey
+      foreign key (track_id)
+      references public.tracks(id)
+      on delete set null;
+  end if;
+end $$;
 
 alter table public.transmissions enable row level security;
 
@@ -187,14 +210,11 @@ using (
   or auth.uid() = recipient_id
 );
 
--- The recipient can update their received transmission so the
--- future incoming-transmission UI can mark it as read.
 drop policy if exists "transmissions recipient read state" on public.transmissions;
 create policy "transmissions recipient read state" on public.transmissions
 for update to authenticated
 using (auth.uid() = recipient_id)
 with check (auth.uid() = recipient_id);
-
 
 -- ============================================================
 -- 5. TRANSMITTED FILE ACCESS
@@ -225,7 +245,6 @@ using (
       and t.cover_path = storage.objects.name
   )
 );
-
 
 -- ============================================================
 -- 6. INDEXES
