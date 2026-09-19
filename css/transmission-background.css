@@ -1,4 +1,4 @@
-/* FREQUENCY // TRANSMISSION CHAMBER BACKGROUND */
+/* FREQUENCY // TRANSMISSION CHAMBER */
 
 #room-transmission {
     position: absolute;
@@ -13,76 +13,192 @@
 
 #room-transmission::before { display:none; }
 
-#room-transmission .room-label,
-#room-transmission .transmission-door {
-    position: relative;
-    z-index: 2;
+.transmission-console {
+    position: absolute;
+    left: 50%;
+    top: 47%;
+    width: min(430px, 34vw);
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    padding: 18px;
+    background: linear-gradient(145deg, rgba(8,8,8,.82), rgba(2,2,2,.62));
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 28px 80px rgba(0,0,0,.7), inset 0 1px rgba(255,255,255,.045), 0 0 55px rgba(150,20,15,.08);
+    backdrop-filter: blur(3px);
 }
 
-/* Desktop: keep the existing temporary chamber content centered. */
-@media (min-width: 721px) {
-    #room-transmission .transmission-door {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: min(760px, 88vw);
-        margin: 0;
-        transform: translate(-50%, -50%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 22px;
+.transmission-console::before {
+    content:"";
+    position:absolute;
+    inset:7px;
+    border:1px solid rgba(255,255,255,.035);
+    pointer-events:none;
+}
+
+.transmission-console-head,
+.transmission-search-block,
+.transmission-destination,
+.transmission-signal,
+.transmit-button { position:relative; z-index:1; }
+
+.transmission-console-head {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-bottom:13px;
+    margin-bottom:15px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.transmission-state {
+    font-size:7px;
+    letter-spacing:.22em;
+    color:rgba(255,255,255,.35);
+}
+
+.transmission-search-block label {
+    display:block;
+    margin-bottom:7px;
+    font-size:7px;
+    letter-spacing:.2em;
+    color:rgba(255,255,255,.4);
+}
+
+.transmission-input-wrap {
+    display:flex;
+    align-items:center;
+    height:42px;
+    border:1px solid rgba(255,255,255,.13);
+    background:rgba(0,0,0,.55);
+    box-shadow:inset 0 0 25px rgba(0,0,0,.65);
+}
+
+.transmission-input-wrap span {
+    padding-left:13px;
+    color:#a52520;
+    font-size:12px;
+}
+
+.transmission-input-wrap input {
+    width:100%;
+    height:100%;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:#f3f3f0;
+    padding:0 11px 0 4px;
+    font-size:10px;
+    letter-spacing:.15em;
+}
+
+.transmission-input-wrap input::placeholder { color:rgba(255,255,255,.22); }
+
+.transmission-results {
+    display:none;
+    margin-top:4px;
+    border:1px solid rgba(255,255,255,.1);
+    background:#070707;
+}
+
+.transmission-destination {
+    display:flex;
+    justify-content:space-between;
+    align-items:end;
+    margin:18px 0;
+    padding:12px 0;
+    border-top:1px solid rgba(255,255,255,.055);
+    border-bottom:1px solid rgba(255,255,255,.055);
+}
+
+.transmission-destination strong {
+    font-size:9px;
+    font-weight:400;
+    letter-spacing:.13em;
+    color:rgba(255,255,255,.65);
+}
+
+.transmission-signal {
+    display:grid;
+    grid-template-columns:72px 1fr;
+    gap:14px;
+    align-items:center;
+    min-height:72px;
+}
+
+.transmission-signal-art {
+    height:58px;
+    border:1px solid rgba(255,255,255,.09);
+    position:relative;
+    overflow:hidden;
+    background:radial-gradient(circle at 50% 50%, rgba(150,20,15,.15), transparent 65%), #030303;
+}
+
+.signal-art-line {
+    position:absolute;
+    left:12%;
+    right:12%;
+    top:50%;
+    height:1px;
+    background:linear-gradient(90deg,transparent,rgba(196,42,32,.8),transparent);
+}
+
+.signal-art-node {
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:8px;
+    height:8px;
+    transform:translate(-50%,-50%);
+    border:1px solid #c42a20;
+    border-radius:50%;
+    box-shadow:0 0 18px rgba(196,42,32,.55);
+}
+
+.transmission-track strong,
+.transmission-track small { display:block; }
+.transmission-track strong { margin-top:7px; font-size:10px; font-weight:400; letter-spacing:.11em; }
+.transmission-track small { margin-top:5px; font-size:7px; color:rgba(255,255,255,.32); letter-spacing:.1em; }
+
+.transmit-button {
+    width:100%;
+    height:42px;
+    margin-top:18px;
+    border:1px solid rgba(196,42,32,.55);
+    background:linear-gradient(180deg,rgba(196,42,32,.12),rgba(80,10,8,.08));
+    color:#f3f3f0;
+    font-size:8px;
+    letter-spacing:.25em;
+    box-shadow:inset 0 0 18px rgba(196,42,32,.04);
+}
+
+.transmit-button i { display:inline-block; width:22px; height:1px; margin-left:12px; vertical-align:middle; background:#c42a20; box-shadow:0 0 8px rgba(196,42,32,.6); }
+
+.transmission-beam {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:3;
+    pointer-events:none;
+    overflow:visible;
+}
+
+.transmission-beam path { fill:none; stroke:rgba(196,42,32,.78); stroke-width:.12; opacity:0; filter:drop-shadow(0 0 4px rgba(196,42,32,.7)); }
+.transmission-beam circle { fill:#e13a2e; opacity:0; filter:drop-shadow(0 0 5px rgba(225,58,46,.9)); }
+
+@media (max-width:720px) {
+    #room-transmission { background-position:center center; }
+    .transmission-console {
+        top:43%;
+        width:min(88vw,430px);
+        padding:15px;
     }
-
-    #room-transmission .door-frame {
-        width: min(300px, 34vw);
-        max-height: 43vh;
-        flex: 0 0 auto;
-    }
-
-    #room-transmission .transmission-copy {
-        position: relative;
-        left: auto;
-        top: auto;
-        width: min(620px, 82vw);
-        margin: 0;
-        transform: none;
-        text-align: center;
-        z-index: 5;
-        padding: 22px 30px;
-        background: rgba(2, 2, 2, .34);
-        border: 1px solid rgba(255,255,255,.07);
-        box-shadow: 0 20px 70px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.035);
-        backdrop-filter: blur(2px);
-    }
+    .transmission-signal { grid-template-columns:62px 1fr; }
+    .transmission-beam { opacity:.75; }
 }
 
-#room-transmission .transmission-copy .micro-label {
-    margin-bottom: 12px;
-}
-
-#room-transmission .transmission-copy h2 {
-    margin: 0 0 14px;
-}
-
-#room-transmission .transmission-copy p {
-    margin: 0 auto 18px;
-}
-
-#room-transmission .transmission-copy strong {
-    display: block;
-}
-
-@media (max-width: 720px) {
-    #room-transmission {
-        background-image: url('../assets/transmission.png');
-        background-position: center center;
-    }
-
-    #room-transmission .transmission-copy {
-        width: min(92vw, 560px);
-        padding: 24px 20px;
-        top: 70%;
-    }
+@media (max-width:430px) {
+    .transmission-console { top:41%; }
+    .transmission-destination { margin:14px 0; }
+    .transmission-console-head { margin-bottom:12px; }
 }
