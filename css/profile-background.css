@@ -1,20 +1,10 @@
 /* FREQUENCY // PRIVATE CHAMBER BACKGROUND */
 #room-profile {
-    background:
-        linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.34)),
-        url('../assets/profilebg.png') center center / cover no-repeat;
+    background:url('../assets/profilebg.png') center center / cover no-repeat;
     overflow:hidden;
 }
 
-#room-profile:after {
-    content:"";
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    background:
-        radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,.28) 72%, rgba(0,0,0,.62) 100%),
-        linear-gradient(180deg, rgba(0,0,0,.16), transparent 28%, rgba(0,0,0,.22));
-}
+#room-profile:after { display:none; }
 
 #room-profile .room-card {
     position:relative;
