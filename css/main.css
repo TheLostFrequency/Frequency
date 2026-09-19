@@ -20,3 +20,11 @@ body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:tr
 @keyframes room-open{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media(max-width:720px){#room-transition:before,#room-transition:after{width:30vw}#room-transition .room-transition-name{font-size:9px;letter-spacing:.22em}#room-transition .room-transition-index{font-size:6px;letter-spacing:.28em}}
 @media(prefers-reduced-motion:reduce){#room-transition{transition-duration:.12s!important}body.room-arriving #room-transition{transition-duration:.12s!important}}
+
+/* FREQUENCY // HIDE ROOM IDENTIFIERS */
+#room-collection .room-label,
+#room-list .room-label,
+#room-transmission .room-label,
+#room-profile .room-label {
+    display:none;
+}
