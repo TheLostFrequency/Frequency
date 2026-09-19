@@ -70,3 +70,9 @@
         margin-top: 17px;
     }
 }
+
+/* FREQUENCY // COLLECTION TOP EDGE
+   The artwork should meet the header cleanly with no artificial black strip. */
+#room-collection::before {
+    display: none !important;
+}
