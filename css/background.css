@@ -8,3 +8,15 @@ body:has(#room-transmission.active-room) .facility-bg,
 body:has(#room-profile.active-room) .facility-bg {
     visibility:hidden!important;
 }
+
+/* FREQUENCY // COLLECTION BLACK THRESHOLD */
+/* Keep the same black architectural entry zone used by the other chambers. */
+#room-collection .collection-stage {
+    background:linear-gradient(
+        180deg,
+        #020202 0%,
+        rgba(2,2,2,.98) 8%,
+        rgba(2,2,2,.72) 16%,
+        transparent 28%
+    );
+}
