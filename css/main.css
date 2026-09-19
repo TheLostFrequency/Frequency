@@ -34,3 +34,33 @@ body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:tr
 #room-profile.room-panel:before {
     display:none;
 }
+
+/* FREQUENCY // ROOM TOP THRESHOLD */
+/* Every chamber begins in the same black architectural threshold before its artwork appears. */
+#room-collection::before,
+#room-list::before,
+#room-profile::before {
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    height:115px;
+    background:linear-gradient(180deg,#020202 0%,rgba(2,2,2,.96) 35%,rgba(2,2,2,.55) 72%,transparent 100%);
+    pointer-events:none;
+    z-index:1;
+}
+
+#room-list .room-card,
+#room-profile .room-card {
+    z-index:2;
+}
+
+@media(max-width:720px){
+    #room-collection::before,
+    #room-list::before,
+    #room-profile::before {
+        height:82px;
+        background:linear-gradient(180deg,#020202 0%,rgba(2,2,2,.94) 40%,transparent 100%);
+    }
+}
