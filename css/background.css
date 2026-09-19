@@ -18,13 +18,3 @@ body:has(#room-profile.active-room) .facility-bg {
 #room-collection .collection-stage {
     background:transparent !important;
 }
-
-body:has(#room-collection.active-room) .facility-bg {
-    clip-path:inset(76px 0 0 0);
-}
-
-@media (max-width:720px) {
-    body:has(#room-collection.active-room) .facility-bg {
-        clip-path:inset(62px 0 0 0);
-    }
-}
