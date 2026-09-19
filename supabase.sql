@@ -94,3 +94,76 @@ create policy "profiles own updates" on public.profiles
 for update to authenticated
 using (auth.uid() = id)
 with check (auth.uid() = id);
+
+-- Private person-to-person Transmission records.
+create table if not exists public.transmissions (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null references auth.users(id) on delete cascade,
+  recipient_id uuid not null references auth.users(id) on delete cascade,
+  track_id uuid references public.tracks(id) on delete set null,
+  title text not null,
+  artist text not null,
+  album text,
+  audio_path text not null,
+  cover_path text,
+  message text,
+  created_at timestamptz not null default now(),
+  read_at timestamptz
+);
+
+alter table public.transmissions enable row level security;
+
+drop policy if exists "transmissions sender insert" on public.transmissions;
+create policy "transmissions sender insert" on public.transmissions
+for insert to authenticated
+with check (
+  auth.uid() = sender_id
+  and sender_id <> recipient_id
+  and exists (
+    select 1 from public.tracks tr
+    where tr.id = track_id
+      and tr.user_id = auth.uid()
+      and tr.audio_path = audio_path
+      and (tr.cover_path is not distinct from cover_path)
+  )
+);
+
+drop policy if exists "transmissions participants read" on public.transmissions;
+create policy "transmissions participants read" on public.transmissions
+for select to authenticated
+using (auth.uid() = sender_id or auth.uid() = recipient_id);
+
+drop policy if exists "transmissions recipient read state" on public.transmissions;
+create policy "transmissions recipient read state" on public.transmissions
+for update to authenticated
+using (auth.uid() = recipient_id)
+with check (auth.uid() = recipient_id);
+
+drop policy if exists "frequency transmitted audio access" on storage.objects;
+create policy "frequency transmitted audio access" on storage.objects
+for select to authenticated
+using (
+  bucket_id = 'audio'
+  and exists (
+    select 1 from public.transmissions t
+    where t.recipient_id = auth.uid()
+      and t.audio_path = name
+  )
+);
+
+drop policy if exists "frequency transmitted covers access" on storage.objects;
+create policy "frequency transmitted covers access" on storage.objects
+for select to authenticated
+using (
+  bucket_id = 'covers'
+  and exists (
+    select 1 from public.transmissions t
+    where t.recipient_id = auth.uid()
+      and t.cover_path = name
+  )
+);
+
+create index if not exists transmissions_recipient_created_idx
+  on public.transmissions (recipient_id, created_at desc);
+create index if not exists transmissions_sender_created_idx
+  on public.transmissions (sender_id, created_at desc);
