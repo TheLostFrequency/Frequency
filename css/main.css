@@ -28,3 +28,9 @@ body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:tr
 #room-profile .room-label {
     display:none;
 }
+
+/* FREQUENCY // REMOVE NON-EQ ROOM FRAME */
+#room-list.room-panel:before,
+#room-profile.room-panel:before {
+    display:none;
+}
