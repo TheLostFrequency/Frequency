@@ -288,7 +288,7 @@ function renderTransmissionTracks() {
     });
 }
 
-function openTransmissionPicker() {
+async function openTransmissionPicker() {
     if (!authUser) {
         $('auth-dialog').showModal();
         toast('Enter your vault before transmitting.');
@@ -358,6 +358,59 @@ $('transmission-form').addEventListener('submit', async event => {
         beam.classList.add('transmitting');
     }
 });
+
+async function loadIncomingTransmissions() {
+    const container = $('transmission-incoming-list');
+    const status = $('transmission-incoming-status');
+    if (!container || !supabase || !authUser) return;
+    const { data, error } = await supabase.from('transmissions')
+        .select('id, sender_id, title, artist, album, audio_path, cover_path, message, created_at, read_at')
+        .eq('recipient_id', authUser.id).order('created_at', { ascending: false }).limit(20);
+    if (error) {
+        console.warn('Incoming transmissions failed:', error);
+        container.innerHTML = '<div class="transmission-incoming-empty">SIGNAL RECEIVER OFFLINE</div>';
+        if (status) status.textContent = 'RECEIVER OFFLINE';
+        return;
+    }
+    if (!data?.length) {
+        container.innerHTML = '<div class="transmission-incoming-empty">NO INCOMING SIGNALS</div>';
+        if (status) status.textContent = 'RECEIVER STANDBY';
+        return;
+    }
+    const ids = [...new Set(data.map(item => item.sender_id).filter(Boolean))];
+    const result = ids.length ? await supabase.from('profiles').select('id, username').in('id', ids) : { data: [] };
+    const names = Object.fromEntries((result.data || []).map(row => [row.id, row.username]));
+    const unread = data.filter(item => !item.read_at).length;
+    if (status) status.textContent = unread ? unread + ' UNREAD SIGNAL' + (unread === 1 ? '' : 'S') : 'ALL SIGNALS RECEIVED';
+    container.innerHTML = data.map(item => {
+        const sender = names[item.sender_id] || 'UNKNOWN STATION';
+        return '<article class="transmission-incoming-item ' + (!item.read_at ? 'unread' : '') + '" data-transmission-id="' + esc(item.id) + '">' +
+            '<div class="transmission-incoming-art"><img src="assets/default-art.jpg" alt=""></div>' +
+            '<div class="transmission-incoming-copy"><span class="micro-label">' + (!item.read_at ? 'INCOMING SIGNAL' : 'RECEIVED SIGNAL') + '</span>' +
+            '<strong>' + esc(item.title || 'UNTITLED SIGNAL') + '</strong><small>' + esc(item.artist || 'UNKNOWN ARTIST') + ' // FROM @' + esc(sender) + '</small>' +
+            (item.message ? '<p>' + esc(item.message) + '</p>' : '') + '</div>' +
+            '<button type="button" class="room-action transmission-received-play">PLAY SIGNAL</button></article>';
+    }).join('');
+    container.querySelectorAll('.transmission-received-play').forEach(button => {
+        button.addEventListener('click', async () => {
+            const row = button.closest('[data-transmission-id]');
+            const item = data.find(entry => entry.id === row?.dataset.transmissionId);
+            if (!item?.audio_path) return;
+            const url = await signedUrl('audio', item.audio_path);
+            if (!url) { toast('Could not open the received signal.'); return; }
+            player.load({ audioUrl: url });
+            player.setMediaSessionTrack({ title: item.title || 'Untitled', artist: item.artist || 'Unknown Artist', album: item.album || 'Frequency', artwork: 'assets/default-art.jpg' });
+            await player.play();
+            if (!item.read_at) {
+                const update = await supabase.from('transmissions').update({ read_at: new Date().toISOString() }).eq('id', item.id).eq('recipient_id', authUser.id);
+                if (!update.error) {
+                    row.classList.remove('unread');
+                    row.querySelector('.micro-label').textContent = 'RECEIVED SIGNAL';
+                }
+            }
+        });
+    });
+}
 
 const transmissionSearch = $('transmission-user-search');
 const transmissionResults = $('transmission-user-results');
@@ -514,6 +567,7 @@ async function load() {
     }
 
     playlist = await hydrateCovers(data || []);
+    await loadIncomingTransmissions();
     currentIndex = Math.min(currentIndex, Math.max(0, playlist.length - 1));
 
     if (playlist.length) {
