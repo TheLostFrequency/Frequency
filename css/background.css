@@ -10,13 +10,31 @@ body:has(#room-profile.active-room) .facility-bg {
 }
 
 /* FREQUENCY // COLLECTION BLACK THRESHOLD */
-/* Keep the same black architectural entry zone used by the other chambers. */
+/* The Collection artwork starts below a clean black architectural threshold. */
 #room-collection .collection-stage {
-    background:linear-gradient(
-        180deg,
-        #020202 0%,
-        rgba(2,2,2,.98) 8%,
-        rgba(2,2,2,.72) 16%,
-        transparent 28%
-    );
+    background:
+        linear-gradient(
+            180deg,
+            #020202 0,
+            #020202 54px,
+            rgba(2,2,2,.98) 82px,
+            rgba(2,2,2,.82) 112px,
+            rgba(2,2,2,.42) 150px,
+            transparent 205px
+        ) !important;
+}
+
+@media (max-width:720px) {
+    #room-collection .collection-stage {
+        background:
+            linear-gradient(
+                180deg,
+                #020202 0,
+                #020202 42px,
+                rgba(2,2,2,.98) 62px,
+                rgba(2,2,2,.78) 88px,
+                rgba(2,2,2,.38) 120px,
+                transparent 165px
+            ) !important;
+    }
 }
