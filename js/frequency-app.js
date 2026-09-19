@@ -176,15 +176,35 @@ document.querySelectorAll('[data-close]').forEach(button => {
     button.addEventListener('click', () => $(button.dataset.close).close());
 });
 
-function profile() {
+let profileUsername = '';
+
+async function getProfileUsername() {
+    if (!supabase || !authUser) return '';
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', authUser.id)
+        .maybeSingle();
+    if (error) {
+        console.warn('Could not load Frequency username:', error);
+        return '';
+    }
+    return data?.username || '';
+}
+
+async function profile() {
+    profileUsername = authUser ? await getProfileUsername() : '';
     $('profile-title').textContent = authUser
-        ? (authUser.email?.split('@')[0] || 'VAULT OWNER')
+        ? (profileUsername ? '@' + profileUsername : 'USERNAME NOT SET')
         : 'PRIVATE SESSION';
     $('profile-status').textContent = authUser
-        ? 'Private vault connected. Your signals and cover art belong to this session.'
+        ? (profileUsername
+            ? 'Private vault connected. Your signals and cover art belong to this session.'
+            : 'Set a username so other Frequency stations can find you for transmissions.')
         : 'Sign in to unlock your private vault and uploads.';
     $('auth-open').classList.toggle('hidden', !!authUser);
     $('sign-out').classList.toggle('hidden', !authUser);
+    $('edit-username').classList.toggle('hidden', !authUser);
 }
 
 async function session() {
@@ -196,9 +216,118 @@ async function session() {
 
 $('auth-open').addEventListener('click', () => $('auth-dialog').showModal());
 
+$('edit-username').addEventListener('click', async () => {
+    if (!authUser) return;
+    $('username-input').value = profileUsername;
+    $('username-message').textContent = '';
+    $('username-dialog').showModal();
+});
+
+$('username-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!authUser || !supabase) return;
+
+    const username = $('username-input').value.trim().replace(/^@+/, '').toLowerCase();
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) {
+        $('username-message').textContent = 'Use 3–24 letters, numbers, or underscores.';
+        return;
+    }
+
+    $('username-message').textContent = 'UPDATING STATION ID...';
+    const { error } = await supabase
+        .from('profiles')
+        .upsert({ id: authUser.id, username }, { onConflict: 'id' });
+
+    if (error) {
+        $('username-message').textContent = error.code === '23505'
+            ? 'That username is already in use.'
+            : (error.message || 'Could not update username.');
+        return;
+    }
+
+    profileUsername = username;
+    $('username-dialog').close();
+    await profile();
+    toast('Username updated to @' + username + '.');
+});
+
+const transmissionSearch = $('transmission-user-search');
+const transmissionResults = $('transmission-user-results');
+const transmissionDestination = $('transmission-destination');
+
+let transmissionSearchTimer = 0;
+
+function hideTransmissionResults() {
+    transmissionResults.innerHTML = '';
+    transmissionResults.style.display = 'none';
+    transmissionResults.setAttribute('aria-hidden', 'true');
+}
+
+function showTransmissionResults(rows) {
+    transmissionResults.innerHTML = rows.length
+        ? rows.map(row => '<button type="button" class="transmission-user-result" data-user-id="' + esc(row.id) + '" data-username="' + esc(row.username) + '"><strong>@' + esc(row.username) + '</strong><small>FREQUENCY STATION</small></button>').join('')
+        : '<div class="transmission-no-results">NO FREQUENCY STATIONS FOUND</div>';
+    transmissionResults.style.display = 'block';
+    transmissionResults.setAttribute('aria-hidden', 'false');
+
+    transmissionResults.querySelectorAll('.transmission-user-result').forEach(button => {
+        button.addEventListener('click', () => {
+            const username = button.dataset.username;
+            transmissionDestination.textContent = '@' + username;
+            transmissionSearch.value = username;
+            hideTransmissionResults();
+            transmissionSearch.blur();
+            toast('Destination locked: @' + username);
+        });
+    });
+}
+
+async function searchTransmissionUsers() {
+    if (!supabase || !authUser) {
+        showTransmissionResults([]);
+        return;
+    }
+
+    const term = transmissionSearch.value.trim().replace(/^@+/, '').toLowerCase();
+    if (!term) {
+        hideTransmissionResults();
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .ilike('username', term + '%')
+        .neq('id', authUser.id)
+        .order('username')
+        .limit(6);
+
+    if (error) {
+        console.warn('Transmission user search failed:', error);
+        showTransmissionResults([]);
+        return;
+    }
+
+    showTransmissionResults(data || []);
+}
+
+transmissionSearch.addEventListener('input', () => {
+    clearTimeout(transmissionSearchTimer);
+    transmissionSearchTimer = window.setTimeout(searchTransmissionUsers, 180);
+});
+
+transmissionSearch.addEventListener('focus', () => {
+    if (transmissionSearch.value.trim()) searchTransmissionUsers();
+});
+
+document.addEventListener('click', event => {
+    if (!transmissionSearch.closest('.transmission-search-block')?.contains(event.target)) hideTransmissionResults();
+});
+
 $('sign-out').addEventListener('click', async () => {
     await supabase?.auth.signOut();
     authUser = null;
+    profileUsername = '';
     currentIndex = 0;
     player.pause();
     renderEmpty();
