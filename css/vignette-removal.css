@@ -1,0 +1,37 @@
+/* FREQUENCY // CLEAN ROOM EDGES
+   Remove the old page-wide vignette treatment without changing room layouts. */
+
+#room-collection::after,
+#room-list::after,
+#room-transmission::after,
+#room-profile::after,
+#room-list.room-panel::before,
+#room-profile.room-panel::before,
+#room-list .room-card::before,
+#room-profile .room-card::before {
+    display:none !important;
+    content:none !important;
+    box-shadow:none !important;
+}
+
+body:has(#room-collection.active-room) .facility-header,
+body:has(#room-list.active-room) .facility-header,
+body:has(#room-transmission.active-room) .facility-header,
+body:has(#room-profile.active-room) .facility-header {
+    background:#020202 !important;
+    box-shadow:none !important;
+}
+
+#room-collection .art-frame::before,
+#room-collection .art-frame::after {
+    box-shadow:none !important;
+}
+
+#room-transmission .transmission-copy,
+#room-transmission .door-frame {
+    box-shadow:none !important;
+}
+
+#room-transmission .door-core {
+    background:#020202 !important;
+}
