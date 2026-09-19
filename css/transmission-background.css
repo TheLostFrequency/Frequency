@@ -5,7 +5,7 @@
     inset: 0;
     overflow: hidden;
     background-color: #020202;
-    background-image: url('../assets/transmisson.png');
+    background-image: url('../assets/transmission.png');
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -19,7 +19,7 @@
     z-index: 2;
 }
 
-/* Desktop: stack the Transmission emblem and message in the true center. */
+/* Desktop: keep the existing temporary chamber content centered. */
 @media (min-width: 721px) {
     #room-transmission .transmission-door {
         position: absolute;
@@ -76,7 +76,7 @@
 
 @media (max-width: 720px) {
     #room-transmission {
-        background-image: url('../assets/transmisson.png');
+        background-image: url('../assets/transmission.png');
         background-position: center center;
     }
 
