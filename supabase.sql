@@ -66,3 +66,31 @@ drop policy if exists "frequency covers access" on storage.objects;
 create policy "frequency covers access" on storage.objects for all
 using (bucket_id = 'covers' and (storage.foldername(name))[1] = auth.uid()::text)
 with check (bucket_id = 'covers' and (storage.foldername(name))[1] = auth.uid()::text);
+
+
+-- Frequency station identities used by Transmission search.
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  username text unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint profiles_username_format check (username is null or username ~ '^[a-z0-9_]{3,24}$')
+);
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "profiles are searchable" on public.profiles;
+create policy "profiles are searchable" on public.profiles
+for select to authenticated
+using (true);
+
+drop policy if exists "profiles own row" on public.profiles;
+create policy "profiles own row" on public.profiles
+for insert to authenticated
+with check (auth.uid() = id);
+
+drop policy if exists "profiles own updates" on public.profiles;
+create policy "profiles own updates" on public.profiles
+for update to authenticated
+using (auth.uid() = id)
+with check (auth.uid() = id);
