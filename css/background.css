@@ -9,32 +9,22 @@ body:has(#room-profile.active-room) .facility-bg {
     visibility:hidden!important;
 }
 
-/* FREQUENCY // COLLECTION BLACK THRESHOLD */
-/* The Collection artwork starts below a clean black architectural threshold. */
+/* FREQUENCY // COLLECTION BLACK TOP */
+/* No fade. The upper portion is simply black, then the Collection artwork begins. */
+#room-collection {
+    background:#020202 !important;
+}
+
 #room-collection .collection-stage {
-    background:
-        linear-gradient(
-            180deg,
-            #020202 0,
-            #020202 54px,
-            rgba(2,2,2,.98) 82px,
-            rgba(2,2,2,.82) 112px,
-            rgba(2,2,2,.42) 150px,
-            transparent 205px
-        ) !important;
+    background:transparent !important;
+}
+
+body:has(#room-collection.active-room) .facility-bg {
+    clip-path:inset(76px 0 0 0);
 }
 
 @media (max-width:720px) {
-    #room-collection .collection-stage {
-        background:
-            linear-gradient(
-                180deg,
-                #020202 0,
-                #020202 42px,
-                rgba(2,2,2,.98) 62px,
-                rgba(2,2,2,.78) 88px,
-                rgba(2,2,2,.38) 120px,
-                transparent 165px
-            ) !important;
+    body:has(#room-collection.active-room) .facility-bg {
+        clip-path:inset(62px 0 0 0);
     }
 }
