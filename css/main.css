@@ -37,7 +37,6 @@ body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:tr
 
 /* FREQUENCY // ROOM TOP THRESHOLD */
 /* Every chamber begins in the same black architectural threshold before its artwork appears. */
-#room-collection::before,
 #room-list::before,
 #room-profile::before {
     content:"";
