@@ -1,1 +1,10 @@
 .facility-bg{background:#020202 url('../assets/background.png') center center / cover no-repeat !important}.facility-bg:before,.facility-bg:after{pointer-events:none}
+
+/* FREQUENCY // ISOLATE CHAMBER BACKGROUNDS */
+/* The global facility artwork belongs only to Collection. Other rooms use their own artwork. */
+body:has(#room-list.active-room) .facility-bg,
+body:has(#room-equalizer.active-room) .facility-bg,
+body:has(#room-transmission.active-room) .facility-bg,
+body:has(#room-profile.active-room) .facility-bg {
+    visibility:hidden!important;
+}
