@@ -34,6 +34,11 @@
         linear-gradient(180deg,rgba(255,255,255,.025),transparent 35%,rgba(0,0,0,.06));
 }
 
+/* Give the Collection now-playing metadata a little more breathing room below the artwork. */
+#room-collection .hero-meta {
+    margin-top: 24px;
+}
+
 @media (max-width:720px) {
     #room-collection .art-frame {
         box-shadow:
@@ -59,5 +64,9 @@
         background:
             linear-gradient(135deg,rgba(255,255,255,.12),transparent 30%,transparent 68%,rgba(0,0,0,.42)),
             linear-gradient(180deg,rgba(255,255,255,.02),transparent 35%,rgba(0,0,0,.05));
+    }
+
+    #room-collection .hero-meta {
+        margin-top: 17px;
     }
 }
