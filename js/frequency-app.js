@@ -306,7 +306,7 @@ function openTransmissionPicker() {
     $('transmission-dialog').showModal();
 }
 
-$('transmission-signal').addEventListener('click', openTransmissionPicker);
+document.querySelector('.transmission-signal')?.addEventListener('click', openTransmissionPicker);
 $('transmit-signal-btn').addEventListener('click', openTransmissionPicker);
 
 $('transmission-form').addEventListener('submit', async event => {
