@@ -300,6 +300,9 @@ function openTransmissionPicker() {
         return;
     }
     syncTransmissionDestination();
+    // Refresh the private vault list when the picker opens so newly loaded
+    // or newly uploaded signals are always available for selection.
+    if (!playlist.length) await load();
     renderTransmissionTracks();
     $('transmission-message').value = '';
     $('transmission-message-status').textContent = '';
