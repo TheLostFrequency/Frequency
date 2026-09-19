@@ -256,3 +256,77 @@
     .transmission-signal-art { height:57px; }
     .transmit-button { width:42%; bottom:2px; }
 }
+
+
+/* FREQUENCY // TRANSMISSION USER SEARCH */
+.transmission-results {
+    display:none;
+    margin-top:4px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(4,4,4,.96);
+    box-shadow:0 12px 30px rgba(0,0,0,.6);
+    overflow:hidden;
+}
+
+.transmission-user-result {
+    display:block;
+    width:100%;
+    padding:8px 10px;
+    text-align:left;
+    border:0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    background:transparent;
+    color:#f3f3f0;
+}
+
+.transmission-user-result:hover,
+.transmission-user-result:focus-visible {
+    background:rgba(196,42,32,.12);
+    outline:none;
+}
+
+.transmission-user-result strong,
+.transmission-user-result small {
+    display:block;
+}
+
+.transmission-user-result strong {
+    font-size:9px;
+    font-weight:400;
+    letter-spacing:.12em;
+}
+
+.transmission-user-result small {
+    margin-top:3px;
+    font-size:6px;
+    color:rgba(255,255,255,.32);
+    letter-spacing:.18em;
+}
+
+.transmission-no-results {
+    padding:9px 10px;
+    font-size:6px;
+    color:rgba(255,255,255,.28);
+    letter-spacing:.16em;
+}
+
+.username-input-wrap {
+    display:flex;
+    align-items:center;
+    background:#080808;
+    border:1px solid rgba(255,255,255,.12);
+}
+
+.username-input-wrap span {
+    padding-left:10px;
+    color:#a52520;
+}
+
+.username-input-wrap input {
+    flex:1;
+    background:transparent;
+    border:0;
+    outline:0;
+    padding:10px 10px 10px 4px;
+    color:#fff;
+}
