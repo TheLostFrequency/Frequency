@@ -13,32 +13,24 @@
 
 #room-transmission::before { display:none; }
 
+/* The HTML is seated on the physical console already built into the background. */
 .transmission-console {
     position: absolute;
     left: 50%;
-    top: 76%;
-    width: min(720px, 52vw);
-    transform: translate(-50%, -50%) perspective(1100px) rotateX(8deg);
+    top: 77%;
+    width: min(900px, 55vw);
+    min-height: 245px;
+    transform: translate(-50%, -50%) perspective(1200px) rotateX(8deg);
     transform-origin: 50% 100%;
     z-index: 5;
-    padding: 22px 24px 24px;
-    background: linear-gradient(180deg, rgba(5,5,5,.52), rgba(2,2,2,.28));
-    border: 1px solid rgba(255,255,255,.055);
-    box-shadow:
-        inset 0 1px rgba(255,255,255,.035),
-        inset 0 -18px 40px rgba(0,0,0,.28),
-        0 12px 35px rgba(0,0,0,.42);
-    backdrop-filter: blur(1.5px);
+    padding: 18px 20px 20px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
-.transmission-console::before {
-    content:"";
-    position:absolute;
-    inset:6px;
-    border:1px solid rgba(255,255,255,.025);
-    box-shadow: inset 0 0 22px rgba(0,0,0,.3);
-    pointer-events:none;
-}
+.transmission-console::before { display:none; }
 
 .transmission-console-head,
 .transmission-search-block,
@@ -47,13 +39,20 @@
 .transmit-button { position:relative; z-index:1; }
 
 .transmission-console-head {
+    position:absolute;
+    left:20px;
+    right:20px;
+    top:8px;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding-bottom:13px;
-    margin-bottom:15px;
-    border-bottom:1px solid rgba(255,255,255,.08);
+    padding:0;
+    margin:0;
+    border:0;
+    pointer-events:none;
 }
+
+.transmission-console-head .micro-label { opacity:.55; }
 
 .transmission-state {
     font-size:7px;
@@ -61,27 +60,34 @@
     color:rgba(255,255,255,.35);
 }
 
+.transmission-search-block {
+    position:absolute;
+    left:5%;
+    top:34px;
+    width:28%;
+}
+
 .transmission-search-block label {
     display:block;
     margin-bottom:7px;
     font-size:7px;
     letter-spacing:.2em;
-    color:rgba(255,255,255,.4);
+    color:rgba(255,255,255,.48);
 }
 
 .transmission-input-wrap {
     display:flex;
     align-items:center;
-    height:42px;
-    border:1px solid rgba(255,255,255,.13);
-    background:rgba(0,0,0,.55);
-    box-shadow:inset 0 0 25px rgba(0,0,0,.65);
+    height:34px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(0,0,0,.48);
+    box-shadow:inset 0 0 20px rgba(0,0,0,.7);
 }
 
 .transmission-input-wrap span {
-    padding-left:13px;
+    padding-left:10px;
     color:#a52520;
-    font-size:12px;
+    font-size:11px;
 }
 
 .transmission-input-wrap input {
@@ -91,26 +97,30 @@
     outline:0;
     background:transparent;
     color:#f3f3f0;
-    padding:0 11px 0 4px;
-    font-size:10px;
-    letter-spacing:.15em;
+    padding:0 9px 0 4px;
+    font-size:9px;
+    letter-spacing:.12em;
 }
 
 .transmission-input-wrap input::placeholder { color:rgba(255,255,255,.22); }
 
 .transmission-results {
     display:none;
-    margin-top:4px;
+    margin-top:3px;
     border:1px solid rgba(255,255,255,.1);
     background:#070707;
 }
 
 .transmission-destination {
+    position:absolute;
+    left:5%;
+    top:105px;
+    width:28%;
     display:flex;
     justify-content:space-between;
     align-items:end;
-    margin:18px 0;
-    padding:12px 0;
+    margin:0;
+    padding:9px 0;
     border-top:1px solid rgba(255,255,255,.055);
     border-bottom:1px solid rgba(255,255,255,.055);
 }
@@ -119,29 +129,34 @@
     font-size:9px;
     font-weight:400;
     letter-spacing:.13em;
-    color:rgba(255,255,255,.65);
+    color:rgba(255,255,255,.68);
 }
 
 .transmission-signal {
+    position:absolute;
+    right:5%;
+    top:34px;
+    width:57%;
     display:grid;
-    grid-template-columns:72px 1fr;
+    grid-template-columns:38% 1fr;
     gap:14px;
     align-items:center;
-    min-height:72px;
+    min-height:115px;
 }
 
 .transmission-signal-art {
-    height:58px;
+    height:108px;
     border:1px solid rgba(255,255,255,.09);
     position:relative;
     overflow:hidden;
-    background:radial-gradient(circle at 50% 50%, rgba(150,20,15,.15), transparent 65%), #030303;
+    background:radial-gradient(circle at 50% 50%, rgba(150,20,15,.12), transparent 65%), rgba(0,0,0,.32);
+    box-shadow:inset 0 0 25px rgba(0,0,0,.7);
 }
 
 .signal-art-line {
     position:absolute;
-    left:12%;
-    right:12%;
+    left:8%;
+    right:8%;
     top:50%;
     height:1px;
     background:linear-gradient(90deg,transparent,rgba(196,42,32,.8),transparent);
@@ -165,18 +180,30 @@
 .transmission-track small { margin-top:5px; font-size:7px; color:rgba(255,255,255,.32); letter-spacing:.1em; }
 
 .transmit-button {
-    width:100%;
-    height:42px;
-    margin-top:18px;
+    position:absolute;
+    left:50%;
+    bottom:4px;
+    transform:translateX(-50%);
+    width:27%;
+    height:40px;
+    margin:0;
     border:1px solid rgba(196,42,32,.55);
-    background:linear-gradient(180deg,rgba(196,42,32,.12),rgba(80,10,8,.08));
+    background:linear-gradient(180deg,rgba(196,42,32,.13),rgba(80,10,8,.08));
     color:#f3f3f0;
     font-size:8px;
     letter-spacing:.25em;
-    box-shadow:inset 0 0 18px rgba(196,42,32,.04);
+    box-shadow:inset 0 0 18px rgba(196,42,32,.05), 0 0 14px rgba(196,42,32,.05);
 }
 
-.transmit-button i { display:inline-block; width:22px; height:1px; margin-left:12px; vertical-align:middle; background:#c42a20; box-shadow:0 0 8px rgba(196,42,32,.6); }
+.transmit-button i {
+    display:inline-block;
+    width:22px;
+    height:1px;
+    margin-left:12px;
+    vertical-align:middle;
+    background:#c42a20;
+    box-shadow:0 0 8px rgba(196,42,32,.6);
+}
 
 .transmission-beam {
     position:absolute;
@@ -195,24 +222,37 @@
     #room-transmission { background-position:center center; }
 
     .transmission-console {
-        top: 75%;
-        width: min(88vw, 620px);
-        padding: 16px 17px 18px;
-        transform: translate(-50%, -50%) perspective(900px) rotateX(8deg);
+        top:76%;
+        width:88vw;
+        min-height:210px;
+        padding:14px;
+        transform:translate(-50%, -50%) perspective(900px) rotateX(8deg);
     }
 
-    .transmission-signal { grid-template-columns:62px 1fr; }
+    .transmission-console-head { left:14px; right:14px; top:5px; }
+    .transmission-search-block { left:4%; top:28px; width:43%; }
+    .transmission-destination { left:4%; top:91px; width:43%; }
+    .transmission-signal { right:4%; top:28px; width:45%; grid-template-columns:1fr; gap:7px; }
+    .transmission-signal-art { height:65px; }
+    .transmission-track strong { font-size:8px; }
+    .transmission-track small { font-size:6px; }
+    .transmit-button { width:38%; height:34px; bottom:3px; font-size:7px; }
     .transmission-beam { opacity:.75; }
 }
 
 @media (max-width:430px) {
     .transmission-console {
-        top: 74%;
-        width: 88vw;
-        padding: 14px 14px 16px;
-        transform: translate(-50%, -50%) perspective(760px) rotateX(8deg);
+        top:75%;
+        width:91vw;
+        min-height:190px;
+        padding:12px;
+        transform:translate(-50%, -50%) perspective(760px) rotateX(8deg);
     }
 
-    .transmission-destination { margin:14px 0; }
-    .transmission-console-head { margin-bottom:12px; }
+    .transmission-console-head { left:12px; right:12px; }
+    .transmission-search-block { left:3%; top:25px; width:45%; }
+    .transmission-destination { left:3%; top:82px; width:45%; }
+    .transmission-signal { right:3%; top:25px; width:45%; }
+    .transmission-signal-art { height:57px; }
+    .transmit-button { width:42%; bottom:2px; }
 }
