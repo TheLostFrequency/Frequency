@@ -19,27 +19,11 @@ body:has(#room-profile.active-room) .facility-bg {
     background:transparent !important;
 }
 
-#room-collection::before {
-    content:"";
-    position:absolute;
-    left:0;
-    right:0;
-    top:0;
-    height:76px;
-    background:#020202 !important;
-    pointer-events:none;
-    z-index:20;
-}
-
 body:has(#room-collection.active-room) .facility-bg {
     clip-path:inset(76px 0 0 0);
 }
 
 @media (max-width:720px) {
-    #room-collection::before {
-        height:62px;
-    }
-
     body:has(#room-collection.active-room) .facility-bg {
         clip-path:inset(62px 0 0 0);
     }
