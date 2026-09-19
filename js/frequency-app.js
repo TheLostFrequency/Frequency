@@ -251,6 +251,111 @@ $('username-form').addEventListener('submit', async event => {
     toast('Username updated to @' + username + '.');
 });
 
+
+let transmissionRecipientId = '';
+let transmissionRecipientUsername = '';
+let transmissionTrack = null;
+
+function syncTransmissionDestination() {
+    const label = '@' + (transmissionRecipientUsername || 'WAITING');
+    transmissionDestination.textContent = label;
+    $('transmission-picker-destination').textContent = label;
+}
+
+function renderTransmissionTracks() {
+    const list = $('transmission-track-list');
+    if (!list) return;
+    if (!playlist.length) {
+        list.innerHTML = '<div class="transmission-track-empty">NO SIGNALS IN YOUR VAULT</div>';
+        return;
+    }
+
+    list.innerHTML = playlist.map((track, index) =>
+        '<button type="button" class="transmission-track-option ' + (transmissionTrack?.id === track.id ? 'selected' : '') + '" data-track-index="' + index + '">' +
+        '<img src="' + esc(cover(track)) + '" alt="">' +
+        '<span><strong>' + esc(track.title || 'Untitled') + '</strong><small>' + esc(track.artist || 'Unknown Artist') + '</small></span>' +
+        '<em>' + (transmissionTrack?.id === track.id ? 'SELECTED' : 'SEND') + '</em></button>'
+    ).join('');
+
+    list.querySelectorAll('.transmission-track-option').forEach(button => {
+        button.addEventListener('click', () => {
+            transmissionTrack = playlist[Number(button.dataset.trackIndex)] || null;
+            $('transmission-track-title').textContent = transmissionTrack?.title || 'SELECT A SIGNAL';
+            $('transmission-track-artist').textContent = transmissionTrack?.artist || 'NO MUSIC SELECTED';
+            renderTransmissionTracks();
+            toast('Signal selected: ' + (transmissionTrack?.title || 'Untitled'));
+        });
+    });
+}
+
+function openTransmissionPicker() {
+    if (!authUser) {
+        $('auth-dialog').showModal();
+        toast('Enter your vault before transmitting.');
+        return;
+    }
+    if (!transmissionRecipientId) {
+        toast('Lock a Frequency destination first.');
+        transmissionSearch.focus();
+        return;
+    }
+    syncTransmissionDestination();
+    renderTransmissionTracks();
+    $('transmission-message').value = '';
+    $('transmission-message-status').textContent = '';
+    $('transmission-dialog').showModal();
+}
+
+$('transmission-signal').addEventListener('click', openTransmissionPicker);
+$('transmit-signal-btn').addEventListener('click', openTransmissionPicker);
+
+$('transmission-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!authUser || !supabase) return;
+
+    if (!transmissionRecipientId) {
+        $('transmission-message-status').textContent = 'SELECT A DESTINATION FIRST.';
+        return;
+    }
+    if (!transmissionTrack) {
+        $('transmission-message-status').textContent = 'SELECT A SIGNAL FIRST.';
+        return;
+    }
+
+    const button = $('confirm-transmission');
+    button.disabled = true;
+    $('transmission-message-status').textContent = 'OPENING PRIVATE CHANNEL...';
+
+    const { error } = await supabase.from('transmissions').insert({
+        sender_id: authUser.id,
+        recipient_id: transmissionRecipientId,
+        track_id: transmissionTrack.id,
+        title: transmissionTrack.title || 'Untitled',
+        artist: transmissionTrack.artist || 'Unknown Artist',
+        album: transmissionTrack.album || null,
+        audio_path: transmissionTrack.audio_path,
+        cover_path: transmissionTrack.cover_path || null,
+        message: $('transmission-message').value.trim() || null
+    });
+
+    if (error) {
+        console.error('Transmission failed:', error);
+        $('transmission-message-status').textContent = error.message || 'TRANSMISSION FAILED.';
+        button.disabled = false;
+        return;
+    }
+
+    $('transmission-dialog').close();
+    button.disabled = false;
+    toast('Signal transmitted to @' + transmissionRecipientUsername + '.');
+    const beam = $('transmission-beam');
+    if (beam) {
+        beam.classList.remove('transmitting');
+        void beam.offsetWidth;
+        beam.classList.add('transmitting');
+    }
+});
+
 const transmissionSearch = $('transmission-user-search');
 const transmissionResults = $('transmission-user-results');
 const transmissionDestination = $('transmission-destination');
@@ -273,7 +378,10 @@ function showTransmissionResults(rows) {
     transmissionResults.querySelectorAll('.transmission-user-result').forEach(button => {
         button.addEventListener('click', () => {
             const username = button.dataset.username;
+            transmissionRecipientId = button.dataset.userId;
+            transmissionRecipientUsername = username;
             transmissionDestination.textContent = '@' + username;
+            syncTransmissionDestination();
             transmissionSearch.value = username;
             hideTransmissionResults();
             transmissionSearch.blur();
