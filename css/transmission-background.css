@@ -330,3 +330,32 @@
     padding:10px 10px 10px 4px;
     color:#fff;
 }
+
+/* FREQUENCY // TRANSMISSION SIGNAL PICKER */
+.transmission-signal { cursor:pointer; }
+.transmission-signal:focus-visible { outline:1px solid rgba(196,42,32,.65); outline-offset:3px; }
+.transmission-picker { width:min(620px,92vw); max-height:min(82vh,760px); overflow:auto; }
+.transmission-picker-destination { display:flex; justify-content:space-between; align-items:center; padding:10px 0; margin:8px 0 14px; border-top:1px solid rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.07); }
+.transmission-picker-destination strong { font-size:10px; font-weight:400; letter-spacing:.14em; color:rgba(255,255,255,.7); }
+.transmission-picker-label { margin-bottom:8px; }
+.transmission-track-list { display:grid; gap:5px; max-height:300px; overflow:auto; padding-right:3px; }
+.transmission-track-option { display:grid; grid-template-columns:44px 1fr auto; gap:11px; align-items:center; width:100%; padding:7px; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.35); color:#f3f3f0; text-align:left; cursor:pointer; }
+.transmission-track-option:hover, .transmission-track-option.selected { border-color:rgba(196,42,32,.55); background:rgba(196,42,32,.08); }
+.transmission-track-option img { width:44px; height:44px; object-fit:cover; border:1px solid rgba(255,255,255,.08); }
+.transmission-track-option strong, .transmission-track-option small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.transmission-track-option strong { font-size:9px; font-weight:400; letter-spacing:.1em; }
+.transmission-track-option small { margin-top:4px; font-size:7px; color:rgba(255,255,255,.38); letter-spacing:.08em; }
+.transmission-track-option em { font-size:6px; color:rgba(255,255,255,.25); font-style:normal; letter-spacing:.12em; }
+.transmission-track-empty { padding:18px 10px; border:1px solid rgba(255,255,255,.07); color:rgba(255,255,255,.32); font-size:7px; letter-spacing:.14em; text-align:center; }
+.transmission-message-label { display:block; margin-top:14px; }
+.transmission-message-label > span { margin-left:7px; font-size:6px; color:rgba(255,255,255,.25); letter-spacing:.12em; }
+#transmission-message { display:block; width:100%; min-height:68px; margin-top:7px; resize:vertical; box-sizing:border-box; background:#080808; border:1px solid rgba(255,255,255,.1); color:#f3f3f0; padding:10px; outline:none; font:inherit; font-size:9px; letter-spacing:.06em; }
+#transmission-message:focus { border-color:rgba(196,42,32,.5); }
+.transmission-picker .auth-actions { justify-content:flex-end; margin-top:12px; }
+@media (max-width:720px) {
+    .transmission-picker { width:92vw; }
+    .transmission-track-list { max-height:38vh; }
+    .transmission-track-option { grid-template-columns:38px 1fr; }
+    .transmission-track-option img { width:38px; height:38px; }
+    .transmission-track-option em { display:none; }
+}
