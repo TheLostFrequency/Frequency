@@ -544,3 +544,58 @@
     #room-transmission .transmission-search-block { padding:5px; }
     #room-transmission .transmission-results { left:5px; right:5px; }
 }
+
+
+/* Transmission launch visibility — make the signal unmistakable on desktop and mobile. */
+#room-transmission .transmission-beam {
+    z-index: 20;
+    overflow: visible;
+    visibility: visible !important;
+}
+#room-transmission .transmission-beam path {
+    stroke: #ef3d32;
+    stroke-width: .42;
+    stroke-linecap: round;
+    stroke-dasharray: 18 82;
+    stroke-dashoffset: 100;
+    opacity: 0;
+    filter:
+        drop-shadow(0 0 3px rgba(255,55,45,1))
+        drop-shadow(0 0 9px rgba(225,35,30,.9))
+        drop-shadow(0 0 20px rgba(180,20,20,.6));
+}
+#room-transmission .transmission-beam circle {
+    fill: #ff6256;
+    opacity: 0;
+    filter:
+        drop-shadow(0 0 4px rgba(255,85,70,1))
+        drop-shadow(0 0 12px rgba(220,35,30,.9));
+}
+#room-transmission .transmission-beam.transmitting path {
+    animation: frequencySignalLaunchVisible 1.15s cubic-bezier(.12,.75,.18,1) both;
+}
+#room-transmission .transmission-beam.transmitting circle {
+    animation: frequencySignalOriginVisible 1.15s ease-out both;
+}
+@keyframes frequencySignalLaunchVisible {
+    0% { stroke-dashoffset:100; opacity:0; }
+    7% { opacity:1; }
+    22% { stroke-dashoffset:72; opacity:1; }
+    62% { stroke-dashoffset:28; opacity:1; }
+    88% { stroke-dashoffset:0; opacity:.9; }
+    100% { stroke-dashoffset:-18; opacity:0; }
+}
+@keyframes frequencySignalOriginVisible {
+    0% { opacity:0; r:1; }
+    8% { opacity:1; r:2.1; }
+    25% { opacity:.95; r:1.25; }
+    65% { opacity:.7; r:.9; }
+    100% { opacity:0; r:.4; }
+}
+#room-transmission .transmission-status-line strong {
+    min-width:0;
+    display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
