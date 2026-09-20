@@ -58,3 +58,50 @@
 #room-transmission #transmission-beam .tx-beam-pulse{
     transform:translateY(-7px);
 }
+
+
+/* FREQUENCY // BEAM VISIBILITY FIX */
+#room-transmission #transmission-beam .tx-beam-core{
+    stroke:#ff3f35!important;
+    stroke-width:7px!important;
+    stroke-linecap:round!important;
+    fill:none!important;
+    opacity:0!important;
+    filter:drop-shadow(0 0 4px #ff7168) drop-shadow(0 0 12px #ff3028) drop-shadow(0 0 28px rgba(210,25,25,.9))!important;
+}
+#room-transmission #transmission-beam .tx-beam-halo{
+    stroke:#e3292d!important;
+    stroke-width:18px!important;
+    stroke-linecap:round!important;
+    fill:none!important;
+    opacity:0!important;
+    filter:blur(4px)!important;
+}
+#room-transmission #transmission-beam.transmitting .tx-beam-core{
+    animation:frequencyVisibleBeam 2.2s ease-out both!important;
+}
+#room-transmission #transmission-beam.transmitting .tx-beam-halo{
+    animation:frequencyVisibleBeamHalo 2.2s ease-out both!important;
+}
+@keyframes frequencyVisibleBeam{
+    0%{stroke-dasharray:0 100;opacity:0}
+    5%{stroke-dasharray:4 96;opacity:1}
+    18%{stroke-dasharray:18 82;opacity:1}
+    38%{stroke-dasharray:38 62;opacity:1}
+    62%{stroke-dasharray:62 38;opacity:1}
+    82%{stroke-dasharray:82 18;opacity:.95}
+    92%{stroke-dasharray:100 0;opacity:.8}
+    100%{stroke-dasharray:100 0;opacity:0}
+}
+@keyframes frequencyVisibleBeamHalo{
+    0%{stroke-dasharray:0 100;opacity:0}
+    6%{stroke-dasharray:5 95;opacity:.75}
+    25%{stroke-dasharray:25 75;opacity:.62}
+    55%{stroke-dasharray:55 45;opacity:.45}
+    85%{stroke-dasharray:85 15;opacity:.25}
+    100%{stroke-dasharray:100 0;opacity:0}
+}
+@media(max-width:720px){
+    #room-transmission #transmission-beam .tx-beam-core{stroke-width:5px!important}
+    #room-transmission #transmission-beam .tx-beam-halo{stroke-width:13px!important}
+}
