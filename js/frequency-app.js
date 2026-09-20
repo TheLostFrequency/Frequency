@@ -381,8 +381,12 @@ $('transmission-form').addEventListener('submit', async event => {
 
     $('transmission-dialog').close();
     button.disabled = false;
-    if ($('transmission-status')) $('transmission-status').textContent = 'SIGNAL TRANSMITTED // CHANNEL CLOSED';
-    toast('Signal transmitted to @' + transmissionRecipientUsername + '.');
+
+    // Keep the successful transmission visible long enough to be unmistakable.
+    const sentTo = transmissionRecipientUsername || 'UNKNOWN STATION';
+    if ($('transmission-status')) $('transmission-status').textContent = 'SIGNAL TRANSMITTED // SENT TO @' + sentTo;
+    toast('TRANSMISSION COMPLETE // SIGNAL SENT TO @' + sentTo);
+
     const beam = $('transmission-beam');
     if (beam) {
         beam.classList.remove('transmitting');
