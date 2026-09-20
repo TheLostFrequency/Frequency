@@ -43,49 +43,60 @@
         <section id="room-transmission" class="room transmission-room">
   <div class="transmission-console" aria-label="Frequency transmission console">
     <div class="transmission-console-head">
-      <span class="micro-label">FREQUENCY // OUTGOING SIGNAL</span>
-      <span class="transmission-state">STANDBY</span>
+      <span class="transmission-title">TRANSMISSION</span>
+      <span class="transmission-state">READY</span>
+    </div>
+
+    <div class="transmission-origin">
+      <span>ORIGIN</span>
+      <strong id="transmission-origin-name">KING</strong>
+    </div>
+
+    <div class="transmission-destination">
+      <span>DESTINATION</span>
+      <strong id="transmission-destination-name">@USERNAME</strong>
     </div>
 
     <div class="transmission-search-block">
       <label for="transmission-user-search">SEARCH FREQUENCY USER</label>
       <div class="transmission-input-wrap">
-        <span>@</span>
-        <input id="transmission-user-search" type="text" autocomplete="off" placeholder="USERNAME">
+        <input id="transmission-user-search" type="text" autocomplete="off" placeholder="@username">
+        <span class="transmission-search-icon" aria-hidden="true"></span>
       </div>
       <div id="transmission-user-results" class="transmission-results" aria-hidden="true"></div>
     </div>
 
-    <div class="transmission-destination">
-      <span class="micro-label">DESTINATION</span>
-      <strong id="transmission-destination">@WAITING</strong>
+    <div class="transmission-art-panel">
+      <img id="transmission-track-art" src="assets/default-art.jpg" alt="">
     </div>
 
-    <div class="transmission-signal">
-      <div class="transmission-signal-art">
-        <div class="signal-art-line"></div>
-        <div class="signal-art-node"></div>
+    <div class="transmission-audio-panel">
+      <span class="audio-signal-label">AUDIO SIGNAL</span>
+      <strong id="transmission-track-title">Kanye West — Flashing Lights</strong>
+      <div class="transmission-waveform" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
       </div>
-      <div class="transmission-track">
-        <span class="micro-label">SIGNAL</span>
-        <strong id="transmission-track-title">SELECT A SIGNAL</strong>
-        <small id="transmission-track-artist">NO MUSIC SELECTED</small>
-      </div>
+    </div>
+
+    <div class="transmission-status-line">
+      <span>STATUS:</span>
+      <strong id="transmission-status">READY TO TRANSMIT</strong>
     </div>
 
     <button id="transmit-signal-btn" class="transmit-button" type="button">
       <span>TRANSMIT SIGNAL</span>
-      <i></i>
     </button>
-    <div class="transmission-incoming-panel" hidden><span class="transmission-incoming-anchor" aria-hidden="true"></span>
+
+    <div class="transmission-incoming-panel" hidden>
+      <span class="transmission-incoming-anchor" aria-hidden="true"></span>
       <div class="transmission-incoming-head"><span class="micro-label">INCOMING // PRIVATE SIGNALS</span><span id="transmission-incoming-status">RECEIVER STANDBY</span></div>
       <div id="transmission-incoming-list" class="transmission-incoming-list"><div class="transmission-incoming-empty">NO INCOMING SIGNALS</div></div>
     </div>
   </div>
 
   <svg id="transmission-beam" class="transmission-beam" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M 7 58 C 28 56, 52 45, 96 40"></path>
-    <circle cx="7" cy="58" r="1.1"></circle>
+    <path d="M 48 55 C 62 47, 73 39, 96 31"></path>
+    <circle cx="48" cy="55" r="1.1"></circle>
   </svg>
 </section>
         <section id="room-profile" class="room room-panel"><div class="room-label"><span>05</span> PRIVATE CHAMBER</div><div class="room-card profile-card"><div class="profile-emblem"><img src="assets/logo.png" alt="Frequency"></div><div class="panel-heading"><div><span class="micro-label">VAULT OWNER</span><h2 id="profile-title">PRIVATE SESSION</h2></div></div><p id="profile-status" class="profile-status">Sign in to unlock your private vault and uploads.</p><div class="auth-actions"><button id="edit-username" class="room-action hidden" type="button">CHANGE USERNAME</button><button id="auth-open" class="room-action">ENTER VAULT</button><button id="sign-out" class="room-action hidden">SIGN OUT</button></div></div></section>
