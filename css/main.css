@@ -40,3 +40,12 @@ body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:tr
 .player-dock{display:none;}
 body:has(#room-collection.active-room) .player-dock{display:grid;}
 @media(max-width:900px){body:has(#room-collection.active-room) .player-dock{display:grid;}}
+
+
+/* FREQUENCY // ROOMS FILL THE FORMER PLAYER AREA */
+.facility-main{
+    height:calc(100vh - 74px);
+}
+@media(max-width:900px){
+    .facility-main{height:calc(100vh - 68px);}
+}
