@@ -405,6 +405,8 @@ async function handleIncomingTransmission(item, action, row) {
     if (container && !container.querySelector('.transmission-incoming-item')) {
         container.innerHTML = '';
         panel?.classList.remove('has-signal');
+        if (panel) panel.hidden = true;
+        if ($('transmission-incoming-status')) $('transmission-incoming-status').textContent = 'RECEIVER STANDBY';
     }
 
     toast(action === 'accept' ? 'Signal accepted into your collection.' : 'Incoming signal declined.');
@@ -514,12 +516,15 @@ async function loadIncomingTransmissions() {
     if (error) {
         console.warn('Incoming transmissions failed:', error);
         panel?.classList.remove('has-signal');
+        if (panel) panel.hidden = true;
         return;
     }
 
     if (!data?.length) {
         panel?.classList.remove('has-signal');
+        if (panel) panel.hidden = true;
         container.innerHTML = '';
+        if (status) status.textContent = 'RECEIVER STANDBY';
         return;
     }
 
@@ -532,6 +537,7 @@ async function loadIncomingTransmissions() {
 
     if (status) status.textContent = data.length + ' INCOMING SIGNAL' + (data.length === 1 ? '' : 'S');
     panel?.classList.add('has-signal');
+    if (panel) panel.hidden = false;
 
     container.innerHTML = data.map(item => {
         const sender = names[item.sender_id] || 'UNKNOWN STATION';
