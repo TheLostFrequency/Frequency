@@ -395,6 +395,12 @@ $('transmission-form').addEventListener('submit', async event => {
         void beam.offsetWidth;
         beam.classList.add('transmitting');
     }
+    const beamFx = $('transmission-beam-fx');
+    if (beamFx) {
+        beamFx.classList.remove('transmitting');
+        void beamFx.offsetWidth;
+        beamFx.classList.add('transmitting');
+    }
 });
 
 async function handleIncomingTransmission(item, action, row) {
