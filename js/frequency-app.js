@@ -295,15 +295,27 @@ async function openTransmissionPicker() {
         toast('Enter your vault before transmitting.');
         return;
     }
-    if (!transmissionRecipientId) {
-        toast('Lock a Frequency destination first.');
-        transmissionSearch.focus();
-        return;
-    }
+    // Let the picker open before a destination is chosen. This allows the
+    // user to select the song first and lock the receiving station afterward.
     syncTransmissionDestination();
+
     // Refresh the private vault list when the picker opens so newly loaded
     // or newly uploaded signals are always available for selection.
     if (!playlist.length) await load();
+
+    // Default to the currently selected song when possible, while still
+    // allowing the user to choose a different signal.
+    if (!transmissionTrack && playlist.length) {
+        transmissionTrack = playlist[
+            Math.max(0, Math.min(currentIndex, playlist.length - 1))
+        ] || playlist[0];
+    }
+
+    if (transmissionTrack) {
+        $('transmission-track-title').textContent = transmissionTrack.title || 'SELECT A SIGNAL';
+        $('transmission-track-artist').textContent = transmissionTrack.artist || 'NO MUSIC SELECTED';
+    }
+
     renderTransmissionTracks();
     $('transmission-message').value = '';
     $('transmission-message-status').textContent = '';
