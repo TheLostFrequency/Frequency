@@ -255,6 +255,7 @@ $('username-form').addEventListener('submit', async event => {
 let transmissionRecipientId = '';
 let transmissionRecipientUsername = '';
 let transmissionTrack = null;
+let incomingTransmissionPollTimer = null;
 
 function syncTransmissionDestination() {
     const label = '@' + (transmissionRecipientUsername || 'WAITING');
@@ -359,6 +360,57 @@ $('transmission-form').addEventListener('submit', async event => {
     }
 });
 
+async function handleIncomingTransmission(item, action, row) {
+    if (!authUser || !supabase || !item?.id) return false;
+
+    const actionButton = row?.querySelector(action === 'accept'
+        ? '.transmission-received-accept'
+        : '.transmission-received-decline');
+
+    if (actionButton) {
+        actionButton.disabled = true;
+        actionButton.textContent = action === 'accept' ? 'ACCEPTING...' : 'DECLINING...';
+    }
+
+    if (action === 'accept') {
+        const saved = await saveTransmissionToCollection(item, null);
+        if (!saved) {
+            if (actionButton) {
+                actionButton.disabled = false;
+                actionButton.textContent = 'ACCEPT SIGNAL';
+            }
+            return false;
+        }
+    }
+
+    const { error } = await supabase.from('transmissions')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', item.id)
+        .eq('recipient_id', authUser.id);
+
+    if (error) {
+        console.error('Transmission decision failed:', error);
+        if (actionButton) {
+            actionButton.disabled = false;
+            actionButton.textContent = action === 'accept' ? 'ACCEPT SIGNAL' : 'DECLINE';
+        }
+        toast('Could not close the incoming signal.');
+        return false;
+    }
+
+    row?.remove();
+
+    const container = $('transmission-incoming-list');
+    const panel = document.querySelector('.transmission-incoming-panel');
+    if (container && !container.querySelector('.transmission-incoming-item')) {
+        container.innerHTML = '';
+        panel?.classList.remove('has-signal');
+    }
+
+    toast(action === 'accept' ? 'Signal accepted into your collection.' : 'Incoming signal declined.');
+    return true;
+}
+
 async function saveTransmissionToCollection(item, button) {
     if (!authUser || !supabase || !item?.audio_path) return false;
 
@@ -376,7 +428,6 @@ async function saveTransmissionToCollection(item, button) {
     }
 
     if (existing?.length) {
-        toast('Signal is already in your collection.');
         if (button) {
             button.textContent = 'IN COLLECTION';
             button.disabled = true;
@@ -402,7 +453,7 @@ async function saveTransmissionToCollection(item, button) {
         console.error('Save received signal failed:', error);
         if (button) {
             button.disabled = false;
-            button.textContent = 'SAVE TO COLLECTION';
+            button.textContent = 'ACCEPT SIGNAL';
         }
         toast('Could not save signal: ' + (error.message || 'database error'));
         return false;
@@ -413,11 +464,10 @@ async function saveTransmissionToCollection(item, button) {
         button.disabled = true;
     }
     await load();
-    toast('Signal saved to your collection.');
     return true;
 }
 
-async function playReceivedTransmission(item, row) {
+async function playReceivedTransmission(item) {
     if (!item?.audio_path) {
         toast('This transmission has no audio signal.');
         return false;
@@ -437,37 +487,12 @@ async function playReceivedTransmission(item, row) {
         artwork: item.cover_path ? ((await signedUrl('covers', item.cover_path)) || 'assets/default-art.jpg') : 'assets/default-art.jpg'
     });
 
-    const ready = new Promise(resolve => {
-        const audio = player.audio;
-        const done = ok => { cleanup(); resolve(ok); };
-        const cleanup = () => {
-            audio.removeEventListener('canplay', onReady);
-            audio.removeEventListener('error', onError);
-        };
-        const onReady = () => done(true);
-        const onError = () => done(false);
-        audio.addEventListener('canplay', onReady, { once: true });
-        audio.addEventListener('error', onError, { once: true });
-        window.setTimeout(() => done(!!audio.readyState), 5000);
-    });
-
-    if (!(await ready)) {
-        toast('The received signal could not be loaded.');
+    try {
+        await player.play();
+    } catch (error) {
+        console.error('Received signal playback failed:', error);
+        toast('The received signal could not be played.');
         return false;
-    }
-
-    await player.play();
-
-    if (!item.read_at) {
-        const update = await supabase.from('transmissions')
-            .update({ read_at: new Date().toISOString() })
-            .eq('id', item.id)
-            .eq('recipient_id', authUser.id);
-        if (!update.error && row) {
-            row.classList.remove('unread');
-            const label = row.querySelector('.micro-label');
-            if (label) label.textContent = 'RECEIVED SIGNAL';
-        }
     }
 
     return true;
@@ -476,40 +501,49 @@ async function playReceivedTransmission(item, row) {
 async function loadIncomingTransmissions() {
     const container = $('transmission-incoming-list');
     const status = $('transmission-incoming-status');
+    const panel = document.querySelector('.transmission-incoming-panel');
     if (!container || !supabase || !authUser) return;
+
     const { data, error } = await supabase.from('transmissions')
         .select('id, sender_id, title, artist, album, audio_path, cover_path, message, created_at, read_at')
-        .eq('recipient_id', authUser.id).order('created_at', { ascending: false }).limit(20);
+        .eq('recipient_id', authUser.id)
+        .is('read_at', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
     if (error) {
         console.warn('Incoming transmissions failed:', error);
-        container.innerHTML = '<div class="transmission-incoming-empty">SIGNAL RECEIVER OFFLINE</div>';
-        if (status) status.textContent = 'RECEIVER OFFLINE';
+        panel?.classList.remove('has-signal');
         return;
     }
+
     if (!data?.length) {
-        container.innerHTML = '<div class="transmission-incoming-empty">NO INCOMING SIGNALS</div>';
-        if (status) status.textContent = 'RECEIVER STANDBY';
+        panel?.classList.remove('has-signal');
+        container.innerHTML = '';
         return;
     }
+
     const ids = [...new Set(data.map(item => item.sender_id).filter(Boolean))];
     const result = ids.length ? await supabase.from('profiles').select('id, username').in('id', ids) : { data: [] };
     const names = Object.fromEntries((result.data || []).map(row => [row.id, row.username]));
-    const unread = data.filter(item => !item.read_at).length;
-    if (status) status.textContent = unread ? unread + ' UNREAD SIGNAL' + (unread === 1 ? '' : 'S') : 'ALL SIGNALS RECEIVED';
+    const artUrls = Object.fromEntries(await Promise.all(
+        data.filter(item => item.cover_path).map(async item => [item.id, await signedUrl('covers', item.cover_path)])
+    ));
 
-    const artUrls = Object.fromEntries(await Promise.all(data.filter(item => item.cover_path).map(async item => [item.id, await signedUrl('covers', item.cover_path)])));
+    if (status) status.textContent = data.length + ' INCOMING SIGNAL' + (data.length === 1 ? '' : 'S');
+    panel?.classList.add('has-signal');
 
     container.innerHTML = data.map(item => {
         const sender = names[item.sender_id] || 'UNKNOWN STATION';
-        const inCollection = playlist.some(track => track.audio_path === item.audio_path);
-        return '<article class="transmission-incoming-item ' + (!item.read_at ? 'unread' : '') + '" data-transmission-id="' + esc(item.id) + '">' +
+        return '<article class="transmission-incoming-item unread" data-transmission-id="' + esc(item.id) + '">' +
             '<div class="transmission-incoming-art"><img src="' + esc(artUrls[item.id] || 'assets/default-art.jpg') + '" alt=""></div>' +
-            '<div class="transmission-incoming-copy"><span class="micro-label">' + (!item.read_at ? 'INCOMING SIGNAL' : 'RECEIVED SIGNAL') + '</span>' +
+            '<div class="transmission-incoming-copy"><span class="micro-label">INCOMING SIGNAL</span>' +
             '<strong>' + esc(item.title || 'UNTITLED SIGNAL') + '</strong><small>' + esc(item.artist || 'UNKNOWN ARTIST') + ' // FROM @' + esc(sender) + '</small>' +
             (item.message ? '<p>' + esc(item.message) + '</p>' : '') + '</div>' +
             '<div class="transmission-incoming-actions">' +
-            '<button type="button" class="room-action transmission-received-play">PLAY SIGNAL</button>' +
-            '<button type="button" class="room-action transmission-received-save" ' + (inCollection ? 'disabled' : '') + '>' + (inCollection ? 'IN COLLECTION' : 'SAVE TO COLLECTION') + '</button>' +
+            '<button type="button" class="room-action transmission-received-play">PLAY</button>' +
+            '<button type="button" class="room-action transmission-received-accept">ACCEPT SIGNAL</button>' +
+            '<button type="button" class="room-action transmission-received-decline">DECLINE</button>' +
             '</div></article>';
     }).join('');
 
@@ -517,15 +551,28 @@ async function loadIncomingTransmissions() {
         const item = data.find(entry => entry.id === row?.dataset.transmissionId);
         row.querySelector('.transmission-received-play')?.addEventListener('click', async event => {
             event.currentTarget.disabled = true;
-            event.currentTarget.textContent = 'LOADING...';
-            const ok = await playReceivedTransmission(item, row);
+            event.currentTarget.textContent = 'PLAYING...';
+            const ok = await playReceivedTransmission(item);
             event.currentTarget.disabled = false;
-            event.currentTarget.textContent = ok ? 'PLAY SIGNAL' : 'RETRY SIGNAL';
+            event.currentTarget.textContent = ok ? 'PLAY' : 'RETRY';
         });
-        row.querySelector('.transmission-received-save')?.addEventListener('click', async event => {
-            await saveTransmissionToCollection(item, event.currentTarget);
+        row.querySelector('.transmission-received-accept')?.addEventListener('click', () => {
+            handleIncomingTransmission(item, 'accept', row);
+        });
+        row.querySelector('.transmission-received-decline')?.addEventListener('click', () => {
+            handleIncomingTransmission(item, 'decline', row);
         });
     });
+}
+
+function startIncomingTransmissionPolling() {
+    clearInterval(incomingTransmissionPollTimer);
+    if (!authUser) return;
+    loadIncomingTransmissions();
+    incomingTransmissionPollTimer = window.setInterval(() => {
+        if (document.hidden || !authUser) return;
+        loadIncomingTransmissions();
+    }, 5000);
 }
 
 const transmissionSearch = $('transmission-user-search');
@@ -1060,6 +1107,10 @@ renderUploadQueue();
 supabase?.auth.onAuthStateChange((_event, sessionData) => {
     authUser = sessionData?.user || null;
     profile();
+    startIncomingTransmissionPolling();
 });
 
-session().then(load);
+session().then(async () => {
+    await load();
+    startIncomingTransmissionPolling();
+});
