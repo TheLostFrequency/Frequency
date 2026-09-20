@@ -86,3 +86,33 @@ body:has(#room-collection.active-room) .player-dock{display:grid;}
     .song-item strong{font-size:12px}
     .song-item small{font-size:9px}
 }
+
+/* FREQUENCY // TYPE SCALE +3PX FROM ORIGINAL, DIMENSIONS UNCHANGED */
+.brand-mark span{font-size:14px}
+.nav-tab,.upload-button{font-size:13px}
+.room-label{font-size:12px}
+.micro-label{font-size:11px}
+.hero-meta h1{font-size:16px}
+.hero-meta p{font-size:12px}
+.song-item strong{font-size:14px}
+.song-item small{font-size:11px}
+.selector-head,.selector-foot{font-size:10px}
+.panel-heading h2{font-size:21px}
+.panel-heading>span{font-size:11px}
+.list-row strong{font-size:13px}
+.list-row small,.list-row em{font-size:11px}
+.room-action{font-size:11px}
+.transmission-copy h2{font-size:18px}
+.transmission-copy p{font-size:14px}
+.transmission-copy strong{font-size:11px}
+.profile-status{font-size:13px}
+.dialog-card label{font-size:11px}
+.file-drop span{font-size:12px}
+.dialog-note{font-size:13px}
+.upload-progress{font-size:11px}
+.toast{font-size:11px}
+.player-track-info strong{font-size:13px}
+.player-track-info small{font-size:11px}
+.player-status{font-size:10px}
+.transport>span{font-size:10px}
+.transport-btn{font-size:14px}
