@@ -607,7 +607,8 @@
    precision machinery, signal-routing geometry, and a single forward beam. */
 
 #room-transmission{
-    position:relative;
+    position:absolute;
+    inset:0;
     isolation:isolate;
     overflow:hidden;
 }
