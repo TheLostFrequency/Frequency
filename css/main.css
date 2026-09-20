@@ -116,3 +116,15 @@ body:has(#room-collection.active-room) .player-dock{display:grid;}
 .player-status{font-size:10px}
 .transport>span{font-size:10px}
 .transport-btn{font-size:14px}
+
+/* FREQUENCY // HEADER LOGO: SLIGHTLY LARGER */
+.brand-mark img{
+    width:38px!important;
+    height:38px!important;
+}
+@media(max-width:650px){
+    .brand-mark img{
+        width:34px!important;
+        height:34px!important;
+    }
+}
