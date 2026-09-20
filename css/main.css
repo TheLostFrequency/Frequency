@@ -35,3 +35,8 @@ body.room-arriving #room-transition .room-transition-copy{opacity:0;transform:tr
 #room-collection::before{content:"";position:absolute;left:0;right:0;top:-76px;height:115px;background:#020202;pointer-events:none;z-index:1;}
 #room-list::before,#room-profile::before{display:none;}
 #room-list .room-card,#room-profile .room-card{z-index:2;}
+
+/* FREQUENCY // PLAYER ONLY EXISTS IN THE COLLECTION ROOM */
+.player-dock{display:none;}
+body:has(#room-collection.active-room) .player-dock{display:grid;}
+@media(max-width:900px){body:has(#room-collection.active-room) .player-dock{display:grid;}}
