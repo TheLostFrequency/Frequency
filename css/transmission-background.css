@@ -359,3 +359,125 @@
     .transmission-track-option img { width:38px; height:38px; }
     .transmission-track-option em { display:none; }
 }
+
+
+
+/* TRANSMISSION CONSOLE — FINAL PHYSICAL CONSOLE PLACEMENT */
+#room-transmission .transmission-console {
+    left: 50%;
+    top: 77%;
+    width: min(820px, 56vw);
+    min-height: 245px;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%) perspective(1200px) rotateX(7deg);
+    transform-origin: 50% 100%;
+    padding: 18px 22px 20px;
+    background: rgba(3,3,3,.34);
+    border: 1px solid rgba(255,255,255,.055);
+    box-shadow:
+        inset 0 1px rgba(255,255,255,.04),
+        inset 0 -18px 35px rgba(0,0,0,.24),
+        0 10px 35px rgba(0,0,0,.45);
+    backdrop-filter: blur(1px);
+}
+
+#room-transmission .transmission-console::before {
+    inset: 5px;
+    border-color: rgba(255,255,255,.022);
+}
+
+#room-transmission .transmission-console-head {
+    margin-bottom: 10px;
+    padding-bottom: 9px;
+}
+
+#room-transmission .transmission-search-block {
+    width: 46%;
+}
+
+#room-transmission .transmission-destination {
+    position: absolute;
+    left: 47%;
+    top: 54px;
+    width: 20%;
+    margin: 0;
+    padding: 0 0 8px;
+    display: block;
+    border: 0;
+}
+
+#room-transmission .transmission-destination strong {
+    display: block;
+    margin-top: 6px;
+}
+
+#room-transmission .transmission-signal {
+    position: absolute;
+    right: 22px;
+    top: 52px;
+    width: 38%;
+    min-height: 100px;
+    grid-template-columns: 72px 1fr;
+}
+
+#room-transmission .transmission-signal-art {
+    height: 78px;
+}
+
+#room-transmission .transmit-button {
+    width: 31%;
+    min-width: 190px;
+    margin: 28px auto 0;
+    display: block;
+}
+
+#room-transmission .transmission-beam {
+    z-index: 4;
+}
+
+@media (max-width: 720px) {
+    #room-transmission .transmission-console {
+        top: 76%;
+        width: 88vw;
+        min-height: 225px;
+        padding: 14px 15px 16px;
+        transform: translate(-50%, -50%) perspective(900px) rotateX(7deg);
+    }
+
+    #room-transmission .transmission-search-block {
+        width: 100%;
+    }
+
+    #room-transmission .transmission-destination {
+        position: static;
+        width: 100%;
+        margin: 12px 0;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255,255,255,.055);
+        border-bottom: 1px solid rgba(255,255,255,.055);
+    }
+
+    #room-transmission .transmission-signal {
+        position: static;
+        width: 100%;
+        min-height: 62px;
+    }
+
+    #room-transmission .transmission-signal-art {
+        height: 58px;
+    }
+
+    #room-transmission .transmit-button {
+        width: 100%;
+        min-width: 0;
+        margin-top: 13px;
+    }
+}
+
+@media (max-width: 430px) {
+    #room-transmission .transmission-console {
+        top: 74%;
+        width: 89vw;
+        min-height: 0;
+    }
+}
