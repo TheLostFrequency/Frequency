@@ -41,3 +41,20 @@
 #room-transmission .tx-emitter-slot{position:absolute!important;left:50%!important;top:9px!important;width:48px!important;height:9px!important;transform:translateX(-50%)!important;border:1px solid rgba(225,225,220,.3)!important;border-radius:50%!important;background:#000!important}
 #room-transmission .tx-emitter-core{position:absolute!important;left:50%!important;top:12px!important;width:17px!important;height:3px!important;transform:translateX(-50%)!important;border-radius:50%!important;background:#3e1012!important;box-shadow:0 0 8px rgba(230,40,35,.45)!important}
 @media(max-width:720px){#room-transmission .tx-emitter{top:-14px!important;width:82px!important;height:32px!important}#room-transmission .tx-emitter-ring{width:64px!important;height:17px!important}#room-transmission .tx-emitter-slot{width:38px!important;height:7px!important}#room-transmission .tx-emitter::before{width:46px!important;height:19px!important}#room-transmission .transmission-beam .tx-beam-core{stroke-width:.55!important}}
+
+
+/* FREQUENCY // THICK BEAM + HIGHER LAUNCH ORIGIN */
+#room-transmission #transmission-beam .tx-beam-core{
+    stroke-width:4px!important;
+    filter:drop-shadow(0 0 3px #ff6257) drop-shadow(0 0 10px rgba(255,45,35,.98)) drop-shadow(0 0 22px rgba(185,20,20,.82))!important;
+}
+#room-transmission #transmission-beam .tx-beam-halo{
+    stroke-width:12px!important;
+    filter:blur(3px)!important;
+}
+#room-transmission #transmission-beam .tx-beam-origin{
+    transform:translateY(-7px);
+}
+#room-transmission #transmission-beam .tx-beam-pulse{
+    transform:translateY(-7px);
+}
