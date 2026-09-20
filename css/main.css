@@ -49,3 +49,40 @@ body:has(#room-collection.active-room) .player-dock{display:grid;}
 @media(max-width:900px){
     .facility-main{height:calc(100vh - 62px);}
 }
+
+/* FREQUENCY // GLOBAL TYPE SCALE: SLIGHTLY LARGER, NO LAYOUT RESIZE */
+.brand-mark span{font-size:12px}
+.nav-tab,.upload-button{font-size:11px}
+.room-label{font-size:10px}
+.micro-label{font-size:9px}
+.hero-meta h1{font-size:14px}
+.hero-meta p{font-size:10px}
+.song-item strong{font-size:12px}
+.song-item small{font-size:9px}
+.selector-head,.selector-foot{font-size:8px}
+.panel-heading h2{font-size:19px}
+.panel-heading>span{font-size:9px}
+.list-row strong{font-size:11px}
+.list-row small,.list-row em{font-size:9px}
+.room-action{font-size:9px}
+.transmission-copy h2{font-size:16px}
+.transmission-copy p{font-size:12px}
+.transmission-copy strong{font-size:9px}
+.profile-status{font-size:11px}
+.dialog-card label{font-size:9px}
+.file-drop span{font-size:10px}
+.dialog-note{font-size:11px}
+.upload-progress{font-size:9px}
+.toast{font-size:9px}
+.player-track-info strong{font-size:11px}
+.player-track-info small{font-size:9px}
+.player-status{font-size:8px}
+.transport>span{font-size:8px}
+.transport-btn{font-size:12px}
+@media(max-width:720px){
+    .brand-mark span{font-size:12px}
+    .hero-meta h1{font-size:14px}
+    .hero-meta p{font-size:10px}
+    .song-item strong{font-size:12px}
+    .song-item small{font-size:9px}
+}
