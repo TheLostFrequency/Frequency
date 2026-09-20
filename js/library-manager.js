@@ -122,6 +122,35 @@ function injectStyles() {
             letter-spacing: .08em;
             text-transform: uppercase;
         }
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+            margin-top: 4px;
+        }
+        .edit-actions .room-action {
+            flex: 1;
+        }
+        .edit-delete-button {
+            border-color: rgba(196,42,32,.38);
+            color: rgba(255,120,110,.78);
+        }
+        .edit-delete-button:hover,
+        .edit-delete-button:focus-visible {
+            border-color: rgba(196,42,32,.9);
+            color: #fff;
+            background: rgba(196,42,32,.16);
+            box-shadow: 0 0 22px rgba(196,42,32,.12);
+        }
+        .edit-delete-button:disabled {
+            opacity: .45;
+            cursor: wait;
+        }
+        @media(max-width:600px) {
+            .edit-actions {
+                flex-direction: column;
+            }
+        }
     `;
     document.head.appendChild(style);
 }
@@ -146,7 +175,10 @@ function ensureEditDialog() {
             </div>
             <label class="file-drop">REPLACE AUDIO<input id="edit-audio" type="file" accept="audio/*"><span id="edit-audio-name">Keep current audio</span></label>
             <label class="file-drop">REPLACE COVER<input id="edit-cover" type="file" accept="image/*"><span id="edit-cover-name">Keep current cover</span></label>
-            <button id="save-edit" class="room-action" type="submit">SAVE SIGNAL</button>
+            <div class="edit-actions">
+                <button id="save-edit" class="room-action" type="submit">SAVE SIGNAL</button>
+                <button id="delete-edit" class="room-action edit-delete-button" type="button">DELETE SIGNAL</button>
+            </div>
             <div id="edit-progress" class="upload-progress"></div>
         </form>`;
     document.body.appendChild(dialog);
@@ -189,6 +221,56 @@ async function uploadReplacement(bucket, file, userId) {
     });
     if (error) throw error;
     return path;
+}
+
+async function deleteEdit() {
+    if (!editingTrack || !supabase) return;
+
+    const user = await getUser();
+    if (!user) return;
+
+    const confirmed = window.confirm(
+        'DELETE SIGNAL?\n\nThis will permanently remove "' +
+        (editingTrack.title || 'Untitled') +
+        '" from your Frequency vault.'
+    );
+    if (!confirmed) return;
+
+    const deleteButton = $('delete-edit');
+    const saveButton = $('save-edit');
+    deleteButton.disabled = true;
+    saveButton.disabled = true;
+    $('edit-progress').textContent = 'DELETING SIGNAL...';
+
+    try {
+        const { error } = await supabase
+            .from('tracks')
+            .delete()
+            .eq('id', editingTrack.id)
+            .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        const removals = [];
+        if (editingTrack.audio_path) removals.push(['audio', editingTrack.audio_path]);
+        if (editingTrack.cover_path) removals.push(['covers', editingTrack.cover_path]);
+
+        for (const [bucket, path] of removals) {
+            const { error: removeError } = await supabase.storage.from(bucket).remove([path]);
+            if (removeError) console.warn('Could not remove old ' + bucket + ' file:', removeError);
+        }
+
+        $('edit-progress').textContent = 'SIGNAL DELETED.';
+        setTimeout(() => {
+            $('edit-dialog')?.close();
+            window.location.reload();
+        }, 350);
+    } catch (error) {
+        console.error('Signal delete failed:', error);
+        $('edit-progress').textContent = error.message || 'Could not delete signal.';
+        deleteButton.disabled = false;
+        saveButton.disabled = false;
+    }
 }
 
 async function saveEdit(event) {
@@ -453,6 +535,7 @@ function init() {
     injectStyles();
     ensureEditDialog();
     $('edit-form')?.addEventListener('submit', saveEdit);
+    $('delete-edit')?.addEventListener('click', deleteEdit);
     setupBulkUpload();
     watchList();
 }
