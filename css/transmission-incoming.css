@@ -14,3 +14,6 @@
 .transmission-incoming-actions .room-action{white-space:nowrap;font-size:8px;padding:9px 12px;}
 .transmission-incoming-actions .room-action:disabled{opacity:.45;cursor:default;}
 @media(max-width:720px){.transmission-incoming-panel{width:90vw;max-height:76vh;padding:13px;}.transmission-incoming-head{align-items:flex-start;flex-direction:column;gap:4px;margin-bottom:9px;font-size:8px;}.transmission-incoming-list{max-height:64vh;}.transmission-incoming-item{grid-template-columns:48px minmax(0,1fr);gap:9px;padding:9px;}.transmission-incoming-art img{width:48px;height:48px;}.transmission-incoming-copy strong{font-size:11px;}.transmission-incoming-copy small{font-size:7px;}.transmission-incoming-copy p{font-size:8px;}.transmission-incoming-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;}.transmission-incoming-actions .room-action{width:100%;font-size:7px;padding:8px 5px;}.transmission-incoming-actions .transmission-received-decline{grid-column:1/-1;}}
+
+/* Hidden until a real unread signal arrives. */
+.transmission-incoming-panel[hidden]{display:none !important;}
