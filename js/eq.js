@@ -87,6 +87,24 @@ export class AudioAnalyzer {
             return true;
         } catch (error) {
             console.error('Frequency analyzer initialization failed:', error);
+
+            // If graph construction failed after creating the media source,
+            // restore a direct audio route so playback cannot become silent.
+            try {
+                if (this.source && this.audioCtx) {
+                    this.source.disconnect();
+                    this.source.connect(this.audioCtx.destination);
+                    this.audioElement.muted = false;
+                    this.audioElement.volume = 1;
+                    this.initializing = false;
+                    this.isInitialized = false;
+                    this.audioCtx.resume().catch(() => {});
+                    return true;
+                }
+            } catch (fallbackError) {
+                console.warn('Direct audio fallback failed:', fallbackError);
+            }
+
             this.initializing = false;
             this.isInitialized = false;
             window.frequencyAnalyzer = this;
