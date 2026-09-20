@@ -194,6 +194,9 @@ async function getProfileUsername() {
 
 async function profile() {
     profileUsername = authUser ? await getProfileUsername() : '';
+    const origin = $('transmission-origin-name');
+    if (origin) origin.textContent = profileUsername || 'USERNAME NOT SET';
+    profileUsername = authUser ? await getProfileUsername() : '';
     $('profile-title').textContent = authUser
         ? (profileUsername ? '@' + profileUsername : 'USERNAME NOT SET')
         : 'PRIVATE SESSION';
