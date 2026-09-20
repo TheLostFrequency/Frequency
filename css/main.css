@@ -44,8 +44,8 @@ body:has(#room-collection.active-room) .player-dock{display:grid;}
 
 /* FREQUENCY // ROOMS FILL THE FORMER PLAYER AREA */
 .facility-main{
-    height:calc(100vh - 74px);
+    height:calc(100vh - 76px);
 }
 @media(max-width:900px){
-    .facility-main{height:calc(100vh - 68px);}
+    .facility-main{height:calc(100vh - 62px);}
 }
