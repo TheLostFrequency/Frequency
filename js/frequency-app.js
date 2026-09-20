@@ -700,19 +700,27 @@ function showTransmissionResults(rows) {
     transmissionResults.style.display = 'block';
     transmissionResults.setAttribute('aria-hidden', 'false');
 
-    transmissionResults.querySelectorAll('.transmission-user-result').forEach(button => {
-        button.addEventListener('click', () => {
-            const username = button.dataset.username;
-            transmissionRecipientId = button.dataset.userId;
-            transmissionRecipientUsername = username;
-            transmissionDestination.textContent = '@' + username;
-            syncTransmissionDestination();
-            transmissionSearch.value = username;
-            hideTransmissionResults();
-            transmissionSearch.blur();
-            toast('Destination locked: @' + username);
-        });
-    });
+    // Use delegated selection so the username result remains clickable even
+    // when the result list is rebuilt by a new search.
+    transmissionResults.onclick = event => {
+        const button = event.target.closest('.transmission-user-result');
+        if (!button || !transmissionResults.contains(button)) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const username = button.dataset.username || '';
+        const userId = button.dataset.userId || '';
+        if (!username || !userId) return;
+
+        transmissionRecipientId = userId;
+        transmissionRecipientUsername = username;
+        transmissionDestination.textContent = '@' + username;
+        syncTransmissionDestination();
+        transmissionSearch.value = username;
+        hideTransmissionResults();
+        transmissionSearch.blur();
+        toast('Destination locked: @' + username);
+    };
 }
 
 async function searchTransmissionUsers() {
