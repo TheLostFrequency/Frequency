@@ -120,13 +120,13 @@ body:has(#room-collection.active-room) .player-dock{display:grid;}
 
 /* FREQUENCY // HEADER LOGO: SLIGHTLY LARGER */
 .brand-mark img{
-    width:46px!important;
-    height:46px!important;
+    width:54px!important;
+    height:54px!important;
 }
 @media(max-width:650px){
     .brand-mark img{
-        width:42px!important;
-        height:42px!important;
+        width:50px!important;
+        height:50px!important;
     }
 }
 
