@@ -259,8 +259,20 @@ let incomingTransmissionPollTimer = null;
 
 function syncTransmissionDestination() {
     const label = '@' + (transmissionRecipientUsername || 'WAITING');
-    transmissionDestination.textContent = label;
-    $('transmission-picker-destination').textContent = label;
+    if (transmissionDestination) transmissionDestination.textContent = label;
+    const pickerDestination = $('transmission-picker-destination');
+    if (pickerDestination) pickerDestination.textContent = label;
+
+    const state = document.querySelector('.transmission-state');
+    if (state) {
+        state.textContent = transmissionRecipientId ? 'DESTINATION LOCKED' : 'READY';
+        state.classList.toggle('locked', !!transmissionRecipientId);
+    }
+
+    const status = $('transmission-status');
+    if (status && !transmissionTrack) {
+        status.textContent = transmissionRecipientId ? 'DESTINATION LOCKED // SELECT A SIGNAL' : 'READY TO TRANSMIT';
+    }
 }
 
 function renderTransmissionTracks() {
@@ -283,6 +295,10 @@ function renderTransmissionTracks() {
             transmissionTrack = playlist[Number(button.dataset.trackIndex)] || null;
             $('transmission-track-title').textContent = transmissionTrack?.title || 'SELECT A SIGNAL';
             $('transmission-track-artist').textContent = transmissionTrack?.artist || 'NO MUSIC SELECTED';
+            const art = $('transmission-track-art');
+            if (art) art.src = cover(transmissionTrack);
+            const status = $('transmission-status');
+            if (status) status.textContent = transmissionTrack ? 'SIGNAL ARMED // READY TO TRANSMIT' : 'READY TO TRANSMIT';
             renderTransmissionTracks();
             toast('Signal selected: ' + (transmissionTrack?.title || 'Untitled'));
         });
@@ -314,6 +330,8 @@ async function openTransmissionPicker() {
     if (transmissionTrack) {
         $('transmission-track-title').textContent = transmissionTrack.title || 'SELECT A SIGNAL';
         $('transmission-track-artist').textContent = transmissionTrack.artist || 'NO MUSIC SELECTED';
+        const art = $('transmission-track-art');
+        if (art) art.src = cover(transmissionTrack);
     }
 
     renderTransmissionTracks();
@@ -363,6 +381,7 @@ $('transmission-form').addEventListener('submit', async event => {
 
     $('transmission-dialog').close();
     button.disabled = false;
+    if ($('transmission-status')) $('transmission-status').textContent = 'SIGNAL TRANSMITTED // CHANNEL CLOSED';
     toast('Signal transmitted to @' + transmissionRecipientUsername + '.');
     const beam = $('transmission-beam');
     if (beam) {
@@ -683,7 +702,7 @@ function startIncomingTransmissionPolling() {
 
 const transmissionSearch = $('transmission-user-search');
 const transmissionResults = $('transmission-user-results');
-const transmissionDestination = $('transmission-destination');
+const transmissionDestination = $('transmission-destination-name');
 
 let transmissionSearchTimer = 0;
 
@@ -714,7 +733,7 @@ function showTransmissionResults(rows) {
 
         transmissionRecipientId = userId;
         transmissionRecipientUsername = username;
-        transmissionDestination.textContent = '@' + username;
+        if (transmissionDestination) transmissionDestination.textContent = '@' + username;
         syncTransmissionDestination();
         transmissionSearch.value = username;
         hideTransmissionResults();
