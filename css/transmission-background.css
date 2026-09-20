@@ -1282,3 +1282,87 @@
     #room-transmission .tx-status{bottom:44px;}
     #room-transmission .transmit-button{width:168px;height:30px;}
 }
+
+
+/* FREQUENCY // BEAM REWORK — clean vertical launch */
+#room-transmission #transmission-beam{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:40;
+    pointer-events:none;
+    overflow:visible;
+    display:block;
+}
+
+#room-transmission #transmission-beam .tx-beam-core,
+#room-transmission #transmission-beam .tx-beam-halo{
+    fill:none;
+    stroke-linecap:round;
+    stroke-dasharray:0 100;
+    stroke-dashoffset:0;
+    opacity:0;
+}
+
+#room-transmission #transmission-beam .tx-beam-core{
+    stroke:#ff5147;
+    stroke-width:.32;
+    filter:drop-shadow(0 0 2px #ff5147) drop-shadow(0 0 7px rgba(220,35,30,.9));
+}
+
+#room-transmission #transmission-beam .tx-beam-halo{
+    stroke:#d52c2d;
+    stroke-width:1.35;
+    filter:blur(1.4px);
+}
+
+#room-transmission #transmission-beam .tx-beam-origin{
+    fill:#fff4ef;
+    opacity:0;
+    filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px #ef302c);
+}
+
+#room-transmission #transmission-beam .tx-beam-pulse{
+    fill:none;
+    stroke:#ef302c;
+    stroke-width:.22;
+    opacity:0;
+}
+
+#room-transmission #transmission-beam.transmitting .tx-beam-core{
+    animation:frequencyBeamGrow .42s cubic-bezier(.18,.9,.2,1) both;
+}
+#room-transmission #transmission-beam.transmitting .tx-beam-halo{
+    animation:frequencyBeamGrowHalo .48s cubic-bezier(.18,.9,.2,1) both;
+}
+#room-transmission #transmission-beam.transmitting .tx-beam-origin{
+    animation:frequencyBeamFlash .48s ease-out both;
+}
+#room-transmission #transmission-beam.transmitting .tx-beam-pulse{
+    animation:frequencyBeamPulse .48s ease-out both;
+}
+
+@keyframes frequencyBeamGrow{
+    0%{stroke-dasharray:0 100;opacity:0}
+    8%{opacity:1}
+    100%{stroke-dasharray:100 0;opacity:0}
+}
+@keyframes frequencyBeamGrowHalo{
+    0%{stroke-dasharray:0 100;opacity:0}
+    8%{opacity:.8}
+    85%{opacity:.48}
+    100%{stroke-dasharray:100 0;opacity:0}
+}
+@keyframes frequencyBeamFlash{
+    0%{opacity:0;r:1}
+    12%{opacity:1;r:2.2}
+    42%{opacity:.9;r:1.4}
+    100%{opacity:0;r:.7}
+}
+@keyframes frequencyBeamPulse{
+    0%{opacity:0;r:1}
+    12%{opacity:1;r:2}
+    50%{opacity:.35;r:5}
+    100%{opacity:0;r:8}
+}
