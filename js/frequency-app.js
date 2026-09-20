@@ -359,6 +359,120 @@ $('transmission-form').addEventListener('submit', async event => {
     }
 });
 
+async function saveTransmissionToCollection(item, button) {
+    if (!authUser || !supabase || !item?.audio_path) return false;
+
+    const { data: existing, error: existingError } = await supabase
+        .from('tracks')
+        .select('id')
+        .eq('user_id', authUser.id)
+        .eq('audio_path', item.audio_path)
+        .limit(1);
+
+    if (existingError) {
+        console.warn('Collection check failed:', existingError);
+        toast('Could not check your collection.');
+        return false;
+    }
+
+    if (existing?.length) {
+        toast('Signal is already in your collection.');
+        if (button) {
+            button.textContent = 'IN COLLECTION';
+            button.disabled = true;
+        }
+        return true;
+    }
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'SAVING...';
+    }
+
+    const { error } = await supabase.from('tracks').insert({
+        user_id: authUser.id,
+        title: item.title || 'Untitled',
+        artist: item.artist || 'Unknown Artist',
+        album: item.album || null,
+        audio_path: item.audio_path,
+        cover_path: item.cover_path || null
+    });
+
+    if (error) {
+        console.error('Save received signal failed:', error);
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'SAVE TO COLLECTION';
+        }
+        toast('Could not save signal: ' + (error.message || 'database error'));
+        return false;
+    }
+
+    if (button) {
+        button.textContent = 'IN COLLECTION';
+        button.disabled = true;
+    }
+    await load();
+    toast('Signal saved to your collection.');
+    return true;
+}
+
+async function playReceivedTransmission(item, row) {
+    if (!item?.audio_path) {
+        toast('This transmission has no audio signal.');
+        return false;
+    }
+
+    const url = await signedUrl('audio', item.audio_path);
+    if (!url) {
+        toast('Could not access the received signal audio.');
+        return false;
+    }
+
+    player.load({ audioUrl: url });
+    player.setMediaSessionTrack({
+        title: item.title || 'Untitled',
+        artist: item.artist || 'Unknown Artist',
+        album: item.album || 'Frequency',
+        artwork: item.cover_path ? ((await signedUrl('covers', item.cover_path)) || 'assets/default-art.jpg') : 'assets/default-art.jpg'
+    });
+
+    const ready = new Promise(resolve => {
+        const audio = player.audio;
+        const done = ok => { cleanup(); resolve(ok); };
+        const cleanup = () => {
+            audio.removeEventListener('canplay', onReady);
+            audio.removeEventListener('error', onError);
+        };
+        const onReady = () => done(true);
+        const onError = () => done(false);
+        audio.addEventListener('canplay', onReady, { once: true });
+        audio.addEventListener('error', onError, { once: true });
+        window.setTimeout(() => done(!!audio.readyState), 5000);
+    });
+
+    if (!(await ready)) {
+        toast('The received signal could not be loaded.');
+        return false;
+    }
+
+    await player.play();
+
+    if (!item.read_at) {
+        const update = await supabase.from('transmissions')
+            .update({ read_at: new Date().toISOString() })
+            .eq('id', item.id)
+            .eq('recipient_id', authUser.id);
+        if (!update.error && row) {
+            row.classList.remove('unread');
+            const label = row.querySelector('.micro-label');
+            if (label) label.textContent = 'RECEIVED SIGNAL';
+        }
+    }
+
+    return true;
+}
+
 async function loadIncomingTransmissions() {
     const container = $('transmission-incoming-list');
     const status = $('transmission-incoming-status');
@@ -382,32 +496,34 @@ async function loadIncomingTransmissions() {
     const names = Object.fromEntries((result.data || []).map(row => [row.id, row.username]));
     const unread = data.filter(item => !item.read_at).length;
     if (status) status.textContent = unread ? unread + ' UNREAD SIGNAL' + (unread === 1 ? '' : 'S') : 'ALL SIGNALS RECEIVED';
+
+    const artUrls = Object.fromEntries(await Promise.all(data.filter(item => item.cover_path).map(async item => [item.id, await signedUrl('covers', item.cover_path)])));
+
     container.innerHTML = data.map(item => {
         const sender = names[item.sender_id] || 'UNKNOWN STATION';
+        const inCollection = playlist.some(track => track.audio_path === item.audio_path);
         return '<article class="transmission-incoming-item ' + (!item.read_at ? 'unread' : '') + '" data-transmission-id="' + esc(item.id) + '">' +
-            '<div class="transmission-incoming-art"><img src="assets/default-art.jpg" alt=""></div>' +
+            '<div class="transmission-incoming-art"><img src="' + esc(artUrls[item.id] || 'assets/default-art.jpg') + '" alt=""></div>' +
             '<div class="transmission-incoming-copy"><span class="micro-label">' + (!item.read_at ? 'INCOMING SIGNAL' : 'RECEIVED SIGNAL') + '</span>' +
             '<strong>' + esc(item.title || 'UNTITLED SIGNAL') + '</strong><small>' + esc(item.artist || 'UNKNOWN ARTIST') + ' // FROM @' + esc(sender) + '</small>' +
             (item.message ? '<p>' + esc(item.message) + '</p>' : '') + '</div>' +
-            '<button type="button" class="room-action transmission-received-play">PLAY SIGNAL</button></article>';
+            '<div class="transmission-incoming-actions">' +
+            '<button type="button" class="room-action transmission-received-play">PLAY SIGNAL</button>' +
+            '<button type="button" class="room-action transmission-received-save" ' + (inCollection ? 'disabled' : '') + '>' + (inCollection ? 'IN COLLECTION' : 'SAVE TO COLLECTION') + '</button>' +
+            '</div></article>';
     }).join('');
-    container.querySelectorAll('.transmission-received-play').forEach(button => {
-        button.addEventListener('click', async () => {
-            const row = button.closest('[data-transmission-id]');
-            const item = data.find(entry => entry.id === row?.dataset.transmissionId);
-            if (!item?.audio_path) return;
-            const url = await signedUrl('audio', item.audio_path);
-            if (!url) { toast('Could not open the received signal.'); return; }
-            player.load({ audioUrl: url });
-            player.setMediaSessionTrack({ title: item.title || 'Untitled', artist: item.artist || 'Unknown Artist', album: item.album || 'Frequency', artwork: 'assets/default-art.jpg' });
-            await player.play();
-            if (!item.read_at) {
-                const update = await supabase.from('transmissions').update({ read_at: new Date().toISOString() }).eq('id', item.id).eq('recipient_id', authUser.id);
-                if (!update.error) {
-                    row.classList.remove('unread');
-                    row.querySelector('.micro-label').textContent = 'RECEIVED SIGNAL';
-                }
-            }
+
+    container.querySelectorAll('.transmission-incoming-item').forEach(row => {
+        const item = data.find(entry => entry.id === row?.dataset.transmissionId);
+        row.querySelector('.transmission-received-play')?.addEventListener('click', async event => {
+            event.currentTarget.disabled = true;
+            event.currentTarget.textContent = 'LOADING...';
+            const ok = await playReceivedTransmission(item, row);
+            event.currentTarget.disabled = false;
+            event.currentTarget.textContent = ok ? 'PLAY SIGNAL' : 'RETRY SIGNAL';
+        });
+        row.querySelector('.transmission-received-save')?.addEventListener('click', async event => {
+            await saveTransmissionToCollection(item, event.currentTarget);
         });
     });
 }
