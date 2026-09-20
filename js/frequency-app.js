@@ -459,6 +459,11 @@ async function handleIncomingTransmission(item, action, row) {
 async function saveTransmissionToCollection(item, button) {
     if (!authUser || !supabase || !item?.audio_path) return false;
 
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'ACCEPTING...';
+    }
+
     const { data: existing, error: existingError } = await supabase
         .from('tracks')
         .select('id, audio_path, cover_path')
@@ -467,37 +472,12 @@ async function saveTransmissionToCollection(item, button) {
         .limit(1);
 
     if (existingError) {
-        console.warn('Collection check failed:', existingError);
-        toast('Could not check your collection.');
-        return false;
-    }
-
-    if (button) {
-        button.disabled = true;
-        button.textContent = 'COPYING...';
-    }
-
-    // IMPORTANT: the sender's storage path cannot become the recipient's
-    // permanent track path. Copy the actual bytes through Supabase Storage
-    // while the transmission access policy is active.
-    let audioBlob;
-    try {
-        const { data: downloadedAudio, error: downloadError } = await supabase
-            .storage.from('audio')
-            .download(item.audio_path);
-
-        if (downloadError || !downloadedAudio) {
-            throw downloadError || new Error('Audio download returned no data.');
-        }
-
-        audioBlob = downloadedAudio;
-    } catch (error) {
-        console.error('Received audio download failed:', error);
+        console.error('Collection check failed:', existingError);
         if (button) {
             button.disabled = false;
             button.textContent = 'ACCEPT SIGNAL';
         }
-        toast('Could not copy the transmitted audio.');
+        toast('Could not check your collection: ' + (existingError.message || 'database error'));
         return false;
     }
 
@@ -506,57 +486,45 @@ async function saveTransmissionToCollection(item, button) {
     const base = authUser.id + '/' + crypto.randomUUID();
     const recipientAudioPath = base + '-' + safeAudioName;
 
-    const audioUpload = await supabase.storage.from('audio').upload(
-        recipientAudioPath,
-        audioBlob,
-        { contentType: audioBlob.type || 'audio/mpeg', upsert: false }
+    // Copy inside Supabase Storage instead of downloading the sender's file
+    // into the browser. Storage copy preserves the file and makes the new
+    // object owned by the accepting user.
+    const audioCopy = await supabase.storage.from('audio').copy(
+        item.audio_path,
+        recipientAudioPath
     );
 
-    if (audioUpload.error) {
-        console.error('Received audio copy failed:', audioUpload.error);
+    if (audioCopy.error) {
+        console.error('Received audio copy failed:', audioCopy.error);
         if (button) {
             button.disabled = false;
             button.textContent = 'ACCEPT SIGNAL';
         }
-        toast('Could not store the received audio.');
+        toast('Could not accept signal: ' + (audioCopy.error.message || 'audio transfer failed'));
         return false;
     }
 
     let recipientCoverPath = null;
 
     if (item.cover_path) {
-        try {
-            const { data: downloadedCover, error: coverDownloadError } = await supabase
-                .storage.from('covers')
-                .download(item.cover_path);
+        const sourceCoverName = item.cover_path.split('/').pop() || 'cover.jpg';
+        const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
+        recipientCoverPath = base + '-' + safeCoverName;
 
-            if (!coverDownloadError && downloadedCover) {
-                const sourceCoverName = item.cover_path.split('/').pop() || 'cover.jpg';
-                const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
-                recipientCoverPath = base + '-' + safeCoverName;
+        const coverCopy = await supabase.storage.from('covers').copy(
+            item.cover_path,
+            recipientCoverPath
+        );
 
-                const coverUpload = await supabase.storage.from('covers').upload(
-                    recipientCoverPath,
-                    downloadedCover,
-                    { contentType: downloadedCover.type || 'image/jpeg', upsert: false }
-                );
-
-                if (coverUpload.error) {
-                    console.warn('Received cover copy failed:', coverUpload.error);
-                    recipientCoverPath = null;
-                }
-            }
-        } catch (error) {
-            console.warn('Received cover download failed:', error);
+        if (coverCopy.error) {
+            console.warn('Received cover copy failed:', coverCopy.error);
+            recipientCoverPath = null;
         }
     }
 
     let saveError = null;
 
     if (existing?.length) {
-        // Repair older test transmissions that were previously saved with
-        // the sender's path. This makes the existing broken test songs
-        // playable without requiring the user to delete them first.
         const result = await supabase.from('tracks')
             .update({
                 audio_path: recipientAudioPath,
@@ -861,15 +829,13 @@ async function repairAcceptedTransmissionTracks() {
 
     const { data: transmissions, error: transmissionError } = await supabase
         .from('transmissions')
-        .select('id, audio_path, cover_path, title, artist, album')
+        .select('id, audio_path, cover_path')
         .eq('recipient_id', authUser.id)
         .order('created_at', { ascending: true });
 
     if (transmissionError || !transmissions?.length) return 0;
 
-    const sourcePaths = [...new Set(
-        transmissions.map(item => item.audio_path).filter(Boolean)
-    )];
+    const sourcePaths = [...new Set(transmissions.map(item => item.audio_path).filter(Boolean))];
 
     const { data: brokenTracks, error: trackError } = await supabase
         .from('tracks')
@@ -885,33 +851,18 @@ async function repairAcceptedTransmissionTracks() {
         const transmission = transmissions.find(item => item.audio_path === track.audio_path);
         if (!transmission) continue;
 
-        // A playable collection copy must live inside this user's own
-        // private storage folder. Older accepted transmissions used the
-        // sender's path, so copy those files into the recipient's folder.
         const base = authUser.id + '/' + crypto.randomUUID();
         const sourceName = track.audio_path.split('/').pop() || 'signal.mp3';
         const safeAudioName = sourceName.replace(/[^a-z0-9._-]/gi, '_');
         const recipientAudioPath = base + '-' + safeAudioName;
 
-        const { data: audioBlob, error: audioDownloadError } = await supabase
-            .storage.from('audio')
-            .download(track.audio_path);
+        const audioCopy = await supabase.storage.from('audio').copy(
+            track.audio_path,
+            recipientAudioPath
+        );
 
-        if (audioDownloadError || !audioBlob) {
-            console.warn('Could not repair transmitted audio:', audioDownloadError);
-            continue;
-        }
-
-        const { error: audioUploadError } = await supabase
-            .storage.from('audio')
-            .upload(
-                recipientAudioPath,
-                audioBlob,
-                { contentType: audioBlob.type || 'audio/mpeg', upsert: false }
-            );
-
-        if (audioUploadError) {
-            console.warn('Could not store repaired transmitted audio:', audioUploadError);
+        if (audioCopy.error) {
+            console.warn('Could not repair transmitted audio:', audioCopy.error);
             continue;
         }
 
@@ -920,25 +871,16 @@ async function repairAcceptedTransmissionTracks() {
         if (track.cover_path) {
             const sourceCoverName = track.cover_path.split('/').pop() || 'cover.jpg';
             const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
+            recipientCoverPath = base + '-' + safeCoverName;
 
-            const { data: coverBlob, error: coverDownloadError } = await supabase
-                .storage.from('covers')
-                .download(track.cover_path);
+            const coverCopy = await supabase.storage.from('covers').copy(
+                track.cover_path,
+                recipientCoverPath
+            );
 
-            if (!coverDownloadError && coverBlob) {
-                recipientCoverPath = base + '-' + safeCoverName;
-                const { error: coverUploadError } = await supabase
-                    .storage.from('covers')
-                    .upload(
-                        recipientCoverPath,
-                        coverBlob,
-                        { contentType: coverBlob.type || 'image/jpeg', upsert: false }
-                    );
-
-                if (coverUploadError) {
-                    console.warn('Could not store repaired transmitted cover:', coverUploadError);
-                    recipientCoverPath = null;
-                }
+            if (coverCopy.error) {
+                console.warn('Could not repair transmitted cover:', coverCopy.error);
+                recipientCoverPath = null;
             }
         }
 
@@ -954,9 +896,7 @@ async function repairAcceptedTransmissionTracks() {
         if (updateError) {
             console.warn('Could not update repaired track:', updateError);
             await supabase.storage.from('audio').remove([recipientAudioPath]);
-            if (recipientCoverPath) {
-                await supabase.storage.from('covers').remove([recipientCoverPath]);
-            }
+            if (recipientCoverPath) await supabase.storage.from('covers').remove([recipientCoverPath]);
             continue;
         }
 
