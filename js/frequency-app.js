@@ -442,17 +442,97 @@ async function saveTransmissionToCollection(item, button) {
         button.textContent = 'SAVING...';
     }
 
+    // A received song must become a real copy in the recipient's private
+    // storage. The sender's original storage path is inside the sender's
+    // private folder, so simply saving that path to the recipient's tracks
+    // table would make the song appear in the collection but fail playback.
+    const sourceAudioUrl = await signedUrl('audio', item.audio_path);
+    if (!sourceAudioUrl) {
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'ACCEPT SIGNAL';
+        }
+        toast('Could not access the transmitted audio.');
+        return false;
+    }
+
+    let audioBlob;
+    try {
+        const response = await fetch(sourceAudioUrl);
+        if (!response.ok) throw new Error('Audio download returned HTTP ' + response.status);
+        audioBlob = await response.blob();
+    } catch (error) {
+        console.error('Received audio download failed:', error);
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'ACCEPT SIGNAL';
+        }
+        toast('Could not copy the transmitted audio.');
+        return false;
+    }
+
+    const sourceName = item.audio_path.split('/').pop() || 'signal.mp3';
+    const safeAudioName = sourceName.replace(/[^a-z0-9._-]/gi, '_');
+    const base = authUser.id + '/' + crypto.randomUUID();
+    const recipientAudioPath = base + '-' + safeAudioName;
+
+    const audioUpload = await supabase.storage.from('audio').upload(
+        recipientAudioPath,
+        audioBlob,
+        { contentType: audioBlob.type || 'audio/mpeg', upsert: false }
+    );
+
+    if (audioUpload.error) {
+        console.error('Received audio copy failed:', audioUpload.error);
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'ACCEPT SIGNAL';
+        }
+        toast('Could not store the received audio.');
+        return false;
+    }
+
+    let recipientCoverPath = null;
+    if (item.cover_path) {
+        const sourceCoverUrl = await signedUrl('covers', item.cover_path);
+        if (sourceCoverUrl) {
+            try {
+                const response = await fetch(sourceCoverUrl);
+                if (response.ok) {
+                    const coverBlob = await response.blob();
+                    const sourceCoverName = item.cover_path.split('/').pop() || 'cover.jpg';
+                    const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
+                    recipientCoverPath = base + '-' + safeCoverName;
+                    const coverUpload = await supabase.storage.from('covers').upload(
+                        recipientCoverPath,
+                        coverBlob,
+                        { contentType: coverBlob.type || 'image/jpeg', upsert: false }
+                    );
+                    if (coverUpload.error) {
+                        console.warn('Received cover copy failed:', coverUpload.error);
+                        recipientCoverPath = null;
+                    }
+                }
+            } catch (error) {
+                console.warn('Received cover download failed:', error);
+            }
+        }
+    }
+
     const { error } = await supabase.from('tracks').insert({
         user_id: authUser.id,
         title: item.title || 'Untitled',
         artist: item.artist || 'Unknown Artist',
         album: item.album || null,
-        audio_path: item.audio_path,
-        cover_path: item.cover_path || null
+        audio_path: recipientAudioPath,
+        cover_path: recipientCoverPath
     });
 
     if (error) {
         console.error('Save received signal failed:', error);
+        // Clean up the copied audio if the database insert fails.
+        await supabase.storage.from('audio').remove([recipientAudioPath]);
+        if (recipientCoverPath) await supabase.storage.from('covers').remove([recipientCoverPath]);
         if (button) {
             button.disabled = false;
             button.textContent = 'ACCEPT SIGNAL';
