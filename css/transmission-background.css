@@ -1140,3 +1140,145 @@
 
 /* Incoming receiver stays temporary and only appears for real unread signals. */
 .transmission-incoming-panel[hidden]{display:none!important}
+
+
+/* FREQUENCY // TRANSMISSION FINAL LAYOUT */
+#room-transmission .transmission-console{
+    top:78%;
+    width:min(1040px,78vw);
+    height:300px;
+    padding:18px 30px 16px;
+}
+
+/* The old header strip is intentionally gone. */
+#room-transmission .tx-heading{
+    margin-top:0;
+}
+#room-transmission .tx-heading .micro-label{
+    position:relative;
+    top:-3px;
+}
+#room-transmission .tx-origin > span{
+    transform:translateY(5px);
+}
+
+/* Compact vertical layout for the shorter console. */
+#room-transmission .tx-route{
+    top:72px;
+    height:38px;
+}
+#room-transmission .transmission-search-block{
+    top:126px;
+}
+#room-transmission .tx-signal-window{
+    top:126px;
+    height:105px;
+    grid-template-columns:92px 1fr;
+}
+#room-transmission .transmission-art-panel{
+    width:72px;
+    height:72px;
+    margin:22px 10px 10px;
+}
+#room-transmission .transmission-audio-panel{
+    margin-top:30px;
+}
+#room-transmission .tx-status{
+    bottom:50px;
+}
+#room-transmission .transmit-button{
+    bottom:12px;
+    height:34px;
+}
+
+/* Remove the decorative red wavelength graphic entirely. */
+#room-transmission .transmission-waveform{
+    display:none !important;
+}
+
+/* Straight-up launch: the signal fires from the console toward the top of the chamber. */
+#room-transmission .transmission-beam{
+    z-index:20;
+}
+#room-transmission .tx-beam-core,
+#room-transmission .tx-beam-halo{
+    stroke-dasharray:12 88;
+    stroke-dashoffset:100;
+}
+#room-transmission .tx-beam-core{
+    stroke:url(#tx-beam-gradient);
+    stroke-width:.48;
+    filter:none;
+}
+#room-transmission .tx-beam-halo{
+    stroke:#d7282c;
+    stroke-width:1.8;
+    filter:blur(1.5px);
+}
+#room-transmission .transmission-beam.transmitting .tx-beam-core{
+    animation:txBeamShootUp .58s linear both;
+}
+#room-transmission .transmission-beam.transmitting .tx-beam-halo{
+    animation:txBeamShootUpHalo .58s linear both;
+}
+#room-transmission .transmission-beam.transmitting .tx-beam-origin{
+    animation:txBeamOriginUp .58s ease-out both;
+}
+#room-transmission .transmission-beam.transmitting .tx-beam-pulse{
+    animation:txBeamPulseUp .58s ease-out both;
+}
+@keyframes txBeamShootUp{
+    0%{stroke-dashoffset:100;opacity:0}
+    6%{opacity:1}
+    78%{stroke-dashoffset:12;opacity:1}
+    100%{stroke-dashoffset:-12;opacity:0}
+}
+@keyframes txBeamShootUpHalo{
+    0%{stroke-dashoffset:100;opacity:0}
+    7%{opacity:.72}
+    75%{stroke-dashoffset:12;opacity:.45}
+    100%{stroke-dashoffset:-12;opacity:0}
+}
+@keyframes txBeamOriginUp{
+    0%{opacity:0;transform:scale(.7);transform-origin:50% 78%}
+    10%{opacity:1;transform:scale(1.8)}
+    38%{opacity:.8;transform:scale(1)}
+    100%{opacity:0;transform:scale(.5)}
+}
+@keyframes txBeamPulseUp{
+    0%{opacity:0;r:1}
+    10%{opacity:1;r:2}
+    45%{opacity:.45;r:3.5}
+    100%{opacity:0;r:6}
+}
+
+/* SVG beam is vertical now, starting at the console and firing upward. */
+#room-transmission #transmission-beam .tx-beam-core,
+#room-transmission #transmission-beam .tx-beam-halo{
+    vector-effect:non-scaling-stroke;
+}
+
+@media(max-width:720px){
+    #room-transmission .transmission-console{
+        top:77%;
+        width:94vw;
+        height:270px;
+        padding:16px 18px 14px;
+    }
+    #room-transmission .tx-route{left:18px;right:18px;top:66px;}
+    #room-transmission .transmission-search-block{left:18px;top:116px;width:39%;}
+    #room-transmission .tx-signal-window{right:18px;top:116px;width:54%;height:98px;grid-template-columns:64px 1fr;}
+    #room-transmission .transmission-art-panel{width:52px;height:52px;margin:25px 6px 8px;}
+    #room-transmission .transmission-audio-panel{margin:27px 8px 8px 0;padding-left:8px;}
+    #room-transmission .transmission-audio-panel strong{font-size:9px;}
+    #room-transmission .tx-status{left:18px;right:18px;bottom:47px;}
+    #room-transmission .transmit-button{right:18px;bottom:12px;width:180px;height:32px;}
+}
+@media(max-width:430px){
+    #room-transmission .transmission-console{top:76%;height:255px;}
+    #room-transmission .tx-route{top:62px;}
+    #room-transmission .transmission-search-block{top:108px;}
+    #room-transmission .tx-signal-window{top:108px;height:90px;}
+    #room-transmission .tx-status{bottom:44px;}
+    #room-transmission .transmit-button{width:168px;height:30px;}
+}
