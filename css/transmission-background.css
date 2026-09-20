@@ -89,6 +89,13 @@
     left:6.8%;
     top:48%;
     width:27%;
+    z-index:30;
+}
+
+.transmission-search-block,
+.transmission-results,
+.transmission-user-result {
+    pointer-events:auto;
 }
 .transmission-search-block label {
     display:block;
