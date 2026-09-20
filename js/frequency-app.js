@@ -418,7 +418,7 @@ async function saveTransmissionToCollection(item, button) {
 
     const { data: existing, error: existingError } = await supabase
         .from('tracks')
-        .select('id')
+        .select('id, audio_path, cover_path')
         .eq('user_id', authUser.id)
         .eq('audio_path', item.audio_path)
         .limit(1);
@@ -429,38 +429,25 @@ async function saveTransmissionToCollection(item, button) {
         return false;
     }
 
-    if (existing?.length) {
-        if (button) {
-            button.textContent = 'IN COLLECTION';
-            button.disabled = true;
-        }
-        return true;
-    }
-
     if (button) {
         button.disabled = true;
-        button.textContent = 'SAVING...';
+        button.textContent = 'COPYING...';
     }
 
-    // A received song must become a real copy in the recipient's private
-    // storage. The sender's original storage path is inside the sender's
-    // private folder, so simply saving that path to the recipient's tracks
-    // table would make the song appear in the collection but fail playback.
-    const sourceAudioUrl = await signedUrl('audio', item.audio_path);
-    if (!sourceAudioUrl) {
-        if (button) {
-            button.disabled = false;
-            button.textContent = 'ACCEPT SIGNAL';
-        }
-        toast('Could not access the transmitted audio.');
-        return false;
-    }
-
+    // IMPORTANT: the sender's storage path cannot become the recipient's
+    // permanent track path. Copy the actual bytes through Supabase Storage
+    // while the transmission access policy is active.
     let audioBlob;
     try {
-        const response = await fetch(sourceAudioUrl);
-        if (!response.ok) throw new Error('Audio download returned HTTP ' + response.status);
-        audioBlob = await response.blob();
+        const { data: downloadedAudio, error: downloadError } = await supabase
+            .storage.from('audio')
+            .download(item.audio_path);
+
+        if (downloadError || !downloadedAudio) {
+            throw downloadError || new Error('Audio download returned no data.');
+        }
+
+        audioBlob = downloadedAudio;
     } catch (error) {
         console.error('Received audio download failed:', error);
         if (button) {
@@ -493,51 +480,71 @@ async function saveTransmissionToCollection(item, button) {
     }
 
     let recipientCoverPath = null;
+
     if (item.cover_path) {
-        const sourceCoverUrl = await signedUrl('covers', item.cover_path);
-        if (sourceCoverUrl) {
-            try {
-                const response = await fetch(sourceCoverUrl);
-                if (response.ok) {
-                    const coverBlob = await response.blob();
-                    const sourceCoverName = item.cover_path.split('/').pop() || 'cover.jpg';
-                    const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
-                    recipientCoverPath = base + '-' + safeCoverName;
-                    const coverUpload = await supabase.storage.from('covers').upload(
-                        recipientCoverPath,
-                        coverBlob,
-                        { contentType: coverBlob.type || 'image/jpeg', upsert: false }
-                    );
-                    if (coverUpload.error) {
-                        console.warn('Received cover copy failed:', coverUpload.error);
-                        recipientCoverPath = null;
-                    }
+        try {
+            const { data: downloadedCover, error: coverDownloadError } = await supabase
+                .storage.from('covers')
+                .download(item.cover_path);
+
+            if (!coverDownloadError && downloadedCover) {
+                const sourceCoverName = item.cover_path.split('/').pop() || 'cover.jpg';
+                const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
+                recipientCoverPath = base + '-' + safeCoverName;
+
+                const coverUpload = await supabase.storage.from('covers').upload(
+                    recipientCoverPath,
+                    downloadedCover,
+                    { contentType: downloadedCover.type || 'image/jpeg', upsert: false }
+                );
+
+                if (coverUpload.error) {
+                    console.warn('Received cover copy failed:', coverUpload.error);
+                    recipientCoverPath = null;
                 }
-            } catch (error) {
-                console.warn('Received cover download failed:', error);
             }
+        } catch (error) {
+            console.warn('Received cover download failed:', error);
         }
     }
 
-    const { error } = await supabase.from('tracks').insert({
-        user_id: authUser.id,
-        title: item.title || 'Untitled',
-        artist: item.artist || 'Unknown Artist',
-        album: item.album || null,
-        audio_path: recipientAudioPath,
-        cover_path: recipientCoverPath
-    });
+    let saveError = null;
 
-    if (error) {
-        console.error('Save received signal failed:', error);
-        // Clean up the copied audio if the database insert fails.
+    if (existing?.length) {
+        // Repair older test transmissions that were previously saved with
+        // the sender's path. This makes the existing broken test songs
+        // playable without requiring the user to delete them first.
+        const result = await supabase.from('tracks')
+            .update({
+                audio_path: recipientAudioPath,
+                cover_path: recipientCoverPath
+            })
+            .eq('id', existing[0].id)
+            .eq('user_id', authUser.id);
+
+        saveError = result.error;
+    } else {
+        const result = await supabase.from('tracks').insert({
+            user_id: authUser.id,
+            title: item.title || 'Untitled',
+            artist: item.artist || 'Unknown Artist',
+            album: item.album || null,
+            audio_path: recipientAudioPath,
+            cover_path: recipientCoverPath
+        });
+
+        saveError = result.error;
+    }
+
+    if (saveError) {
+        console.error('Save received signal failed:', saveError);
         await supabase.storage.from('audio').remove([recipientAudioPath]);
         if (recipientCoverPath) await supabase.storage.from('covers').remove([recipientCoverPath]);
         if (button) {
             button.disabled = false;
             button.textContent = 'ACCEPT SIGNAL';
         }
-        toast('Could not save signal: ' + (error.message || 'database error'));
+        toast('Could not save signal: ' + (saveError.message || 'database error'));
         return false;
     }
 
@@ -545,6 +552,7 @@ async function saveTransmissionToCollection(item, button) {
         button.textContent = 'IN COLLECTION';
         button.disabled = true;
     }
+
     await load();
     return true;
 }
