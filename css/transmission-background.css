@@ -324,3 +324,53 @@
     .transmission-audio-panel strong { font-size:7px; }
     .transmission-status-line strong { font-size:7px; }
 }
+
+
+/* Signal launch — the beam physically travels outward from the console when a transmission is sent. */
+#room-transmission .transmission-beam {
+    overflow:visible;
+    mix-blend-mode:screen;
+}
+
+#room-transmission .transmission-beam path {
+    stroke:#d52d2d;
+    stroke-width:.18;
+    stroke-linecap:round;
+    stroke-dasharray:14 86;
+    stroke-dashoffset:100;
+    opacity:0;
+    filter:
+        drop-shadow(0 0 2px rgba(255,70,55,.95))
+        drop-shadow(0 0 7px rgba(210,30,30,.65))
+        drop-shadow(0 0 14px rgba(160,20,20,.35));
+}
+
+#room-transmission .transmission-beam circle {
+    fill:#ff5145;
+    opacity:0;
+    filter:
+        drop-shadow(0 0 3px rgba(255,80,65,1))
+        drop-shadow(0 0 9px rgba(210,30,30,.8));
+}
+
+#room-transmission .transmission-beam.transmitting path {
+    animation: frequencySignalLaunch .72s cubic-bezier(.15,.8,.25,1) both;
+}
+
+#room-transmission .transmission-beam.transmitting circle {
+    animation: frequencySignalOrigin .72s ease-out both;
+}
+
+@keyframes frequencySignalLaunch {
+    0% { stroke-dashoffset:100; opacity:0; }
+    8% { opacity:1; }
+    70% { opacity:.95; }
+    100% { stroke-dashoffset:0; opacity:0; }
+}
+
+@keyframes frequencySignalOrigin {
+    0% { opacity:0; r:1.1; }
+    10% { opacity:1; r:1.7; }
+    38% { opacity:.8; r:1.1; }
+    100% { opacity:0; r:.6; }
+}
