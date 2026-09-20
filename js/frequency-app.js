@@ -805,6 +805,116 @@ $('auth-signup').addEventListener('click', async () => {
     }
 });
 
+async function repairAcceptedTransmissionTracks() {
+    if (!supabase || !authUser) return 0;
+
+    const { data: transmissions, error: transmissionError } = await supabase
+        .from('transmissions')
+        .select('id, audio_path, cover_path, title, artist, album')
+        .eq('recipient_id', authUser.id)
+        .order('created_at', { ascending: true });
+
+    if (transmissionError || !transmissions?.length) return 0;
+
+    const sourcePaths = [...new Set(
+        transmissions.map(item => item.audio_path).filter(Boolean)
+    )];
+
+    const { data: brokenTracks, error: trackError } = await supabase
+        .from('tracks')
+        .select('id, title, artist, album, audio_path, cover_path')
+        .eq('user_id', authUser.id)
+        .in('audio_path', sourcePaths);
+
+    if (trackError || !brokenTracks?.length) return 0;
+
+    let repaired = 0;
+
+    for (const track of brokenTracks) {
+        const transmission = transmissions.find(item => item.audio_path === track.audio_path);
+        if (!transmission) continue;
+
+        // A playable collection copy must live inside this user's own
+        // private storage folder. Older accepted transmissions used the
+        // sender's path, so copy those files into the recipient's folder.
+        const base = authUser.id + '/' + crypto.randomUUID();
+        const sourceName = track.audio_path.split('/').pop() || 'signal.mp3';
+        const safeAudioName = sourceName.replace(/[^a-z0-9._-]/gi, '_');
+        const recipientAudioPath = base + '-' + safeAudioName;
+
+        const { data: audioBlob, error: audioDownloadError } = await supabase
+            .storage.from('audio')
+            .download(track.audio_path);
+
+        if (audioDownloadError || !audioBlob) {
+            console.warn('Could not repair transmitted audio:', audioDownloadError);
+            continue;
+        }
+
+        const { error: audioUploadError } = await supabase
+            .storage.from('audio')
+            .upload(
+                recipientAudioPath,
+                audioBlob,
+                { contentType: audioBlob.type || 'audio/mpeg', upsert: false }
+            );
+
+        if (audioUploadError) {
+            console.warn('Could not store repaired transmitted audio:', audioUploadError);
+            continue;
+        }
+
+        let recipientCoverPath = null;
+
+        if (track.cover_path) {
+            const sourceCoverName = track.cover_path.split('/').pop() || 'cover.jpg';
+            const safeCoverName = sourceCoverName.replace(/[^a-z0-9._-]/gi, '_');
+
+            const { data: coverBlob, error: coverDownloadError } = await supabase
+                .storage.from('covers')
+                .download(track.cover_path);
+
+            if (!coverDownloadError && coverBlob) {
+                recipientCoverPath = base + '-' + safeCoverName;
+                const { error: coverUploadError } = await supabase
+                    .storage.from('covers')
+                    .upload(
+                        recipientCoverPath,
+                        coverBlob,
+                        { contentType: coverBlob.type || 'image/jpeg', upsert: false }
+                    );
+
+                if (coverUploadError) {
+                    console.warn('Could not store repaired transmitted cover:', coverUploadError);
+                    recipientCoverPath = null;
+                }
+            }
+        }
+
+        const { error: updateError } = await supabase
+            .from('tracks')
+            .update({
+                audio_path: recipientAudioPath,
+                cover_path: recipientCoverPath
+            })
+            .eq('id', track.id)
+            .eq('user_id', authUser.id);
+
+        if (updateError) {
+            console.warn('Could not update repaired track:', updateError);
+            await supabase.storage.from('audio').remove([recipientAudioPath]);
+            if (recipientCoverPath) {
+                await supabase.storage.from('covers').remove([recipientCoverPath]);
+            }
+            continue;
+        }
+
+        repaired++;
+    }
+
+    return repaired;
+}
+
 async function load() {
     if (!supabase || !authUser) {
         renderEmpty();
