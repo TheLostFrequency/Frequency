@@ -1,0 +1,227 @@
+/* FREQUENCY // FACILITY EXPERIENCE ENHANCEMENTS
+   Physical depth, restrained ambient motion, artifact presence, and tactile controls.
+*/
+:root{
+  --fx-red:#b52227;
+  --fx-red-hot:#e53a34;
+  --fx-metal:#242526;
+}
+
+/* The facility breathes very slowly instead of sitting perfectly still. */
+.facility-bg .facility-light-a{
+  animation:frequencyAmbientLightA 18s ease-in-out infinite alternate;
+}
+.facility-bg .facility-light-b{
+  animation:frequencyAmbientLightB 14s ease-in-out infinite alternate;
+}
+.facility-bg .facility-grid{
+  animation:frequencyGridDrift 26s linear infinite;
+}
+@keyframes frequencyAmbientLightA{
+  from{transform:translate3d(-1%,0,0) scale(.98);opacity:.13}
+  to{transform:translate3d(2%,1%,0) scale(1.04);opacity:.19}
+}
+@keyframes frequencyAmbientLightB{
+  from{transform:translate3d(0,-1%,0) scale(.96);opacity:.10}
+  to{transform:translate3d(-2%,2%,0) scale(1.06);opacity:.17}
+}
+@keyframes frequencyGridDrift{
+  from{background-position:0 0}
+  to{background-position:80px 80px}
+}
+
+/* Architectural edges gain a little physical depth. */
+.room-card,
+.eq-room-card,
+.transmission-console,
+.profile-card{
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.055),
+    inset 0 -24px 45px rgba(0,0,0,.28),
+    0 24px 70px rgba(0,0,0,.34);
+}
+.room-card::before,
+.eq-room-card::before,
+.transmission-console::before,
+.profile-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border:1px solid rgba(255,255,255,.025);
+  box-shadow:inset 0 0 35px rgba(255,255,255,.012);
+}
+
+/* Collection album artifact: quiet physical lift rather than a generic card hover. */
+#room-collection .hero-art .art-frame{
+  transition:transform .55s cubic-bezier(.2,.75,.2,1),box-shadow .55s ease,filter .55s ease;
+  box-shadow:
+    0 28px 70px rgba(0,0,0,.7),
+    inset 0 1px rgba(255,255,255,.12);
+}
+#room-collection .hero-art:hover .art-frame{
+  transform:translateY(-7px) scale(1.018);
+  filter:contrast(1.04);
+  box-shadow:
+    0 38px 90px rgba(0,0,0,.82),
+    0 0 34px rgba(160,24,24,.10),
+    inset 0 1px rgba(255,255,255,.16);
+}
+#room-collection .hero-art .art-glass{
+  transition:opacity .5s ease;
+}
+#room-collection .hero-art:hover .art-glass{
+  opacity:.72;
+}
+
+/* Song selector gets a machined/recessed feel. */
+#room-collection .song-selector{
+  box-shadow:
+    inset 10px 0 30px rgba(0,0,0,.42),
+    inset -1px 0 rgba(255,255,255,.06),
+    18px 20px 50px rgba(0,0,0,.34);
+}
+#room-collection .song-item{
+  transition:transform .3s ease,opacity .3s ease,color .3s ease,text-shadow .3s ease;
+}
+#room-collection .song-item:hover{
+  color:#fff;
+  text-shadow:0 0 12px rgba(255,255,255,.14);
+}
+
+/* Navigation feels like illuminated room controls. */
+.facility-nav .nav-tab{
+  position:relative;
+  transition:color .25s ease,opacity .25s ease,text-shadow .25s ease;
+}
+.facility-nav .nav-tab::after{
+  transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s ease;
+  transform-origin:left center;
+}
+.facility-nav .nav-tab:hover{
+  text-shadow:0 0 14px rgba(255,255,255,.14);
+}
+.facility-nav .nav-tab.active{
+  text-shadow:0 0 16px rgba(255,255,255,.10);
+}
+
+/* Physical player housing. */
+.player-dock{
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.08),
+    inset 0 18px 35px rgba(255,255,255,.012),
+    0 -18px 55px rgba(0,0,0,.55);
+}
+.player-dock .player-thumb,
+.player-track-info img{
+  box-shadow:0 8px 24px rgba(0,0,0,.65),inset 0 1px rgba(255,255,255,.1);
+}
+.player-dock .transport-btn,
+.player-dock .play-btn{
+  transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
+}
+.player-dock .transport-btn:hover,
+.player-dock .play-btn:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.18);
+}
+.player-dock .play-btn:active,
+.player-dock .transport-btn:active{
+  transform:translateY(1px) scale(.97);
+}
+
+/* Transmission machine: make the emitter read as hardware even when idle. */
+#room-transmission .tx-emitter-ring{
+  animation:frequencyEmitterBreath 4.8s ease-in-out infinite;
+}
+#room-transmission .tx-emitter-core{
+  animation:frequencyEmitterCore 3.6s ease-in-out infinite;
+}
+#room-transmission .tx-live i{
+  animation:frequencyRelayLamp 2.4s ease-in-out infinite;
+}
+@keyframes frequencyEmitterBreath{
+  0%,100%{box-shadow:inset 0 0 10px rgba(0,0,0,.9),0 0 10px rgba(170,25,25,.08)}
+  50%{box-shadow:inset 0 0 10px rgba(0,0,0,.9),0 0 20px rgba(190,25,25,.20)}
+}
+@keyframes frequencyEmitterCore{
+  0%,100%{background:#321012;box-shadow:0 0 5px rgba(225,42,38,.18)}
+  50%{background:#6d1719;box-shadow:0 0 11px rgba(225,42,38,.50)}
+}
+@keyframes frequencyRelayLamp{
+  0%,100%{opacity:.45;box-shadow:0 0 4px rgba(210,30,30,.15)}
+  50%{opacity:1;box-shadow:0 0 11px rgba(225,40,38,.72)}
+}
+
+/* Transmission signal bay gets a restrained scanning atmosphere. */
+#room-transmission .tx-signal-window{
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,.72),
+    inset 0 1px rgba(255,255,255,.05),
+    0 12px 30px rgba(0,0,0,.22);
+}
+#room-transmission .tx-signal-window::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.018) 50%,transparent 100%);
+  background-size:100% 180%;
+  animation:frequencyBayScan 7s linear infinite;
+}
+@keyframes frequencyBayScan{
+  from{background-position:0 -100%}
+  to{background-position:0 100%}
+}
+
+/* Buttons become tactile controls instead of flat text. */
+.room-action,
+.transmit-button,
+.upload-button{
+  transition:transform .18s ease,filter .18s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.room-action:hover,
+.transmit-button:hover,
+.upload-button:hover{
+  filter:brightness(1.08);
+  box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 28px rgba(0,0,0,.42);
+}
+.room-action:active,
+.transmit-button:active,
+.upload-button:active{
+  transform:translateY(1px);
+}
+
+/* Room transitions feel like entering a sealed chamber. */
+#room-transition{
+  backdrop-filter:blur(1px);
+}
+
+/* Respect accessibility and user preference. */
+@media(prefers-reduced-motion:reduce){
+  .facility-bg .facility-light-a,
+  .facility-bg .facility-light-b,
+  .facility-bg .facility-grid,
+  #room-transmission .tx-emitter-ring,
+  #room-transmission .tx-emitter-core,
+  #room-transmission .tx-live i,
+  #room-transmission .tx-signal-window::after{
+    animation:none!important;
+  }
+  #room-collection .hero-art .art-frame,
+  #room-collection .song-item,
+  .facility-nav .nav-tab,
+  .player-dock .transport-btn,
+  .player-dock .play-btn,
+  .room-action,
+  .transmit-button,
+  .upload-button{
+    transition:none!important;
+  }
+}
+
+@media(max-width:720px){
+  #room-collection .hero-art:hover .art-frame{
+    transform:none;
+  }
+}
