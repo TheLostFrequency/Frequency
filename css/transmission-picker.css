@@ -201,3 +201,49 @@
     #room-transmission #transmission-beam .tx-beam-core{stroke-width:6px!important}
     #room-transmission #transmission-beam .tx-beam-halo{stroke-width:16px!important}
 }
+
+
+/* FREQUENCY // FAILSAFE BEAM: HTML/CSS LIGHT COLUMN */
+#room-transmission #transmission-beam-fx{
+    position:absolute!important;
+    left:50%!important;
+    top:0!important;
+    width:16px!important;
+    height:63%!important;
+    transform:translateX(-50%) scaleY(0)!important;
+    transform-origin:50% 100%!important;
+    z-index:100!important;
+    pointer-events:none!important;
+    opacity:0!important;
+    background:linear-gradient(90deg,rgba(210,20,20,0),#ff3b30 25%,#fff0ed 50%,#ff3b30 75%,rgba(210,20,20,0))!important;
+    filter:blur(1px) drop-shadow(0 0 6px #ff3028) drop-shadow(0 0 18px rgba(220,25,25,.95)) drop-shadow(0 0 35px rgba(180,15,15,.8))!important;
+    box-shadow:0 0 14px #ff3028,0 0 35px rgba(210,20,20,.9)!important;
+}
+#room-transmission #transmission-beam-fx::after{
+    content:""!important;
+    position:absolute!important;
+    left:50%!important;
+    bottom:0!important;
+    width:5px!important;
+    height:100%!important;
+    transform:translateX(-50%)!important;
+    background:#fff5f0!important;
+    box-shadow:0 0 5px #fff,0 0 14px #ff3a32,0 0 28px #e02020!important;
+}
+#room-transmission #transmission-beam-fx.transmitting{
+    animation:frequencyFailsafeBeam 2.6s cubic-bezier(.12,.7,.18,1) both!important;
+}
+@keyframes frequencyFailsafeBeam{
+    0%{transform:translateX(-50%) scaleY(0);opacity:0}
+    5%{transform:translateX(-50%) scaleY(.04);opacity:1}
+    18%{transform:translateX(-50%) scaleY(.22);opacity:1}
+    40%{transform:translateX(-50%) scaleY(.5);opacity:1}
+    65%{transform:translateX(-50%) scaleY(.78);opacity:1}
+    84%{transform:translateX(-50%) scaleY(1);opacity:1}
+    94%{transform:translateX(-50%) scaleY(1);opacity:.9}
+    100%{transform:translateX(-50%) scaleY(1);opacity:0}
+}
+@media(max-width:720px){
+    #room-transmission #transmission-beam-fx{width:12px!important;height:63%!important}
+    #room-transmission #transmission-beam-fx::after{width:4px!important}
+}
