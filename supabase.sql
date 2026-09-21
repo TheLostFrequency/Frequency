@@ -108,6 +108,54 @@ with check (
   and (storage.foldername(name))[1] = auth.uid()::text
 );
 
+-- Recipients must be able to read a sender's private signal after
+-- accepting it. The Collection row intentionally keeps the original
+-- sender-owned storage path, so SELECT access must follow the
+-- transmission/recipient relationship even after read_at is set.
+drop policy if exists "frequency transmitted audio read" on storage.objects;
+create policy "frequency transmitted audio read" on storage.objects
+for select to authenticated
+using (
+  bucket_id = 'audio'
+  and (
+    (storage.foldername(name))[1] = auth.uid()::text
+    or exists (
+      select 1
+      from public.transmissions t
+      where t.recipient_id = auth.uid()
+        and t.audio_path = storage.objects.name
+    )
+    or exists (
+      select 1
+      from public.tracks tr
+      where tr.user_id = auth.uid()
+        and tr.audio_path = storage.objects.name
+    )
+  )
+);
+
+drop policy if exists "frequency transmitted covers read" on storage.objects;
+create policy "frequency transmitted covers read" on storage.objects
+for select to authenticated
+using (
+  bucket_id = 'covers'
+  and (
+    (storage.foldername(name))[1] = auth.uid()::text
+    or exists (
+      select 1
+      from public.transmissions t
+      where t.recipient_id = auth.uid()
+        and t.cover_path = storage.objects.name
+    )
+    or exists (
+      select 1
+      from public.tracks tr
+      where tr.user_id = auth.uid()
+        and tr.cover_path = storage.objects.name
+    )
+  )
+);
+
 -- ============================================================
 -- 3. FREQUENCY USERNAMES
 -- ============================================================
