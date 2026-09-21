@@ -7,6 +7,12 @@ if (canvas && visual) {
     let height = 1;
     let ratio = 1;
     let smoothWave = [];
+    let gridCanvas = null;
+    let gridWidth = 0;
+    let gridHeight = 0;
+    let lastDraw = 0;
+    const targetFps = 30;
+    const frameInterval = 1000 / targetFps;
 
     function resize() {
         const rect = visual.getBoundingClientRect();
@@ -25,29 +31,41 @@ if (canvas && visual) {
         canvas.style.height = `${height}px`;
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         smoothWave = [];
+        gridCanvas = null;
+        gridWidth = 0;
+        gridHeight = 0;
     }
 
     function drawGrid() {
-        ctx.save();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(255,255,255,.028)';
+        if (gridCanvas && gridWidth === width && gridHeight === height) {
+            ctx.drawImage(gridCanvas, 0, 0, width, height);
+            return;
+        }
+        gridCanvas = document.createElement('canvas');
+        gridCanvas.width = Math.max(1, Math.floor(width));
+        gridCanvas.height = Math.max(1, Math.floor(height));
+        gridWidth = width;
+        gridHeight = height;
+        const gridCtx = gridCanvas.getContext('2d');
+        gridCtx.lineWidth = 1;
+        gridCtx.strokeStyle = 'rgba(255,255,255,.028)';
         for (let i = 1; i < 12; i++) {
             const x = Math.round(width * i / 12) + .5;
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
+            gridCtx.beginPath();
+            gridCtx.moveTo(x, 0);
+            gridCtx.lineTo(x, height);
+            gridCtx.stroke();
         }
         for (let i = 1; i < 7; i++) {
             const y = Math.round(height * i / 7) + .5;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, y);
+            gridCtx.lineTo(width, y);
+            gridCtx.stroke();
         }
-        ctx.restore();
+        ctx.drawImage(gridCanvas, 0, 0, width, height);
+        return;
     }
-
     function drawWave(waveform, active) {
         if (!waveform.length || width <= 1 || height <= 1) return;
 
@@ -99,13 +117,18 @@ if (canvas && visual) {
         ctx.shadowBlur = 0;
     }
 
-    function draw() {
+    function draw(timestamp = 0) {
         const roomActive = room?.classList.contains('active-room');
         if (!roomActive || document.hidden) {
             ctx.clearRect(0, 0, width, height);
             setTimeout(() => requestAnimationFrame(draw), 250);
             return;
         }
+        if (timestamp - lastDraw < frameInterval) {
+            requestAnimationFrame(draw);
+            return;
+        }
+        lastDraw = timestamp;
 
         // If the room was hidden during startup, catch its real dimensions as
         // soon as it becomes visible. This is intentionally checked every
