@@ -1,0 +1,20 @@
+#transmission-alert{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);padding:20px}
+#transmission-alert[hidden]{display:none}
+.transmission-alert-card{width:min(560px,92vw);position:relative;padding:34px;text-align:center;background:linear-gradient(145deg,#1c1816,#050505 70%);border:1px solid rgba(255,255,255,.2);box-shadow:0 40px 120px #000,0 0 70px rgba(170,20,15,.2),inset 0 1px rgba(255,255,255,.07);animation:transmissionAlertIn .28s ease-out both}
+.transmission-alert-card:before{content:"";position:absolute;inset:9px;border:1px solid rgba(255,255,255,.035);pointer-events:none}
+.transmission-alert-line{width:70px;height:1px;margin:18px auto 22px;background:#c42a20;box-shadow:0 0 16px rgba(196,42,32,.8)}
+.transmission-alert-card h2{margin:0 0 18px;font-size:20px;font-weight:400;letter-spacing:.18em}
+.transmission-alert-card p{margin:0 0 8px;font-size:11px;letter-spacing:.16em;color:rgba(255,255,255,.5)}
+.transmission-alert-card strong{display:block;font-size:14px;font-weight:400;letter-spacing:.12em}
+.transmission-alert-card small{display:block;margin-top:7px;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.12em}
+.transmission-alert-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:28px}
+.transmission-alert-actions .room-action{min-width:130px}
+.transmission-alert-dismiss{margin-top:18px;font:inherit;font-size:9px;letter-spacing:.18em;color:rgba(255,255,255,.32)}
+.player-status{gap:10px}
+.volume-btn{border:1px solid rgba(255,255,255,.18);padding:6px 8px;font:inherit;font-size:8px;letter-spacing:.14em;color:rgba(255,255,255,.55);transition:.2s}
+.volume-btn:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+.volume-slider{width:90px;height:3px;accent-color:#c42a20;cursor:pointer}
+@media(max-width:900px){.player-status{justify-content:center}.volume-slider{width:80px}}
+@media(max-width:650px){.transmission-alert-card{padding:28px 20px}.transmission-alert-card h2{font-size:16px}.transmission-alert-actions{display:grid;grid-template-columns:1fr}.transmission-alert-actions .room-action{width:100%}.volume-slider{width:70px}}
+@keyframes transmissionAlertIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.transmission-alert-card{animation:none}}
