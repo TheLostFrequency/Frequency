@@ -258,6 +258,8 @@ let transmissionRecipientId = '';
 let transmissionRecipientUsername = '';
 let transmissionTrack = null;
 let incomingTransmissionPollTimer = null;
+let incomingTransmissionItems = new Map();
+let transmissionAlertItem = null;
 
 function syncTransmissionDestination() {
     const label = '@' + (transmissionRecipientUsername || 'WAITING');
@@ -564,6 +566,24 @@ async function playReceivedTransmission(item) {
     return true;
 }
 
+function closeTransmissionAlert() {
+    const alert = $('transmission-alert');
+    if (!alert) return;
+    alert.hidden = true;
+    transmissionAlertItem = null;
+}
+
+async function showTransmissionAlert(item) {
+    if (!item) return;
+    transmissionAlertItem = item;
+    const alert = $('transmission-alert');
+    if (!alert) return;
+    $('transmission-alert-from').textContent = 'FROM @' + (item._senderUsername || 'UNKNOWN STATION');
+    $('transmission-alert-title').textContent = item.title || 'UNTITLED SIGNAL';
+    $('transmission-alert-artist').textContent = item.artist || 'UNKNOWN ARTIST';
+    alert.hidden = false;
+}
+
 async function loadIncomingTransmissions() {
     const container = $('transmission-incoming-list');
     const status = $('transmission-incoming-status');
@@ -595,6 +615,15 @@ async function loadIncomingTransmissions() {
     const ids = [...new Set(data.map(item => item.sender_id).filter(Boolean))];
     const result = ids.length ? await supabase.from('profiles').select('id, username').in('id', ids) : { data: [] };
     const names = Object.fromEntries((result.data || []).map(row => [row.id, row.username]));
+
+    const previousIds = new Set(incomingTransmissionItems.keys());
+    const currentIds = new Set(data.map(item => item.id));
+    const enrichedItems = data.map(item => ({ ...item, _senderUsername: names[item.sender_id] || 'UNKNOWN STATION' }));
+    incomingTransmissionItems = new Map(enrichedItems.map(item => [item.id, item]));
+
+    const newItem = enrichedItems.find(item => !previousIds.has(item.id));
+    if (newItem && !transmissionAlertItem) await showTransmissionAlert(newItem);
+    if (transmissionAlertItem && !currentIds.has(transmissionAlertItem.id)) closeTransmissionAlert();
     const artUrls = Object.fromEntries(await Promise.all(
         data.filter(item => item.cover_path).map(async item => [item.id, await signedUrl('covers', item.cover_path)])
     ));
@@ -637,6 +666,8 @@ async function loadIncomingTransmissions() {
 
 function startIncomingTransmissionPolling() {
     clearInterval(incomingTransmissionPollTimer);
+    incomingTransmissionItems.clear();
+    closeTransmissionAlert();
     if (!authUser) return;
     loadIncomingTransmissions();
     incomingTransmissionPollTimer = window.setInterval(() => {
@@ -728,6 +759,69 @@ transmissionSearch.addEventListener('focus', () => {
 document.addEventListener('click', event => {
     if (!transmissionSearch.closest('.transmission-search-block')?.contains(event.target)) hideTransmissionResults();
 });
+
+$('transmission-alert-play')?.addEventListener('click', async event => {
+    if (!transmissionAlertItem) return;
+    event.currentTarget.disabled = true;
+    event.currentTarget.textContent = 'PLAYING...';
+    const ok = await playReceivedTransmission(transmissionAlertItem);
+    event.currentTarget.disabled = false;
+    event.currentTarget.textContent = ok ? 'PLAY' : 'RETRY';
+});
+
+$('transmission-alert-accept')?.addEventListener('click', async event => {
+    if (!transmissionAlertItem) return;
+    event.currentTarget.disabled = true;
+    event.currentTarget.textContent = 'ACCEPTING...';
+    const ok = await handleIncomingTransmission(transmissionAlertItem, 'accept', null);
+    if (!ok) {
+        event.currentTarget.disabled = false;
+        event.currentTarget.textContent = 'ACCEPT SIGNAL';
+    } else closeTransmissionAlert();
+});
+
+$('transmission-alert-decline')?.addEventListener('click', async event => {
+    if (!transmissionAlertItem) return;
+    event.currentTarget.disabled = true;
+    event.currentTarget.textContent = 'DECLINING...';
+    const ok = await handleIncomingTransmission(transmissionAlertItem, 'decline', null);
+    if (!ok) {
+        event.currentTarget.disabled = false;
+        event.currentTarget.textContent = 'DECLINE';
+    } else closeTransmissionAlert();
+});
+
+$('transmission-alert-dismiss')?.addEventListener('click', closeTransmissionAlert);
+
+const volumeSlider = $('volume-slider');
+const volumeButton = $('volume-btn');
+let lastVolume = 1;
+
+function syncVolumeUI() {
+    const value = player.audio.volume;
+    if (volumeSlider) volumeSlider.value = String(Math.round(value * 100));
+    if (volumeButton) {
+        volumeButton.textContent = value === 0 ? 'MUTE' : 'VOL';
+        volumeButton.setAttribute('aria-label', value === 0 ? 'Unmute volume' : 'Mute volume');
+    }
+}
+
+volumeSlider?.addEventListener('input', event => {
+    const value = Number(event.target.value) / 100;
+    player.setVolume(value);
+    if (value > 0) lastVolume = value;
+    syncVolumeUI();
+});
+
+volumeButton?.addEventListener('click', () => {
+    if (player.audio.volume > 0) {
+        lastVolume = player.audio.volume;
+        player.setVolume(0);
+    } else player.setVolume(lastVolume || 1);
+    syncVolumeUI();
+});
+
+syncVolumeUI();
 
 $('sign-out').addEventListener('click', async () => {
     await supabase?.auth.signOut();
