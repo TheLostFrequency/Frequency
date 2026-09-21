@@ -5,6 +5,8 @@ export class AudioAnalyzer {
         this.source = null;
         this.analyser = null;
         this.filters = [];
+        this.waveformBuffer = null;
+        this.frequencyBuffer = null;
         this.isInitialized = false;
         this.initializing = false;
         this.frequencies = [32, 64, 128, 250, 500, 1000, 2000, 4000, 16000];
@@ -152,16 +154,20 @@ export class AudioAnalyzer {
 
     getWaveformData() {
         if (!this.analyser) return new Uint8Array(0);
-        const data = new Uint8Array(this.analyser.fftSize);
-        this.analyser.getByteTimeDomainData(data);
-        return data;
+        if (!this.waveformBuffer || this.waveformBuffer.length !== this.analyser.fftSize) {
+            this.waveformBuffer = new Uint8Array(this.analyser.fftSize);
+        }
+        this.analyser.getByteTimeDomainData(this.waveformBuffer);
+        return this.waveformBuffer;
     }
 
     getFrequencyData() {
         if (!this.analyser) return new Uint8Array(0);
-        const data = new Uint8Array(this.analyser.frequencyBinCount);
-        this.analyser.getByteFrequencyData(data);
-        return data;
+        if (!this.frequencyBuffer || this.frequencyBuffer.length !== this.analyser.frequencyBinCount) {
+            this.frequencyBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+        }
+        this.analyser.getByteFrequencyData(this.frequencyBuffer);
+        return this.frequencyBuffer;
     }
 
     getSignalLevel() {
