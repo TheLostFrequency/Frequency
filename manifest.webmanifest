@@ -1,0 +1,17 @@
+{
+  "name": "FREQUENCY — Find Your Frequency",
+  "short_name": "FREQUENCY",
+  "description": "A private music vault for your collection, signals, and listening experience.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
