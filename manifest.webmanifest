@@ -8,7 +8,7 @@
   "theme_color": "#050505",
   "icons": [
     {
-      "src": "assets/applogo.jpg",
+      "src": "assets/frequency-home-icon.jpg",
       "sizes": "any",
       "type": "image/jpeg",
       "purpose": "any maskable"
