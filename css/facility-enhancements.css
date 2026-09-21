@@ -225,3 +225,33 @@
     transform:none;
   }
 }
+
+
+/* FREQUENCY // PERFORMANCE PASS */
+body:not(:has(#room-collection.active-room)) .facility-bg .facility-light-a,
+body:not(:has(#room-collection.active-room)) .facility-bg .facility-light-b,
+body:not(:has(#room-collection.active-room)) .facility-bg .facility-grid{
+  animation:none!important;
+}
+.facility-bg{
+  contain:layout paint;
+}
+.room{
+  contain:layout style;
+}
+#room-equalizer .eq-room-card,
+#room-transmission .transmission-console,
+#room-list .room-card,
+#room-profile .profile-card{
+  contain:layout paint;
+}
+@media(max-width:720px){
+  .facility-bg .facility-grid{
+    animation:none!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .facility-bg *{
+    animation:none!important;
+  }
+}
