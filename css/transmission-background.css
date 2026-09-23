@@ -1662,3 +1662,12 @@
 @media (max-width:430px){
     #room-transmission .transmission-console{top:72%!important;}
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — MOVE UI UP AGAIN */
+@media (max-width:720px){
+    #room-transmission .transmission-console{top:69%!important;}
+}
+@media (max-width:430px){
+    #room-transmission .transmission-console{top:69%!important;}
+}
