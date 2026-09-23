@@ -1630,3 +1630,26 @@
         height:32px!important;
     }
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — TALLER + TIGHTER TYPE ONLY */
+@media (max-width:720px){
+    #room-transmission .transmission-console{height:390px!important;}
+    #room-transmission .tx-heading h2{font-size:clamp(23px,7vw,36px)!important;}
+    #room-transmission .tx-heading .micro-label{font-size:6px!important;}
+    #room-transmission .tx-live{font-size:5px!important;}
+    #room-transmission .tx-node span{font-size:5px!important;}
+    #room-transmission .tx-node strong{font-size:8px!important;}
+    #room-transmission .transmission-search-block label{font-size:5px!important;}
+    #room-transmission .transmission-user-result strong{font-size:8px!important;}
+    #room-transmission .transmission-user-result small{font-size:5px!important;}
+    #room-transmission .transmission-input-wrap input{font-size:8px!important;}
+    #room-transmission .tx-window-top{font-size:5px!important;}
+    #room-transmission .audio-signal-label{font-size:5px!important;}
+    #room-transmission .transmission-audio-panel strong{font-size:8px!important;}
+    #room-transmission .transmission-audio-panel small{font-size:5px!important;}
+    #room-transmission .tx-status span{font-size:5px!important;}
+    #room-transmission .tx-status strong{font-size:7px!important;}
+    #room-transmission .transmit-button{font-size:6px!important;}
+}
+@media (max-width:430px){#room-transmission .transmission-console{height:370px!important;}}
