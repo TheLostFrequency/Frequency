@@ -1811,3 +1811,31 @@
         width:49%!important;
     }
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — HARD LAYOUT OVERRIDE v8 */
+@media screen and (max-width:720px){
+  #room-transmission .transmission-search-block{
+    left:18px!important;
+    right:auto!important;
+    width:calc(44% - 18px)!important;
+    max-width:none!important;
+  }
+  #room-transmission .tx-signal-window{
+    left:auto!important;
+    right:18px!important;
+    width:calc(44% - 18px)!important;
+    max-width:none!important;
+  }
+  #room-transmission .tx-live{display:none!important;visibility:hidden!important;width:0!important;overflow:hidden!important;}
+}
+@media screen and (max-width:430px){
+  #room-transmission .transmission-search-block{
+    left:14px!important;
+    width:calc(45% - 14px)!important;
+  }
+  #room-transmission .tx-signal-window{
+    right:14px!important;
+    width:calc(45% - 14px)!important;
+  }
+}
