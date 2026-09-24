@@ -1766,3 +1766,22 @@
         height:300px!important;
     }
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — TIGHTEN SEARCH + SIGNAL BAYS */
+@media (max-width:720px){
+    #room-transmission .transmission-search-block{
+        width:37%!important;
+    }
+    #room-transmission .tx-signal-window{
+        width:52%!important;
+    }
+}
+@media (max-width:430px){
+    #room-transmission .transmission-search-block{
+        width:38%!important;
+    }
+    #room-transmission .tx-signal-window{
+        width:52%!important;
+    }
+}
