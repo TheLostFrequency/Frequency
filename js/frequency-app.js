@@ -370,6 +370,27 @@ async function openTransmissionPicker() {
 document.querySelector('.transmission-signal')?.addEventListener('click', openTransmissionPicker);
 $('transmit-signal-btn').addEventListener('click', openTransmissionPicker);
 
+// The main Transmission console now has two explicit actions:
+// choose a signal first, then send it directly from the console.
+$('transmit-now-btn')?.addEventListener('click', () => {
+    if (!authUser) {
+        $('auth-dialog').showModal();
+        toast('Enter your vault before transmitting.');
+        return;
+    }
+    if (!transmissionRecipientId) {
+        if ($('transmission-status')) $('transmission-status').textContent = 'SELECT A DESTINATION FIRST';
+        toast('Select a Frequency station first.');
+        return;
+    }
+    if (!transmissionTrack) {
+        if ($('transmission-status')) $('transmission-status').textContent = 'CHOOSE A SIGNAL FIRST';
+        toast('Choose a signal before sending.');
+        return;
+    }
+    $('transmission-form').requestSubmit();
+});
+
 $('transmission-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (!authUser || !supabase) return;
