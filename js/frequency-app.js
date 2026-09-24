@@ -478,23 +478,35 @@ $('transmission-form').addEventListener('submit', async event => {
 
         const beamFx = $('transmission-beam-fx');
         if (beamFx) {
-            // Use the physical emitter as the animation anchor. This is a
-            // simple DOM beam rather than an SVG dash animation, so it cannot
-            // disappear because of SVG stroke timing or mobile rendering.
+            // Direct beam: position its bottom exactly on the emitter and
+            // grow it upward with a plain CSS transition. No SVG dash timing.
             const xPx = emitterRect
                 ? (emitterRect.left + emitterRect.width / 2 - roomRect.left)
                 : roomRect.width / 2;
             const yPx = emitterRect
                 ? (emitterRect.top + emitterRect.height / 2 - roomRect.top)
                 : roomRect.height * .55;
-            beamFx.style.left = xPx + 'px';
-            beamFx.style.top = '0px';
-            beamFx.style.height = Math.max(40, yPx) + 'px';
-            beamFx.style.transformOrigin = '50% 100%';
             beamFx.classList.remove('transmitting');
+            beamFx.style.left = (xPx - 5) + 'px';
+            beamFx.style.top = '0px';
+            beamFx.style.height = Math.max(60, yPx) + 'px';
+            beamFx.style.transformOrigin = '50% 100%';
+            beamFx.style.opacity = '0';
+            beamFx.style.transform = 'scaleY(0)';
             void beamFx.offsetWidth;
-            beamFx.classList.add('transmitting');
-            window.setTimeout(() => beamFx.classList.remove('transmitting'), 1100);
+            requestAnimationFrame(() => {
+                beamFx.style.opacity = '1';
+                beamFx.style.transform = 'scaleY(1)';
+            });
+            window.setTimeout(() => {
+                beamFx.style.opacity = '0';
+                beamFx.style.transform = 'scaleY(1)';
+            }, 760);
+            window.setTimeout(() => {
+                beamFx.classList.remove('transmitting');
+                beamFx.style.opacity = '';
+                beamFx.style.transform = '';
+            }, 1150);
         }
         beam.classList.remove('transmitting');
         void beam.offsetWidth;
