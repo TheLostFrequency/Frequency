@@ -468,7 +468,10 @@ $('transmission-form').addEventListener('submit', async event => {
 
         const x = emitterRect.left + emitterRect.width / 2;
         const originY = Math.max(8, emitterRect.top + emitterRect.height * 0.12);
-        const height = Math.max(80, originY);
+        const nav = document.querySelector('.facility-nav');
+        const navRect = nav?.getBoundingClientRect();
+        const beamTop = Math.max(0, (navRect?.bottom ?? 0) + 2);
+        const height = Math.max(20, originY - beamTop);
 
         const beamFx = document.createElement('div');
         beamFx.id = 'frequency-send-beam';
@@ -476,7 +479,7 @@ $('transmission-form').addEventListener('submit', async event => {
         Object.assign(beamFx.style, {
             position: 'fixed',
             left: (x - 5) + 'px',
-            top: '0px',
+            top: beamTop + 'px',
             width: '10px',
             height: height + 'px',
             zIndex: '2147483647',
