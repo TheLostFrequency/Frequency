@@ -45,3 +45,55 @@
 #room-transmission .tx-status{left:10px!important;right:10px!important;bottom:31px!important;height:18px!important}
 #room-transmission .transmit-button{right:10px!important;bottom:6px!important;width:115px!important;height:21px!important}
 }
+
+/* FREQUENCY // TRANSMISSION ACTION PAIR */
+#room-transmission .tx-action-pair{
+    position:absolute!important;
+    left:50%!important;
+    bottom:7px!important;
+    width:430px!important;
+    height:38px!important;
+    transform:translateX(-50%)!important;
+    display:flex!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    gap:8px!important;
+    z-index:35!important;
+}
+#room-transmission .tx-action-pair .transmit-button{
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    width:auto!important;
+    height:38px!important;
+    transform:none!important;
+    flex:1 1 0!important;
+}
+@media screen and (max-width:720px){
+    #room-transmission .tx-action-pair{
+        left:50%!important;
+        bottom:7px!important;
+        width:calc(100% - 24px)!important;
+        height:23px!important;
+        gap:6px!important;
+    }
+    #room-transmission .tx-action-pair .transmit-button{
+        width:auto!important;
+        height:23px!important;
+        flex:1 1 0!important;
+        font-size:4.2px!important;
+    }
+}
+@media screen and (max-width:430px){
+    #room-transmission .tx-action-pair{
+        bottom:6px!important;
+        width:calc(100% - 20px)!important;
+        height:21px!important;
+        gap:5px!important;
+    }
+    #room-transmission .tx-action-pair .transmit-button{
+        height:21px!important;
+        font-size:4px!important;
+    }
+}
