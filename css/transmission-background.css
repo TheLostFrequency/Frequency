@@ -1699,3 +1699,18 @@
         filter:drop-shadow(0 0 2px #ff5147) drop-shadow(0 0 5px rgba(220,35,30,.75));
     }
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — PREVENT IOS INPUT ZOOM */
+@media (max-width:720px){
+    /* iOS Safari zooms focused form controls whose computed font-size is
+       below 16px. Keep the compact control, but make the actual input text
+       16px so tapping SEARCH FREQUENCY USER never zooms the page. */
+    #room-transmission .transmission-input-wrap input,
+    #room-transmission input[type="text"],
+    #room-transmission input[type="search"]{
+        font-size:16px!important;
+        line-height:1.1!important;
+        -webkit-text-size-adjust:100%;
+    }
+}
