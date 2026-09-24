@@ -1748,3 +1748,8 @@
     #room-transmission .transmission-console{height:358px!important;}
     #room-transmission .tx-emitter{top:-27px!important;}
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — SECOND SLIGHT UI REDUCTION */
+@media (max-width:720px){#room-transmission .transmission-console{height:360px!important;}}
+@media (max-width:430px){#room-transmission .transmission-console{height:340px!important;}}
