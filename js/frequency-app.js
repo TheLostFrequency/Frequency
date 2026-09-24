@@ -4,6 +4,10 @@ import { supabase } from './supabaseClient.js';
 
 const player = new AudioPlayer();
 const analyzer = new AudioAnalyzer(player.audio);
+// Build the EQ/visualizer signal chain as soon as the app loads. The AudioContext
+// may begin suspended on iOS, but the actual graph is already connected before
+// any song is played.
+analyzer.init();
 let playlist = [];
 let currentIndex = 0;
 let shuffle = false;
@@ -327,6 +331,9 @@ function renderTransmissionTracks() {
             if (art) art.src = cover(transmissionTrack);
             const status = $('transmission-status');
             if (status) status.textContent = transmissionTrack ? 'SIGNAL ARMED // READY TO TRANSMIT' : 'READY TO TRANSMIT';
+            // Once a signal is selected, the picker button is no longer needed.
+            // The console's SEND SIGNAL action becomes the single next step.
+            $('transmit-signal-btn')?.classList.add('hidden');
             renderTransmissionTracks();
             $('transmission-dialog').close();
             toast('Signal selected: ' + (transmissionTrack?.title || 'Untitled'));
@@ -470,11 +477,29 @@ $('transmission-form').addEventListener('submit', async event => {
         }
 
         const beamFx = $('transmission-beam-fx');
-        const beamElements = [beam, beamFx].filter(Boolean);
-        beamElements.forEach(element => element.classList.remove('transmitting'));
+        if (beamFx) {
+            // Use the physical emitter as the animation anchor. This is a
+            // simple DOM beam rather than an SVG dash animation, so it cannot
+            // disappear because of SVG stroke timing or mobile rendering.
+            const xPx = emitterRect
+                ? (emitterRect.left + emitterRect.width / 2 - roomRect.left)
+                : roomRect.width / 2;
+            const yPx = emitterRect
+                ? (emitterRect.top + emitterRect.height / 2 - roomRect.top)
+                : roomRect.height * .55;
+            beamFx.style.left = xPx + 'px';
+            beamFx.style.top = '0px';
+            beamFx.style.height = Math.max(40, yPx) + 'px';
+            beamFx.style.transformOrigin = '50% 100%';
+            beamFx.classList.remove('transmitting');
+            void beamFx.offsetWidth;
+            beamFx.classList.add('transmitting');
+            window.setTimeout(() => beamFx.classList.remove('transmitting'), 1100);
+        }
+        beam.classList.remove('transmitting');
         void beam.offsetWidth;
         beam.classList.add('transmitting');
-        window.setTimeout(() => beam.classList.remove('transmitting'), 1050);
+        window.setTimeout(() => beam.classList.remove('transmitting'), 1100);
     };
 
     launchBeam();
