@@ -1714,3 +1714,10 @@
         -webkit-text-size-adjust:100%;
     }
 }
+
+/* FREQUENCY // MOBILE TRANSMISSION — KEEP SIGNAL TEXT CLEAR OF COVER ART */
+@media (max-width:720px){
+    #room-transmission .transmission-audio-panel{
+        transform:translateX(8px);
+    }
+}
