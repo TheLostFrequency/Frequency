@@ -477,35 +477,43 @@ $('transmission-form').addEventListener('submit', async event => {
         }
 
         const beamFx = $('transmission-beam-fx');
-        if (beamFx) {
-            // Direct beam: position its bottom exactly on the emitter and
-            // grow it upward with a plain CSS transition. No SVG dash timing.
-            const xPx = emitterRect
-                ? (emitterRect.left + emitterRect.width / 2 - roomRect.left)
-                : roomRect.width / 2;
-            const yPx = emitterRect
-                ? (emitterRect.top + emitterRect.height / 2 - roomRect.top)
-                : roomRect.height * .55;
+        if (beamFx && emitterRect) {
+            // HARD BEAM PATH: move the visual out of the transmission room's
+            // stacking/clip context and anchor it directly to the viewport.
+            // The console has a clip-path, so an in-room child can be clipped.
+            // A fixed body-level beam cannot be hidden by the console.
+            if (beamFx.parentElement !== document.body) document.body.appendChild(beamFx);
+
+            const xPx = emitterRect.left + emitterRect.width / 2;
+            const topPx = Math.max(0, emitterRect.top);
+            const widthPx = window.innerWidth <= 720 ? 7 : 10;
+
             beamFx.classList.remove('transmitting');
-            beamFx.style.left = (xPx - 5) + 'px';
+            beamFx.style.position = 'fixed';
+            beamFx.style.left = (xPx - widthPx / 2) + 'px';
             beamFx.style.top = '0px';
-            beamFx.style.height = Math.max(60, yPx) + 'px';
+            beamFx.style.width = widthPx + 'px';
+            beamFx.style.height = Math.max(40, topPx) + 'px';
+            beamFx.style.zIndex = '2147483647';
             beamFx.style.transformOrigin = '50% 100%';
             beamFx.style.opacity = '0';
             beamFx.style.transform = 'scaleY(0)';
+            beamFx.style.display = 'block';
+
             void beamFx.offsetWidth;
             requestAnimationFrame(() => {
-                beamFx.style.opacity = '1';
-                beamFx.style.transform = 'scaleY(1)';
+                requestAnimationFrame(() => {
+                    beamFx.style.opacity = '1';
+                    beamFx.style.transform = 'scaleY(1)';
+                });
             });
+
             window.setTimeout(() => {
                 beamFx.style.opacity = '0';
-                beamFx.style.transform = 'scaleY(1)';
             }, 760);
             window.setTimeout(() => {
-                beamFx.classList.remove('transmitting');
-                beamFx.style.opacity = '';
-                beamFx.style.transform = '';
+                beamFx.style.transform = 'scaleY(0)';
+                beamFx.style.display = 'none';
             }, 1150);
         }
         beam.classList.remove('transmitting');
