@@ -36,7 +36,9 @@ buttons.forEach(button => button.addEventListener('click', () => applyPreset(but
 inputs.forEach((input, index) => input.addEventListener('input', () => {
     buttons.forEach(button => button.classList.remove('active'));
     if (state) state.textContent = 'CUSTOM';
-    window.frequencyAnalyzer?.setBand?.(index, input.value);
+    const analyzer = window.frequencyAnalyzer;
+    if (analyzer && !analyzer.isInitialized) analyzer.init();
+    analyzer?.setBand?.(index, input.value);
     if (status) status.textContent = `${Number(input.value) > 0 ? '+' : ''}${input.value} dB // CUSTOM`;
 }));
 
