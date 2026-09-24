@@ -455,78 +455,89 @@ $('transmission-form').addEventListener('submit', async event => {
     if ($('transmission-status')) $('transmission-status').textContent = 'SIGNAL TRANSMITTED // SENT TO @' + sentTo;
     toast('TRANSMISSION COMPLETE // SIGNAL SENT TO @' + sentTo);
 
-    // Launch immediately from the physical emitter. Recompute the SVG origin
-    // from the emitter's actual screen position so the beam cannot start low
-    // in the console or wait for a room switch to become visible.
+    // Launch a completely independent viewport beam. This is intentionally
+    // created at send-time instead of relying on the room SVG or a clipped
+    // child element, so the effect is visible even on mobile/iOS.
     const launchBeam = () => {
         const roomElement = $('room-transmission');
         const emitter = roomElement?.querySelector('.tx-emitter');
-        const beam = $('transmission-beam');
-        if (!roomElement || !beam) return;
+        if (!roomElement || !emitter) return;
 
-        const roomRect = roomElement.getBoundingClientRect();
-        const emitterRect = emitter?.getBoundingClientRect();
-        if (emitterRect && roomRect.width && roomRect.height) {
-            const x = ((emitterRect.left + emitterRect.width / 2 - roomRect.left) / roomRect.width) * 100;
-            const y = ((emitterRect.top + emitterRect.height / 2 - roomRect.top) / roomRect.height) * 100;
-            // Lift the visual beam origin slightly above the emitter center so
-            // the beam reads as leaving the upper edge of the transmission port.
-            const originY = Math.max(2, Math.min(98, y - 4));
-            const originX = Math.max(2, Math.min(98, x));
+        const emitterRect = emitter.getBoundingClientRect();
+        if (!emitterRect.width || !emitterRect.height) return;
 
-            beam.querySelector('.tx-beam-core')?.setAttribute('d', 'M ' + originX + ' ' + originY + ' L ' + originX + ' 0');
-            beam.querySelector('.tx-beam-halo')?.setAttribute('d', 'M ' + originX + ' ' + originY + ' L ' + originX + ' 0');
-            beam.querySelector('.tx-beam-origin')?.setAttribute('cx', originX);
-            beam.querySelector('.tx-beam-origin')?.setAttribute('cy', originY);
-            beam.querySelector('.tx-beam-pulse')?.setAttribute('cx', originX);
-            beam.querySelector('.tx-beam-pulse')?.setAttribute('cy', originY);
-        }
+        const x = emitterRect.left + emitterRect.width / 2;
+        const originY = Math.max(8, emitterRect.top + emitterRect.height * 0.12);
+        const height = Math.max(80, originY);
 
-        const beamFx = $('transmission-beam-fx');
-        if (beamFx && emitterRect) {
-            // HARD BEAM PATH: move the visual out of the transmission room's
-            // stacking/clip context and anchor it directly to the viewport.
-            // The console has a clip-path, so an in-room child can be clipped.
-            // A fixed body-level beam cannot be hidden by the console.
-            if (beamFx.parentElement !== document.body) document.body.appendChild(beamFx);
+        const beamFx = document.createElement('div');
+        beamFx.id = 'frequency-send-beam';
+        beamFx.setAttribute('aria-hidden', 'true');
+        Object.assign(beamFx.style, {
+            position: 'fixed',
+            left: (x - 5) + 'px',
+            top: '0px',
+            width: '10px',
+            height: height + 'px',
+            zIndex: '2147483647',
+            pointerEvents: 'none',
+            display: 'block',
+            opacity: '0',
+            transform: 'scaleY(0)',
+            transformOrigin: '50% 100%',
+            borderRadius: '999px',
+            background: 'linear-gradient(to top, rgba(255,248,246,1) 0%, rgba(255,62,48,1) 8%, rgba(218,28,28,.9) 30%, rgba(145,12,20,.65) 62%, rgba(90,8,14,0) 100%)',
+            boxShadow: '0 0 5px rgba(255,72,55,1), 0 0 16px rgba(220,30,30,.95), 0 0 38px rgba(150,20,25,.7)',
+            transition: 'transform .68s cubic-bezier(.12,.78,.18,1), opacity .08s linear'
+        });
 
-            const xPx = emitterRect.left + emitterRect.width / 2;
-            const topPx = Math.max(0, emitterRect.top);
-            const widthPx = window.innerWidth <= 720 ? 7 : 10;
+        document.body.appendChild(beamFx);
 
-            beamFx.classList.remove('transmitting');
-            beamFx.style.position = 'fixed';
-            beamFx.style.left = (xPx - widthPx / 2) + 'px';
-            beamFx.style.top = '0px';
-            beamFx.style.width = widthPx + 'px';
-            beamFx.style.height = Math.max(40, topPx) + 'px';
-            beamFx.style.zIndex = '2147483647';
-            beamFx.style.transformOrigin = '50% 100%';
+        // Force layout before starting the animation so iOS/Safari cannot
+        // collapse the initial state and skip the transition.
+        void beamFx.offsetHeight;
+        requestAnimationFrame(() => {
+            beamFx.style.opacity = '1';
+            beamFx.style.transform = 'scaleY(1)';
+        });
+
+        // Add a bright emitter flash at the physical launch point.
+        const flash = document.createElement('div');
+        flash.id = 'frequency-send-flash';
+        flash.setAttribute('aria-hidden', 'true');
+        Object.assign(flash.style, {
+            position: 'fixed',
+            left: (x - 11) + 'px',
+            top: (emitterRect.top + emitterRect.height * 0.12 - 11) + 'px',
+            width: '22px',
+            height: '22px',
+            zIndex: '2147483646',
+            pointerEvents: 'none',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,245,242,1) 0%, rgba(255,70,55,.95) 18%, rgba(215,30,30,.5) 42%, rgba(120,10,18,0) 72%)',
+            opacity: '0',
+            transform: 'scale(.45)',
+            transition: 'transform .18s ease-out, opacity .18s ease-out'
+        });
+        document.body.appendChild(flash);
+        void flash.offsetHeight;
+        requestAnimationFrame(() => {
+            flash.style.opacity = '1';
+            flash.style.transform = 'scale(1.35)';
+        });
+
+        window.setTimeout(() => {
             beamFx.style.opacity = '0';
-            beamFx.style.transform = 'scaleY(0)';
-            beamFx.style.display = 'block';
+            flash.style.opacity = '0';
+            flash.style.transform = 'scale(1.8)';
+        }, 700);
 
-            void beamFx.offsetWidth;
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    beamFx.style.opacity = '1';
-                    beamFx.style.transform = 'scaleY(1)';
-                });
-            });
-
-            window.setTimeout(() => {
-                beamFx.style.opacity = '0';
-            }, 760);
-            window.setTimeout(() => {
-                beamFx.style.transform = 'scaleY(0)';
-                beamFx.style.display = 'none';
-            }, 1150);
-        }
-        beam.classList.remove('transmitting');
-        void beam.offsetWidth;
-        beam.classList.add('transmitting');
-        window.setTimeout(() => beam.classList.remove('transmitting'), 1100);
+        window.setTimeout(() => {
+            beamFx.remove();
+            flash.remove();
+        }, 1050);
     };
+
 
     launchBeam();
 });
