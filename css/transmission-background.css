@@ -1926,3 +1926,15 @@
 @media(max-width:720px){
     #room-transmission #transmission-beam-fx{width:6px!important;box-shadow:0 0 3px rgba(255,72,55,.95),0 0 10px rgba(215,30,28,.7),0 0 20px rgba(150,20,25,.35)}
 }
+
+/* DIRECT BEAM FINAL: JS-controlled transition, independent of SVG animation */
+#room-transmission #transmission-beam-fx{
+    z-index:999!important;
+    width:10px!important;
+    opacity:0;
+    transform:scaleY(0);
+    transform-origin:50% 100%!important;
+    transition:transform .72s cubic-bezier(.12,.78,.18,1),opacity .12s linear!important;
+    will-change:transform,opacity;
+}
+@media(max-width:720px){#room-transmission #transmission-beam-fx{z-index:999!important;width:7px!important;}}
