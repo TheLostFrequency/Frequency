@@ -20,18 +20,10 @@ export class AudioAnalyzer {
             // On mobile this can delay the first audible frame. Let the media
             // element start first, then initialize the analyzer immediately
             // after the play event has returned to the browser.
-            const wake = () => {
-                if (this.isInitialized) {
-                    this.resume();
-                    return;
-                }
-                window.setTimeout(() => {
-                    this.init();
-                    this.resume();
-                }, 0);
-            };
-
-            this.audioElement.addEventListener('play', wake);
+            // The graph is initialized by the playback path before the
+            // media element starts. Do not attach a post-play initializer:
+            // changing the Web Audio routing after audio begins can produce
+            // a brief rate/glitch on iOS.
             this.audioElement.addEventListener('playing', () => this.resume());
         }
     }
