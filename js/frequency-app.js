@@ -1212,6 +1212,15 @@ $('next-btn').addEventListener('click', () => move(1, true));
 $('prev-btn').addEventListener('click', () => move(-1, true));
 
 // Connect browser lock-screen / headset track controls to the same player controls.
+player.onBeforePlay = async () => {
+    // Build the Web Audio graph before the native media element starts.
+    // This guarantees the EQ filters are actually in the audible signal path,
+    // including play/pause and lock-screen/headset playback controls.
+    if (!analyzer.isInitialized) analyzer.init();
+    eq.forEach((input, index) => analyzer.setBand(index, input.value));
+    await analyzer.resume();
+};
+
 player.onNextTrack = () => move(1, true);
 player.onPreviousTrack = () => move(-1, true);
 
