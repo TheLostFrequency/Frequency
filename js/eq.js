@@ -16,15 +16,23 @@ export class AudioAnalyzer {
         // initialization depended too heavily on which UI action happened
         // first, which is why opening DevTools could appear to "wake" it up.
         if (this.audioElement) {
+            // Do not build the Web Audio graph while a track is merely loading.
+            // On mobile this can delay the first audible frame. Let the media
+            // element start first, then initialize the analyzer immediately
+            // after the play event has returned to the browser.
             const wake = () => {
-                this.init();
-                this.resume();
+                if (this.isInitialized) {
+                    this.resume();
+                    return;
+                }
+                window.setTimeout(() => {
+                    this.init();
+                    this.resume();
+                }, 0);
             };
 
             this.audioElement.addEventListener('play', wake);
-            this.audioElement.addEventListener('playing', wake);
-            this.audioElement.addEventListener('canplay', () => this.init());
-            this.audioElement.addEventListener('loadeddata', () => this.init());
+            this.audioElement.addEventListener('playing', () => this.resume());
         }
     }
 
@@ -43,7 +51,7 @@ export class AudioAnalyzer {
 
         try {
             if (!this.audioCtx) {
-                this.audioCtx = new AudioContextClass();
+                this.audioCtx = new AudioContextClass({ latencyHint: 'interactive' });
             }
 
             if (!this.source) {
@@ -52,7 +60,7 @@ export class AudioAnalyzer {
 
             if (!this.analyser) {
                 this.analyser = this.audioCtx.createAnalyser();
-                this.analyser.fftSize = 2048;
+                this.analyser.fftSize = window.matchMedia?.('(max-width: 720px)').matches ? 1024 : 2048;
                 this.analyser.minDecibels = -100;
                 this.analyser.maxDecibels = -10;
                 this.analyser.smoothingTimeConstant = 0.35;
