@@ -169,3 +169,12 @@
         visibility:hidden!important;
     }
 }
+
+/* FREQUENCY // MOBILE COLLECTION — REMOVE SELECTOR SPINE RENDERING */
+@media (max-width:720px){
+    /* Swipe handling stays on .song-selector, but the decorative spine is
+       removed from layout/paint entirely on mobile. Desktop is untouched. */
+    #room-collection .song-selector .selector-spine{
+        display:none!important;
+    }
+}
