@@ -1885,3 +1885,15 @@
   #room-transmission .tx-status{left:12px!important;right:12px!important;bottom:36px!important;}
   #room-transmission .transmit-button{right:12px!important;bottom:7px!important;width:138px!important;height:25px!important;}
 }
+
+
+/* FREQUENCY // TRANSMISSION — HARD ONE-SHOT BEAM LAUNCH */
+#room-transmission #transmission-beam.transmitting{z-index:200!important;visibility:visible!important;pointer-events:none!important}
+#room-transmission #transmission-beam.transmitting .tx-beam-core{animation:frequencyHardBeamLaunch .92s cubic-bezier(.12,.78,.2,1) both!important}
+#room-transmission #transmission-beam.transmitting .tx-beam-halo{animation:frequencyHardBeamHalo .92s cubic-bezier(.12,.78,.2,1) both!important}
+#room-transmission #transmission-beam.transmitting .tx-beam-origin{animation:frequencyHardBeamOrigin .92s ease-out both!important}
+#room-transmission #transmission-beam.transmitting .tx-beam-pulse{animation:frequencyHardBeamPulse .92s ease-out both!important}
+@keyframes frequencyHardBeamLaunch{0%{stroke-dasharray:0 100;opacity:0}7%{stroke-dasharray:4 96;opacity:1}25%{stroke-dasharray:28 72;opacity:1}58%{stroke-dasharray:68 32;opacity:.95}88%{stroke-dasharray:100 0;opacity:.9}100%{stroke-dasharray:100 0;opacity:0}}
+@keyframes frequencyHardBeamHalo{0%{stroke-dasharray:0 100;opacity:0}8%{stroke-dasharray:8 92;opacity:.7}30%{stroke-dasharray:35 65;opacity:.55}70%{stroke-dasharray:82 18;opacity:.3}100%{stroke-dasharray:100 0;opacity:0}}
+@keyframes frequencyHardBeamOrigin{0%{opacity:0;r:1}8%{opacity:1;r:2.4}35%{opacity:.85;r:1.5}100%{opacity:0;r:.5}}
+@keyframes frequencyHardBeamPulse{0%{opacity:0;r:1}8%{opacity:1;r:2}42%{opacity:.4;r:4}100%{opacity:0;r:8}}
