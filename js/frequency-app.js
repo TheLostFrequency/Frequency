@@ -470,18 +470,19 @@ $('transmission-form').addEventListener('submit', async event => {
         }
 
         const beamFx = $('transmission-beam-fx');
-        [beam, beamFx].forEach(element => {
-            if (!element) return;
-            element.classList.remove('transmitting');
-            void element.offsetWidth;
-            element.classList.add('transmitting');
-        });
+        const beamElements = [beam, beamFx].filter(Boolean);
+        beamElements.forEach(element => element.classList.remove('transmitting'));
 
-        // The launch class is temporary. Leaving it on the beam causes the
-        // CSS animation to replay when the Transmission room is shown again.
-        window.setTimeout(() => {
-            [beam, beamFx].forEach(element => element?.classList.remove('transmitting'));
-        }, 1800);
+        // Use two animation frames so the browser cannot batch the class
+        // removal/addition and skip the one-shot launch.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                beamElements.forEach(element => element.classList.add('transmitting'));
+                window.setTimeout(() => {
+                    beamElements.forEach(element => element.classList.remove('transmitting'));
+                }, 1050);
+            });
+        });
     };
 
     launchBeam();
@@ -1150,8 +1151,13 @@ async function select(auto = false) {
     }
 
     if (auto) {
-        // Let the native media element start first. The analyzer now wakes
-        // asynchronously from the play event instead of blocking playback.
+        // Initialize the Web Audio graph before playback so the EQ filters and
+        // live waveform are connected from the first audible frame.
+        if (!analyzer.isInitialized) {
+            analyzer.init();
+            eq.forEach((input, index) => analyzer.setBand(index, input.value));
+        }
+        await analyzer.resume();
         await player.play();
     }
 }
