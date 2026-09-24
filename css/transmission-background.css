@@ -1721,3 +1721,19 @@
         transform:translateX(8px);
     }
 }
+
+/* FREQUENCY // MOBILE TRANSMISSION — SHIFT SIGNAL COPY RIGHT */
+@media(max-width:720px){
+    #room-transmission .transmission-audio-panel{
+        padding-left:18px!important;
+        margin-left:6px!important;
+    }
+}
+
+/* FREQUENCY // MOBILE TRANSMISSION — KEEP BEAM ABOVE CONSOLE PAINT */
+@media(max-width:720px){
+    #room-transmission #transmission-beam,
+    #room-transmission #transmission-beam-fx{
+        z-index:80!important;
+    }
+}
