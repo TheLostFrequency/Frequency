@@ -1753,3 +1753,16 @@
 /* FREQUENCY // MOBILE TRANSMISSION — SECOND SLIGHT UI REDUCTION */
 @media (max-width:720px){#room-transmission .transmission-console{height:360px!important;}}
 @media (max-width:430px){#room-transmission .transmission-console{height:340px!important;}}
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — MAKE CONSOLE VISIBLY SHORTER */
+@media (max-width:720px){
+    #room-transmission .transmission-console{
+        height:320px!important;
+    }
+}
+@media (max-width:430px){
+    #room-transmission .transmission-console{
+        height:300px!important;
+    }
+}
