@@ -472,17 +472,9 @@ $('transmission-form').addEventListener('submit', async event => {
         const beamFx = $('transmission-beam-fx');
         const beamElements = [beam, beamFx].filter(Boolean);
         beamElements.forEach(element => element.classList.remove('transmitting'));
-
-        // Use two animation frames so the browser cannot batch the class
-        // removal/addition and skip the one-shot launch.
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                beamElements.forEach(element => element.classList.add('transmitting'));
-                window.setTimeout(() => {
-                    beamElements.forEach(element => element.classList.remove('transmitting'));
-                }, 1050);
-            });
-        });
+        void beam.offsetWidth;
+        beam.classList.add('transmitting');
+        window.setTimeout(() => beam.classList.remove('transmitting'), 1050);
     };
 
     launchBeam();
