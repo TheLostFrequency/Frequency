@@ -414,18 +414,40 @@ $('transmission-form').addEventListener('submit', async event => {
     if ($('transmission-status')) $('transmission-status').textContent = 'SIGNAL TRANSMITTED // SENT TO @' + sentTo;
     toast('TRANSMISSION COMPLETE // SIGNAL SENT TO @' + sentTo);
 
-    // Restart both beam layers after the picker closes. Two animation
-    // frames give iOS time to paint the active Transmission room before the
-    // launch begins, preventing the beam from waiting for a room switch.
+    // Launch immediately from the physical emitter. Recompute the SVG origin
+    // from the emitter's actual screen position so the beam cannot start low
+    // in the console or wait for a room switch to become visible.
     const launchBeam = () => {
-        [$('transmission-beam'), $('transmission-beam-fx')].forEach(element => {
+        const roomElement = $('room-transmission');
+        const emitter = roomElement?.querySelector('.tx-emitter');
+        const beam = $('transmission-beam');
+        if (!roomElement || !beam) return;
+
+        const roomRect = roomElement.getBoundingClientRect();
+        const emitterRect = emitter?.getBoundingClientRect();
+        if (emitterRect && roomRect.width && roomRect.height) {
+            const x = ((emitterRect.left + emitterRect.width / 2 - roomRect.left) / roomRect.width) * 100;
+            const y = ((emitterRect.top + emitterRect.height / 2 - roomRect.top) / roomRect.height) * 100;
+            const originY = Math.max(2, Math.min(98, y));
+            const originX = Math.max(2, Math.min(98, x));
+
+            beam.querySelector('.tx-beam-core')?.setAttribute('d', 'M ' + originX + ' ' + originY + ' L ' + originX + ' 0');
+            beam.querySelector('.tx-beam-halo')?.setAttribute('d', 'M ' + originX + ' ' + originY + ' L ' + originX + ' 0');
+            beam.querySelector('.tx-beam-origin')?.setAttribute('cx', originX);
+            beam.querySelector('.tx-beam-origin')?.setAttribute('cy', originY);
+            beam.querySelector('.tx-beam-pulse')?.setAttribute('cx', originX);
+            beam.querySelector('.tx-beam-pulse')?.setAttribute('cy', originY);
+        }
+
+        [beam, $('transmission-beam-fx')].forEach(element => {
             if (!element) return;
             element.classList.remove('transmitting');
             void element.offsetWidth;
             element.classList.add('transmitting');
         });
     };
-    requestAnimationFrame(() => requestAnimationFrame(launchBeam));
+
+    launchBeam();
 });
 
 async function handleIncomingTransmission(item, action, row) {
