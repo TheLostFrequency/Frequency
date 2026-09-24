@@ -283,6 +283,7 @@ let transmissionTrack = null;
 let incomingTransmissionPollTimer = null;
 let incomingTransmissionItems = new Map();
 let transmissionAlertItem = null;
+let transmissionSending = false;
 
 function syncTransmissionDestination() {
     const label = '@' + (transmissionRecipientUsername || 'WAITING');
@@ -327,6 +328,7 @@ function renderTransmissionTracks() {
             const status = $('transmission-status');
             if (status) status.textContent = transmissionTrack ? 'SIGNAL ARMED // READY TO TRANSMIT' : 'READY TO TRANSMIT';
             renderTransmissionTracks();
+            $('transmission-dialog').close();
             toast('Signal selected: ' + (transmissionTrack?.title || 'Untitled'));
         });
     });
@@ -373,6 +375,7 @@ $('transmit-signal-btn').addEventListener('click', openTransmissionPicker);
 // The main Transmission console now has two explicit actions:
 // choose a signal first, then send it directly from the console.
 $('transmit-now-btn')?.addEventListener('click', () => {
+    if (transmissionSending) return;
     if (!authUser) {
         $('auth-dialog').showModal();
         toast('Enter your vault before transmitting.');
@@ -393,6 +396,7 @@ $('transmit-now-btn')?.addEventListener('click', () => {
 
 $('transmission-form').addEventListener('submit', async event => {
     event.preventDefault();
+    if (transmissionSending) return;
     if (!authUser || !supabase) return;
 
     if (!transmissionRecipientId) {
@@ -405,6 +409,7 @@ $('transmission-form').addEventListener('submit', async event => {
     }
 
     const button = $('confirm-transmission');
+    transmissionSending = true;
     button.disabled = true;
     $('transmission-message-status').textContent = 'OPENING PRIVATE CHANNEL...';
 
@@ -424,11 +429,13 @@ $('transmission-form').addEventListener('submit', async event => {
         console.error('Transmission failed:', error);
         $('transmission-message-status').textContent = error.message || 'TRANSMISSION FAILED.';
         button.disabled = false;
+        transmissionSending = false;
         return;
     }
 
     $('transmission-dialog').close();
     button.disabled = false;
+    transmissionSending = false;
 
     // Keep the successful transmission visible long enough to be unmistakable.
     const sentTo = transmissionRecipientUsername || 'UNKNOWN STATION';
@@ -449,7 +456,9 @@ $('transmission-form').addEventListener('submit', async event => {
         if (emitterRect && roomRect.width && roomRect.height) {
             const x = ((emitterRect.left + emitterRect.width / 2 - roomRect.left) / roomRect.width) * 100;
             const y = ((emitterRect.top + emitterRect.height / 2 - roomRect.top) / roomRect.height) * 100;
-            const originY = Math.max(2, Math.min(98, y));
+            // Lift the visual beam origin slightly above the emitter center so
+            // the beam reads as leaving the upper edge of the transmission port.
+            const originY = Math.max(2, Math.min(98, y - 4));
             const originX = Math.max(2, Math.min(98, x));
 
             beam.querySelector('.tx-beam-core')?.setAttribute('d', 'M ' + originX + ' ' + originY + ' L ' + originX + ' 0');
