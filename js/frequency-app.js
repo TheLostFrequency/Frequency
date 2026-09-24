@@ -1,5 +1,5 @@
 import { AudioPlayer } from './audioPlayer.js';
-import { AudioAnalyzer } from './eq.js';
+import { AudioAnalyzer } from './eq.js?v=2';
 import { supabase } from './supabaseClient.js';
 
 const player = new AudioPlayer();
