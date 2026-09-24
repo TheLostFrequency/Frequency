@@ -157,3 +157,15 @@
     #prev-btn, #play-pause-btn, #next-btn, #shuffle-btn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; position:relative !important; z-index:1000 !important; }
     #room-equalizer .eq-bands input { left:50% !important; transform:translateX(-50%) !important; }
 }
+
+/* FREQUENCY // MOBILE COLLECTION — HIDE SONG LIST, KEEP SWIPE TARGET */
+@media (max-width:720px){
+    /* Keep the selector itself active for swipe gestures, but remove every
+       visible song/selector element so side tracks can never peek through. */
+    #room-collection .song-selector .song-wheel,
+    #room-collection .song-selector .selector-spine,
+    #room-collection .song-selector .selector-head,
+    #room-collection .song-selector .selector-foot{
+        visibility:hidden!important;
+    }
+}
