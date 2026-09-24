@@ -33,9 +33,11 @@ function applyPreset(name) {
 
 buttons.forEach(button => button.addEventListener('click', () => applyPreset(button.dataset.preset)));
 
-inputs.forEach(input => input.addEventListener('input', () => {
+inputs.forEach((input, index) => input.addEventListener('input', () => {
     buttons.forEach(button => button.classList.remove('active'));
     if (state) state.textContent = 'CUSTOM';
+    window.frequencyAnalyzer?.setBand?.(index, input.value);
+    if (status) status.textContent = `${Number(input.value) > 0 ? '+' : ''}${input.value} dB // CUSTOM`;
 }));
 
 document.getElementById('eq-reset')?.addEventListener('click', () => {
