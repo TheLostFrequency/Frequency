@@ -1671,3 +1671,31 @@
 @media (max-width:430px){
     #room-transmission .transmission-console{top:69%!important;}
 }
+
+
+/* FREQUENCY // MOBILE PERFORMANCE PASS */
+@media (max-width:720px){
+    /* Keep expensive visual effects from competing with touch, audio and recording. */
+    #room-transmission .transmission-console,
+    #room-transmission .tx-signal-window{
+        backdrop-filter:none!important;
+        -webkit-backdrop-filter:none!important;
+    }
+
+    /* The launch should read instantly on a phone instead of taking 1.65s. */
+    #room-transmission .transmission-beam.transmitting .tx-beam-core{
+        animation-duration:.68s!important;
+    }
+    #room-transmission .transmission-beam.transmitting .tx-beam-halo{
+        animation-duration:.68s!important;
+        filter:blur(1px)!important;
+    }
+    #room-transmission .transmission-beam.transmitting .tx-beam-origin,
+    #room-transmission .transmission-beam.transmitting .tx-beam-pulse{
+        animation-duration:.68s!important;
+    }
+
+    #room-transmission .transmission-beam .tx-beam-core{
+        filter:drop-shadow(0 0 2px #ff5147) drop-shadow(0 0 5px rgba(220,35,30,.75));
+    }
+}
