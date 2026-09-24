@@ -14,6 +14,7 @@ export class AudioPlayer {
         this.onTimeUpdate = null;
         this.onEnded = null;
         this.onPlayStateChange = null;
+        this.onBeforePlay = null;
         window.frequencyAudio = this.audio;
         this.configureAudioSession();
         this.audio.addEventListener('timeupdate', () => {
@@ -101,6 +102,7 @@ export class AudioPlayer {
     async play() {
         try {
             this.configureAudioSession();
+            if (this.onBeforePlay) await this.onBeforePlay();
             await this.audio.play();
         } catch (error) { console.warn('Playback prevented:', error); }
     }
