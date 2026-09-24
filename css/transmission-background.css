@@ -1785,3 +1785,11 @@
         width:52%!important;
     }
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — HIDE OVERLAPPING RELAY COPY */
+@media(max-width:720px){
+    #room-transmission .tx-live{
+        display:none!important;
+    }
+}
