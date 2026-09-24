@@ -29,14 +29,37 @@ const fmt = seconds => Number.isFinite(seconds)
     ? `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`
     : '00:00';
 
+const signedUrlCache = new Map();
+const signedUrlPending = new Map();
+
 async function signedUrl(bucket, path) {
     if (!supabase || !path) return '';
-    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
-    if (error) {
-        console.warn(`Could not create signed ${bucket} URL:`, error);
-        return '';
-    }
-    return data?.signedUrl || '';
+
+    const key = bucket + ':' + path;
+    const cached = signedUrlCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.url;
+
+    const pending = signedUrlPending.get(key);
+    if (pending) return pending;
+
+    const request = supabase.storage.from(bucket).createSignedUrl(path, 3600)
+        .then(({ data, error }) => {
+            if (error) {
+                console.warn(`Could not create signed ${bucket} URL:`, error);
+                return '';
+            }
+            const url = data?.signedUrl || '';
+            if (url) {
+                // Reuse the same signed URL for almost its full lifetime. This
+                // avoids a fresh network round-trip every time a track is selected.
+                signedUrlCache.set(key, { url, expiresAt: Date.now() + 50 * 60 * 1000 });
+            }
+            return url;
+        })
+        .finally(() => signedUrlPending.delete(key));
+
+    signedUrlPending.set(key, request);
+    return request;
 }
 
 async function hydrateCovers(tracks) {
@@ -983,8 +1006,9 @@ async function load() {
         return;
     }
 
-    playlist = await hydrateCovers(data || []);
-    await loadIncomingTransmissions();
+    // Make the music list usable immediately. Cover art and receiver polling
+    // are secondary work and must not block the first playable signal.
+    playlist = (data || []).map(track => ({ ...track, _coverUrl: 'assets/default-art.jpg' }));
     currentIndex = Math.min(currentIndex, Math.max(0, playlist.length - 1));
 
     if (playlist.length) {
@@ -992,6 +1016,22 @@ async function load() {
     } else {
         renderEmpty();
     }
+
+    // Finish non-critical work after the player is ready.
+    hydrateCovers(data || []).then(hydrated => {
+        const coversById = new Map(hydrated.map(track => [track.id, track._coverUrl]));
+        playlist.forEach(track => {
+            if (coversById.has(track.id)) track._coverUrl = coversById.get(track.id);
+        });
+        if (playlist[currentIndex]) {
+            const art = cover(playlist[currentIndex]);
+            $('current-album-art').src = art;
+            $('player-thumb').src = art;
+        }
+        renderWheel();
+    });
+
+    loadIncomingTransmissions();
 }
 
 function renderEmpty() {
@@ -1051,8 +1091,8 @@ async function select(auto = false) {
     }
 
     if (auto) {
-        analyzer.init();
-        analyzer.resume();
+        // Let the native media element start first. The analyzer now wakes
+        // asynchronously from the play event instead of blocking playback.
         await player.play();
     }
 }
@@ -1106,8 +1146,8 @@ $('play-pause-btn').addEventListener('click', async () => {
         else $('upload-dialog').showModal();
         return;
     }
-    analyzer.init();
-    analyzer.resume();
+    // Playback starts through the native media element; AudioAnalyzer wakes
+    // from the play event without blocking the click handler.
     await player.togglePlay();
 });
 
