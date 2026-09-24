@@ -414,18 +414,18 @@ $('transmission-form').addEventListener('submit', async event => {
     if ($('transmission-status')) $('transmission-status').textContent = 'SIGNAL TRANSMITTED // SENT TO @' + sentTo;
     toast('TRANSMISSION COMPLETE // SIGNAL SENT TO @' + sentTo);
 
-    const beam = $('transmission-beam');
-    if (beam) {
-        beam.classList.remove('transmitting');
-        void beam.offsetWidth;
-        beam.classList.add('transmitting');
-    }
-    const beamFx = $('transmission-beam-fx');
-    if (beamFx) {
-        beamFx.classList.remove('transmitting');
-        void beamFx.offsetWidth;
-        beamFx.classList.add('transmitting');
-    }
+    // Restart both beam layers after the picker closes. Two animation
+    // frames give iOS time to paint the active Transmission room before the
+    // launch begins, preventing the beam from waiting for a room switch.
+    const launchBeam = () => {
+        [$('transmission-beam'), $('transmission-beam-fx')].forEach(element => {
+            if (!element) return;
+            element.classList.remove('transmitting');
+            void element.offsetWidth;
+            element.classList.add('transmitting');
+        });
+    };
+    requestAnimationFrame(() => requestAnimationFrame(launchBeam));
 });
 
 async function handleIncomingTransmission(item, action, row) {
