@@ -1243,33 +1243,61 @@ $('eq-reset').addEventListener('click', () => {
 });
 eqDraw();
 
-function drawWaveform() {
+let waveformCanvasWidth = 0;
+let waveformCanvasHeight = 0;
+let waveformCanvasRatio = 1;
+let waveformLastDraw = 0;
+const waveformFrameInterval = 1000 / 30;
+
+function drawWaveform(timestamp = 0) {
     const collectionActive = $('room-collection')?.classList.contains('active-room');
     if (!collectionActive || document.hidden) {
         setTimeout(() => requestAnimationFrame(drawWaveform), 250);
         return;
     }
+
+    if (timestamp - waveformLastDraw < waveformFrameInterval) {
+        requestAnimationFrame(drawWaveform);
+        return;
+    }
+    waveformLastDraw = timestamp;
+
     const canvas = $('waveform-canvas');
     const context = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
-    const width = Math.max(1, rect.width);
-    const height = Math.max(1, rect.height);
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    const width = Math.max(1, Math.floor(rect.width));
+    const height = Math.max(1, Math.floor(rect.height));
+
+    // Resizing a canvas every frame forces the browser to recreate its backing
+    // store. Only resize when the viewport actually changed.
+    if (width !== waveformCanvasWidth || height !== waveformCanvasHeight || ratio !== waveformCanvasRatio) {
+        waveformCanvasWidth = width;
+        waveformCanvasHeight = height;
+        waveformCanvasRatio = ratio;
+        canvas.width = Math.max(1, Math.floor(width * ratio));
+        canvas.height = Math.max(1, Math.floor(height * ratio));
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
     context.clearRect(0, 0, width, height);
 
-    const data = analyzer.getWaveformData();
-    context.beginPath();
-    for (let pixel = 0; pixel < width; pixel += 1) {
-        const index = data.length ? Math.floor(pixel / width * data.length) : 0;
-        const value = data.length ? (data[index] - 128) / 128 : 0;
-        const y = height / 2 + value * height * 0.38;
-        pixel ? context.lineTo(pixel, y) : context.moveTo(pixel, y);
+    const data = analyzer.isInitialized ? analyzer.getWaveformData() : null;
+    if (data?.length) {
+        context.beginPath();
+        const step = width > 600 ? 2 : 1;
+        for (let pixel = 0; pixel < width; pixel += step) {
+            const index = Math.floor(pixel / width * data.length);
+            const value = (data[index] - 128) / 128;
+            const y = height / 2 + value * height * 0.38;
+            pixel ? context.lineTo(pixel, y) : context.moveTo(pixel, y);
+        }
+        context.strokeStyle = 'rgba(255,255,255,.72)';
+        context.stroke();
     }
-    context.strokeStyle = 'rgba(255,255,255,.72)';
-    context.stroke();
+
     requestAnimationFrame(drawWaveform);
 }
 
