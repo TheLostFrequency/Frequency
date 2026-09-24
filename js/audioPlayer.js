@@ -2,7 +2,9 @@ export class AudioPlayer {
     constructor() {
         this.audio = new Audio();
         this.audio.id = 'frequency-audio';
-        this.audio.preload = 'metadata';
+        // Prefer eager buffering for the music player so a selected signal can
+        // begin playback as soon as the signed URL is ready.
+        this.audio.preload = 'auto';
         this.audio.crossOrigin = 'anonymous';
         this.audio.playsInline = true;
         this.audio.volume = 1;
