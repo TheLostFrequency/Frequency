@@ -331,9 +331,15 @@ function renderTransmissionTracks() {
             if (art) art.src = cover(transmissionTrack);
             const status = $('transmission-status');
             if (status) status.textContent = transmissionTrack ? 'SIGNAL ARMED // READY TO TRANSMIT' : 'READY TO TRANSMIT';
-            // Once a signal is selected, the picker button is no longer needed.
-            // The console's SEND SIGNAL action becomes the single next step.
-            $('transmit-signal-btn')?.classList.add('hidden');
+            // Keep the selector available so the sender can change the
+            // signal at any time before sending. It becomes CHANGE SIGNAL
+            // once a track has been armed.
+            const chooseButton = $('transmit-signal-btn');
+            if (chooseButton) {
+                chooseButton.classList.remove('hidden');
+                const label = chooseButton.querySelector('span');
+                if (label) label.textContent = 'CHANGE SIGNAL';
+            }
             renderTransmissionTracks();
             $('transmission-dialog').close();
             toast('Signal selected: ' + (transmissionTrack?.title || 'Untitled'));
