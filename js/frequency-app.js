@@ -469,12 +469,19 @@ $('transmission-form').addEventListener('submit', async event => {
             beam.querySelector('.tx-beam-pulse')?.setAttribute('cy', originY);
         }
 
-        [beam, $('transmission-beam-fx')].forEach(element => {
+        const beamFx = $('transmission-beam-fx');
+        [beam, beamFx].forEach(element => {
             if (!element) return;
             element.classList.remove('transmitting');
             void element.offsetWidth;
             element.classList.add('transmitting');
         });
+
+        // The launch class is temporary. Leaving it on the beam causes the
+        // CSS animation to replay when the Transmission room is shown again.
+        window.setTimeout(() => {
+            [beam, beamFx].forEach(element => element?.classList.remove('transmitting'));
+        }, 1800);
     };
 
     launchBeam();
