@@ -1737,3 +1737,14 @@
         z-index:80!important;
     }
 }
+
+
+/* FREQUENCY // MOBILE TRANSMISSION — SLIGHTLY REDUCE UI + RAISE BEAM */
+@media (max-width:720px){
+    #room-transmission .transmission-console{height:378px!important;}
+    #room-transmission .tx-emitter{top:-28px!important;}
+}
+@media (max-width:430px){
+    #room-transmission .transmission-console{height:358px!important;}
+    #room-transmission .tx-emitter{top:-27px!important;}
+}
