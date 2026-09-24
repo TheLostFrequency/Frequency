@@ -1938,3 +1938,25 @@
     will-change:transform,opacity;
 }
 @media(max-width:720px){#room-transmission #transmission-beam-fx{z-index:999!important;width:7px!important;}}
+
+
+/* FREQUENCY // BEAM VISIBILITY LOCK — BODY LEVEL
+   The launch element is moved to <body> so the console clip-path can never
+   hide it. Keep all visual properties available after that move. */
+body #transmission-beam-fx{
+    position:fixed!important;
+    z-index:2147483647!important;
+    width:10px!important;
+    min-height:40px!important;
+    pointer-events:none!important;
+    display:block;
+    background:linear-gradient(to top,rgba(255,245,242,1) 0%,rgba(255,66,52,.98) 9%,rgba(220,30,30,.78) 34%,rgba(120,12,18,0) 100%)!important;
+    box-shadow:0 0 5px rgba(255,72,55,1),0 0 16px rgba(215,30,28,.85),0 0 36px rgba(150,20,25,.5)!important;
+    border-radius:999px!important;
+    transform-origin:50% 100%!important;
+    transition:transform .72s cubic-bezier(.12,.78,.18,1),opacity .12s linear!important;
+    will-change:transform,opacity;
+}
+@media(max-width:720px){
+    body #transmission-beam-fx{width:7px!important;box-shadow:0 0 4px rgba(255,72,55,1),0 0 12px rgba(215,30,28,.8),0 0 24px rgba(150,20,25,.45)!important;}
+}
